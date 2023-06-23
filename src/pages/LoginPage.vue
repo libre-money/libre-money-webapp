@@ -22,8 +22,10 @@
 <script lang="ts">
 
 import { useQuasar } from "quasar";
+import { loginService } from "src/services/login-service";
 import { validators } from "src/utils/validators";
-import { defineComponent, ref } from "vue";
+import { Ref, defineComponent, ref } from "vue";
+import { RouteLocationRaw, useRoute, useRouter } from "vue-router";
 
 export default defineComponent({
   name: "IndexPage",
@@ -34,23 +36,35 @@ export default defineComponent({
   },
   setup() {
     const $q = useQuasar();
+    const route = useRoute();
+    const router = useRouter();
 
-    const username = ref(null);
-    const password = ref(null);
+    const username: Ref<string | null> = ref(null);
+    const password: Ref<string | null> = ref(null);
 
     return {
       validators,
       username,
       password,
 
-      onSubmit() {
+      async onSubmit() {
 
+        loginService.login(username.value!, password.value!);
         $q.notify({
           color: "green-4",
           textColor: "white",
           icon: "cloud_done",
-          message: "Submitted"
+          message: "Successfully logged in!"
         });
+
+        if (route.query && route.query.next) {
+          await router.push(route.query.next as RouteLocationRaw);
+        } else {
+          await router.push("/");
+        }
+
+
+
 
       },
 
