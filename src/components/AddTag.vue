@@ -3,10 +3,9 @@
     <q-card class="q-dialog-plugin">
 
       <q-card-section>
-        <div class="std-dialog-title q-pa-md">{{ existingPartyId ? "Editing a Party" : "Adding a Party" }}</div>
-        <q-form class="q-gutter-md q-pa-md" ref="partyForm">
-          <q-input filled v-model="partyName" label="Name of the Party/Vendor" lazy-rules :rules="validators.name" />
-          <q-select filled v-model="partyType" :options="partyTypeList" label="Type" emit-value map-options />
+        <div class="std-dialog-title q-pa-md">{{ existingTagId ? "Editing a Tag" : "Adding a Tag" }}</div>
+        <q-form class="q-gutter-md q-pa-md" ref="tagForm">
+          <q-input filled v-model="tagName" label="Name of the Tag/Vendor" lazy-rules :rules="validators.name" />
         </q-form>
       </q-card-section>
 
@@ -22,13 +21,12 @@
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Ref, ref } from "vue";
 import { validators } from "src/utils/validators";
-import { partyTypeList } from "src/constants/constants";
-import { Party } from "src/models/party";
+import { Tag } from "src/models/tag";
 import { pouchdbService } from "src/services/pouchdb-service";
 
 export default {
   props: {
-    existingPartyId: {
+    existingTagId: {
       type: String,
       required: false,
       default: null
@@ -40,45 +38,40 @@ export default {
   ],
 
   setup(props) {
-    let initialDoc: Party | null = null;
+    let initialDoc: Tag | null = null;
 
     const isLoading = ref(false);
 
-    const partyForm: Ref<QForm | null> = ref(null);
+    const tagForm: Ref<QForm | null> = ref(null);
 
-    const partyName: Ref<string | null> = ref(null);
-    const partyType: Ref<string | null> = ref(
-      partyTypeList.find(partyType => partyType.value === "party")!.value
-    );
+    const tagName: Ref<string | null> = ref(null);
 
     const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-    if (props.existingPartyId) {
+    if (props.existingTagId) {
       isLoading.value = true;
       (async function () {
-        let res = await pouchdbService.getDocById(props.existingPartyId) as Party;
+        let res = await pouchdbService.getDocById(props.existingTagId) as Tag;
         initialDoc = res;
-        partyName.value = res.name;
-        partyType.value = res.type;
+        tagName.value = res.name;
         isLoading.value = false;
       })();
     }
     async function okClicked() {
-      if (!await partyForm.value?.validate()) {
+      if (!await tagForm.value?.validate()) {
         return;
       }
 
-      let party: Party = {
-        $collection: "party",
-        name: partyName.value!,
-        type: partyType.value!,
+      let tag: Tag = {
+        $collection: "tag",
+        name: tagName.value!,
       };
 
       if (initialDoc) {
-        party = Object.assign({}, initialDoc, party);
+        tag = Object.assign({}, initialDoc, tag);
       }
 
-      pouchdbService.upsertDoc(party);
+      pouchdbService.upsertDoc(tag);
 
       onDialogOK();
     }
@@ -89,11 +82,9 @@ export default {
       okClicked,
       cancelClicked: onDialogCancel,
       isLoading,
-      partyTypeList,
-      partyName,
-      partyType,
+      tagName,
       validators,
-      partyForm
+      tagForm
     };
   }
 };

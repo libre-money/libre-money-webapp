@@ -97,7 +97,7 @@ const entityList = [
     title: "Tags",
     caption: "",
     icon: "school",
-    link: ""
+    link: "#/tags"
   },
   {
     title: "Income Sources",

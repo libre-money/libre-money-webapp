@@ -26,9 +26,15 @@ const routes: RouteRecordRaw[] = [
       // --- Entities:
       {
         path: "parties",
-        name: "party-entities",
+        name: "parties",
         component: () => import("pages/PartiesPage.vue"),
         meta: { requiresAuthentication: true, title: "Parties & Vendors" },
+      },
+      {
+        path: "tags",
+        name: "tags",
+        component: () => import("pages/TagsPage.vue"),
+        meta: { requiresAuthentication: true, title: "Tags" },
       },
     ],
   },
