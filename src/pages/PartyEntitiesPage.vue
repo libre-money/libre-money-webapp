@@ -8,14 +8,15 @@
       </div>
 
       <div class="q-pa-md">
-        <q-table :loading="isLoading" title="Parties & Vendors" :rows="rows" :columns="columns" row-key="name" flat
-          :grid="$q.screen.lt.sm" bordered :rows-per-page-options="rowsPerPageOptions">
+        <q-table :loading="isLoading" title="Parties & Vendors" :rows="rows" :columns="columns" row-key="_id" flat
+          :grid="$q.screen.lt.sm" bordered :rows-per-page-options="rowsPerPageOptions" binary-state-sort
+          v-model:pagination="pagination" @request="dataForTableRequested">
 
           <template v-slot:top-right>
             <q-input borderless dense clearable debounce="1" v-model="searchFilter" label="Search by name"
               placeholder="Search">
               <template v-slot:prepend>
-                <q-btn icon="search" flat round />
+                <q-btn icon="search" flat round @click="dataForTableRequested" />
               </template>
             </q-input>
           </template>
@@ -43,58 +44,27 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, ref } from "vue";
+import { Ref, defineComponent, ref, watch } from "vue";
 import { partyTypeList, rowsPerPageOptions } from "./../constants/constants";
 import { useQuasar } from "quasar";
 import AddParty from "./../components/AddParty.vue";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Party } from "src/models/party";
 import { dialogService } from "src/services/dialog-service";
+import { sleep } from "src/utils/misc-utils";
 
 export default defineComponent({
   name: "PartyEntitiesPage",
   components: {},
   setup() {
 
-    const isLoading = ref(false);
-
     const $q = useQuasar();
 
-    let rows: Ref<any[]> = ref([]);
-
-    async function addPartyClicked() {
-      $q.dialog({ component: AddParty }).onOk((res) => {
-        loadData();
-      });
-    }
-
-    async function loadData() {
-      isLoading.value = true;
-      let res = await pouchdbService.listDocs();
-      rows.value = res.rows.map(wrapper => wrapper.doc);
-      isLoading.value = false;
-    }
-    loadData();
-
-    async function editClicked(party: Party) {
-      $q.dialog({ component: AddParty, componentProps: { existingPartyId: party._id } }).onOk((res) => {
-        loadData();
-      });
-    }
-
-    async function deleteClicked(party: Party) {
-      let answer = await dialogService.confirm("Remove party", `Are you sure you want to remove the party "${party.name}"?`);
-      if (!answer) return;
-
-      let res = await pouchdbService.removeDoc(party);
-      if (!res.ok) {
-        await dialogService.alert("Error", "There was an error trying to remove the party.");
-      }
-
-      loadData();
-    }
+    // -----
 
     const searchFilter: Ref<string | null> = ref(null);
+
+    const isLoading = ref(false);
 
     const columns = [
       {
@@ -117,13 +87,106 @@ export default defineComponent({
       }
     ];
 
+    let rows: Ref<any[]> = ref([]);
+
+    const pagination = ref({
+      sortBy: 'name',
+      descending: false,
+      page: 1,
+      rowsPerPage: 5,
+      rowsNumber: 0
+    });
+
+    // -----
+
+    async function dataForTableRequested(props: any) {
+
+      let inputPagination = props?.pagination || pagination.value;
+
+      const { page, rowsPerPage, sortBy, descending } = inputPagination;
+
+      isLoading.value = true;
+
+      const skip = (page - 1) * rowsPerPage;
+      const limit = rowsPerPage;
+
+      let res = await pouchdbService.listByCollection("party");
+      let docList = res.docs as Party[];
+      if (searchFilter.value) {
+        let regex = new RegExp(`.*${searchFilter.value}.*`, "i");
+        docList = docList.filter(doc => regex.test(doc.name));
+      }
+      docList.sort((a, b) => {
+        if (sortBy === "name") {
+          return a.name.localeCompare(b.name) * (descending ? -1 : 1);
+        } else if (sortBy === "type") {
+          return b.type.localeCompare(a.type) * (descending ? -1 : 1);
+        } else {
+          return 0;
+        }
+      });
+
+      let totalRowCount = docList.length;
+      let currentRows = docList.slice(skip, skip + limit);
+      rows.value = currentRows;
+
+      pagination.value.rowsNumber = totalRowCount;
+      pagination.value.page = page;
+      pagination.value.rowsPerPage = rowsPerPage;
+      pagination.value.sortBy = sortBy;
+      pagination.value.descending = descending;
+
+      isLoading.value = false;
+    }
+
+
+    async function addPartyClicked() {
+      $q.dialog({ component: AddParty }).onOk((res) => {
+        loadData();
+      });
+    }
+
+    async function loadData() {
+      dataForTableRequested(null);
+    }
+
+    async function editClicked(party: Party) {
+      $q.dialog({ component: AddParty, componentProps: { existingPartyId: party._id } }).onOk((res) => {
+        loadData();
+      });
+    }
+
+    async function deleteClicked(party: Party) {
+      let answer = await dialogService.confirm("Remove party", `Are you sure you want to remove the party "${party.name}"?`);
+      if (!answer) return;
+
+      let res = await pouchdbService.removeDoc(party);
+      if (!res.ok) {
+        await dialogService.alert("Error", "There was an error trying to remove the party.");
+      }
+
+      loadData();
+    }
+
+    // -----
+
+    loadData();
+
+    // -----
+
+    watch(searchFilter, (_, __) => {
+      loadData();
+    });
+
     return {
       addPartyClicked,
       searchFilter,
       rowsPerPageOptions, columns, rows,
       isLoading,
       editClicked,
-      deleteClicked
+      deleteClicked,
+      pagination,
+      dataForTableRequested
     };
   }
 });

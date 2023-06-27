@@ -69,6 +69,7 @@ export default {
       }
 
       let party: Party = {
+        $collection: "party",
         name: partyName.value!,
         type: partyType.value!,
       };
