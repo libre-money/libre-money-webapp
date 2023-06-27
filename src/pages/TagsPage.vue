@@ -14,7 +14,7 @@
 
           <template v-slot:top-right>
             <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name"
-              placeholder="Search">
+              placeholder="Search" class="search-field">
               <template v-slot:prepend>
                 <q-btn icon="search" flat round @click="dataForTableRequested" />
               </template>
