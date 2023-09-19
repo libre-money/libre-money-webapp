@@ -3,3 +3,7 @@ export async function sleep(duration: number) {
     setTimeout(accept, duration);
   });
 }
+
+export function deepClone(object: any) {
+  return JSON.parse(JSON.stringify(object));
+}
