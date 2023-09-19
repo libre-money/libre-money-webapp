@@ -5,7 +5,7 @@
         <div class="title"></div>
         <q-btn-dropdown size="md" color="primary" label="Add Expenses" split @click="addExpenseClicked">
           <q-list>
-            <q-item clickable v-close-popup>
+            <q-item clickable v-close-popup @click="addIncomeClicked">
               <q-item-section>
                 <q-item-label>Add Income</q-item-label>
               </q-item-section>
@@ -57,19 +57,64 @@
               <div class="amounts-section">
                 <div class="amount">
                   {{ dataInferenceService.prettifyAmount(record.expense?.amount!, record.expense?.currencyId!) }}
-                  <div class="wallet" v-if="record.expense?.walletId">({{ record.expense.wallet.name }})</div>
                 </div>
+                <div class="wallet" v-if="record.expense?.walletId">({{ record.expense.wallet.name }})</div>
                 <div class="unpaid-amount" v-if="record.expense?.amountUnpaid! > 0">
                   Unpaid:
                   {{ dataInferenceService.prettifyAmount(record.expense?.amountUnpaid!, record.expense?.currencyId!) }}
                 </div>
                 <div class="controls">
-                  <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editClicked(record)" />
+                  <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editExpenseClicked(record)" />
                   <q-btn class="control-button" round color="negative" icon="delete" size="8px" @click="deleteClicked(record)" />
                 </div>
               </div>
             </div>
             <!-- Expense - end -->
+
+            <!-- Income - start -->
+            <div class="income-row row" v-if="record.type === RecordType.INCOME" :data-index="index">
+              <div class="details-section">
+                <div class="primary-line">
+                  {{ record.income?.incomeSource.name }}
+                </div>
+
+                <div class="row secondary-line">
+                  <div class="party" v-if="record.income?.partyId">Party: {{ record.income.party.name }}</div>
+                </div>
+
+                <div class="notes" v-if="record.notes">{{ record.notes }}</div>
+
+                <div class="row tags-line">
+                  <div class="record-type" :data-record-type="record.type">
+                    {{ record.type }}
+                  </div>
+                  <div
+                    class="tag"
+                    v-for="tag in record.tagList"
+                    v-bind:key="tag._id"
+                    :style="`background-color: ${tag.color}; color: ${guessFontColorCode(tag.color)}`"
+                  >
+                    {{ tag.name }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="amounts-section">
+                <div class="amount">
+                  {{ dataInferenceService.prettifyAmount(record.income?.amount!, record.income?.currencyId!) }}
+                </div>
+                <div class="wallet" v-if="record.income?.walletId">({{ record.income.wallet.name }})</div>
+                <div class="unpaid-amount" v-if="record.income?.amountUnpaid! > 0">
+                  Due:
+                  {{ dataInferenceService.prettifyAmount(record.income?.amountUnpaid!, record.income?.currencyId!) }}
+                </div>
+                <div class="controls">
+                  <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editIncomeClicked(record)" />
+                  <q-btn class="control-button" round color="negative" icon="delete" size="8px" @click="deleteClicked(record)" />
+                </div>
+              </div>
+            </div>
+            <!-- Income - end -->
 
             <div class="misc-row" v-else :data-index="index">{{ record.type }} {{ record.expense?.amount }} {{ record.notes }}</div>
           </div>
@@ -85,11 +130,12 @@ import { useQuasar } from "quasar";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Record } from "src/models/record";
 import { dialogService } from "src/services/dialog-service";
-import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
 import { Collection, RecordType } from "src/constants/constants";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { dataInferenceService } from "src/services/data-inference-service";
 import { guessFontColorCode } from "src/utils/misc-utils";
+import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
+import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
 
 const $q = useQuasar();
 
@@ -120,8 +166,20 @@ async function addExpenseClicked() {
   });
 }
 
-async function editClicked(record: InferredRecord) {
+async function addIncomeClicked() {
+  $q.dialog({ component: AddIncomeRecord }).onOk((res) => {
+    loadData();
+  });
+}
+
+async function editExpenseClicked(record: InferredRecord) {
   $q.dialog({ component: AddExpenseRecord, componentProps: { existingRecordId: record._id } }).onOk((res) => {
+    loadData();
+  });
+}
+
+async function editIncomeClicked(record: InferredRecord) {
+  $q.dialog({ component: AddIncomeRecord, componentProps: { existingRecordId: record._id } }).onOk((res) => {
     loadData();
   });
 }
@@ -173,10 +231,16 @@ loadData();
         padding: 2px 6px;
         display: inline-block;
         border-radius: 6px;
+        text-transform: capitalize;
 
         &[data-record-type="expense"] {
           background-color: $record-expense-primary-color;
           color: $record-expense-text-color;
+        }
+
+        &[data-record-type="income"] {
+          background-color: $record-income-primary-color;
+          color: $record-income-text-color;
         }
       }
 
@@ -209,6 +273,12 @@ loadData();
         margin: 2px;
       }
     }
+  }
+}
+
+.income-row {
+  .amount {
+    color: rgb(7, 112, 7);
   }
 }
 

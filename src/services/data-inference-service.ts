@@ -9,6 +9,7 @@ import { Tag } from "src/models/tag";
 import { Currency } from "src/models/currency";
 import { assert } from "console";
 import { Wallet } from "src/models/wallet";
+import { IncomeSource } from "src/models/income-source";
 
 let currencyCacheList: Currency[] = [];
 
@@ -35,6 +36,16 @@ export const dataInferenceService = {
       if (inferredRecord.expense.walletId) {
         inferredRecord.expense.wallet = await this.getWallet(inferredRecord.expense.walletId);
       }
+    } else if (inferredRecord.type === RecordType.INCOME && inferredRecord.income) {
+      inferredRecord.income.incomeSource = await this.getExpenseAvenue(inferredRecord.income.incomeSourceId);
+
+      if (inferredRecord.income.partyId) {
+        inferredRecord.income.party = await this.getParty(inferredRecord.income.partyId);
+      }
+
+      if (inferredRecord.income.walletId) {
+        inferredRecord.income.wallet = await this.getWallet(inferredRecord.income.walletId);
+      }
     }
 
     inferredRecord.tagList = await this.getTagList(inferredRecord.tagIdList);
@@ -44,6 +55,11 @@ export const dataInferenceService = {
 
   async getExpenseAvenue(expenseAvenueId: string) {
     const doc = (await pouchdbService.getDocById(expenseAvenueId)) as ExpenseAvenue;
+    return doc;
+  },
+
+  async getIncomeSource(incomeSourceId: string) {
+    const doc = (await pouchdbService.getDocById(incomeSourceId)) as IncomeSource;
     return doc;
   },
 
