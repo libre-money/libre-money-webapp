@@ -13,7 +13,7 @@ const value = computed({
   },
   set(value) {
     emit("update:modelValue", value);
-  }
+  },
 });
 
 const isLoading: Ref<boolean> = ref(true);
@@ -37,32 +37,46 @@ async function loadData() {
 loadData();
 
 function createValue(val: string, done: any) {
-  console.log("createValue", { val });
+  console.debug("createValue", { val });
   if (val.length > 2) {
-    if (!fullTagTagList.value.find(tag => tag.name.toLowerCase().includes(val))) {
-      done(val, 'add-unique');
+    if (!fullTagTagList.value.find((tag) => tag.name.toLowerCase().includes(val))) {
+      done(val, "add-unique");
     }
   }
 }
 
 function filterTagFn(val: string, update: any, abort: any) {
   update(() => {
-    console.log("filterTagFn", { val });
+    console.debug("filterTagFn", { val });
     const needle = val.toLowerCase();
-    tagTagList.value = fullTagTagList.value.filter(tag => {
+    tagTagList.value = fullTagTagList.value.filter((tag) => {
       return tag.name.toLowerCase().includes(needle);
     });
   });
 }
-
 </script>
 
 <template>
-  <div style="text-align: center;" v-if="isLoading">
+  <div style="text-align: center" v-if="isLoading">
     <q-spinner color="primary" size="40px" :thickness="4" />
   </div>
 
-  <q-select filled v-model="value" :options="tagTagList" label="Tags" emit-value map-options use-input input-debounce="0"
-    @filter="filterTagFn" class="std-margin-bottom-32" option-value="_id" option-label="name" v-if="!isLoading" use-chips
-    multiple @new-value="createValue" />
+  <q-select
+    filled
+    v-model="value"
+    :options="tagTagList"
+    label="Tags"
+    emit-value
+    map-options
+    use-input
+    input-debounce="0"
+    @filter="filterTagFn"
+    class="std-margin-bottom-32"
+    option-value="_id"
+    option-label="name"
+    v-if="!isLoading"
+    use-chips
+    multiple
+    @new-value="createValue"
+  />
 </template>
