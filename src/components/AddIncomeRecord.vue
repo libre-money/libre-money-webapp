@@ -103,8 +103,6 @@ export default {
         recordIncomeSourceId.value = initialDoc.income.incomeSourceId;
         recordAmount.value = asAmount(initialDoc.income.amount);
 
-        console.log("INI", initialDoc);
-
         recordCurrencyId.value = initialDoc.income.currencyId;
         recordPartyId.value = initialDoc.income.partyId;
         recordWalletId.value = initialDoc.income.walletId!;

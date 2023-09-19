@@ -10,7 +10,7 @@
                 <q-item-label>Add Income</q-item-label>
               </q-item-section>
             </q-item>
-            <q-item clickable v-close-popup>
+            <q-item clickable v-close-popup @click="addMoneyTransferClicked">
               <q-item-section>
                 <q-item-label>Transfer Money</q-item-label>
               </q-item-section>
@@ -41,7 +41,7 @@
 
                 <div class="row tags-line">
                   <div class="record-type" :data-record-type="record.type">
-                    {{ record.type }}
+                    {{ record.typePrettified }}
                   </div>
                   <div
                     class="tag"
@@ -86,7 +86,7 @@
 
                 <div class="row tags-line">
                   <div class="record-type" :data-record-type="record.type">
-                    {{ record.type }}
+                    {{ record.typePrettified }}
                   </div>
                   <div
                     class="tag"
@@ -116,6 +116,52 @@
             </div>
             <!-- Income - end -->
 
+            <!-- Money Transfer - start -->
+            <div class="money-transfer-row row" v-if="record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer" :data-index="index">
+              <div class="details-section">
+                <div class="primary-line">Transfer {{ record.moneyTransfer.fromWallet.name }} to {{ record.moneyTransfer.toWallet.name }}</div>
+
+                <div class="notes" v-if="record.notes">{{ record.notes }}</div>
+
+                <div class="row tags-line">
+                  <div class="record-type" :data-record-type="record.type">
+                    {{ record.typePrettified }}
+                  </div>
+                  <div
+                    class="tag"
+                    v-for="tag in record.tagList"
+                    v-bind:key="tag._id"
+                    :style="`background-color: ${tag.color}; color: ${guessFontColorCode(tag.color)}`"
+                  >
+                    {{ tag.name }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="amounts-section">
+                <div class="row">
+                  <div class="amount-left-col">
+                    <div class="amount amount-out">
+                      Out {{ dataInferenceService.prettifyAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}
+                    </div>
+                    <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
+                  </div>
+                  <div>
+                    <div class="amount amount-in">
+                      In {{ dataInferenceService.prettifyAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}
+                    </div>
+                    <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
+                  </div>
+                </div>
+
+                <div class="controls">
+                  <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editMoneyTransferClicked(record)" />
+                  <q-btn class="control-button" round color="negative" icon="delete" size="8px" @click="deleteClicked(record)" />
+                </div>
+              </div>
+            </div>
+            <!-- Money Transfer -->
+
             <div class="misc-row" v-else :data-index="index">{{ record.type }} {{ record.expense?.amount }} {{ record.notes }}</div>
           </div>
         </template>
@@ -136,6 +182,7 @@ import { dataInferenceService } from "src/services/data-inference-service";
 import { guessFontColorCode } from "src/utils/misc-utils";
 import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
 import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
+import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
 
 const $q = useQuasar();
 
@@ -172,6 +219,12 @@ async function addIncomeClicked() {
   });
 }
 
+async function addMoneyTransferClicked() {
+  $q.dialog({ component: AddMoneyTransferRecord }).onOk((res) => {
+    loadData();
+  });
+}
+
 async function editExpenseClicked(record: InferredRecord) {
   $q.dialog({ component: AddExpenseRecord, componentProps: { existingRecordId: record._id } }).onOk((res) => {
     loadData();
@@ -180,6 +233,12 @@ async function editExpenseClicked(record: InferredRecord) {
 
 async function editIncomeClicked(record: InferredRecord) {
   $q.dialog({ component: AddIncomeRecord, componentProps: { existingRecordId: record._id } }).onOk((res) => {
+    loadData();
+  });
+}
+
+async function editMoneyTransferClicked(record: InferredRecord) {
+  $q.dialog({ component: AddMoneyTransferRecord, componentProps: { existingRecordId: record._id } }).onOk((res) => {
     loadData();
   });
 }
@@ -242,6 +301,11 @@ loadData();
           background-color: $record-income-primary-color;
           color: $record-income-text-color;
         }
+
+        &[data-record-type="money-transfer"] {
+          background-color: $record-money-transfer-primary-color;
+          color: $record-money-transfer-text-color;
+        }
       }
 
       .tag {
@@ -279,6 +343,20 @@ loadData();
 .income-row {
   .amount {
     color: rgb(7, 112, 7);
+  }
+}
+
+.money-transfer-row {
+  .amount-left-col {
+    margin-right: 12px;
+  }
+
+  .amount-in {
+    color: rgb(7, 112, 7);
+  }
+
+  .amount-out {
+    color: rgb(112, 7, 7);
   }
 }
 

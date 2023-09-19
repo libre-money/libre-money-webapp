@@ -46,8 +46,16 @@ export const dataInferenceService = {
       if (inferredRecord.income.walletId) {
         inferredRecord.income.wallet = await this.getWallet(inferredRecord.income.walletId);
       }
+    } else if (inferredRecord.type === RecordType.MONEY_TRANSFER && inferredRecord.moneyTransfer) {
+      if (inferredRecord.moneyTransfer.fromWalletId) {
+        inferredRecord.moneyTransfer.fromWallet = await this.getWallet(inferredRecord.moneyTransfer.fromWalletId);
+      }
+      if (inferredRecord.moneyTransfer.toWalletId) {
+        inferredRecord.moneyTransfer.toWallet = await this.getWallet(inferredRecord.moneyTransfer.toWalletId);
+      }
     }
 
+    inferredRecord.typePrettified = inferredRecord.type.replace("-", " ");
     inferredRecord.tagList = await this.getTagList(inferredRecord.tagIdList);
 
     return inferredRecord;
@@ -70,6 +78,11 @@ export const dataInferenceService = {
 
   async getWallet(walletId: string) {
     const doc = (await pouchdbService.getDocById(walletId)) as Wallet;
+    return doc;
+  },
+
+  async getCurrency(currencyId: string) {
+    const doc = (await pouchdbService.getDocById(currencyId)) as Currency;
     return doc;
   },
 

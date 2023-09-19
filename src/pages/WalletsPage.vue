@@ -1,6 +1,5 @@
 <template>
   <q-page class="row items-center justify-evenly">
-
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <div class="title"></div>
@@ -8,13 +7,22 @@
       </div>
 
       <div class="q-pa-md">
-        <q-table :loading="isLoading" title="Wallets" :rows="rows" :columns="columns" row-key="_id" flat bordered
-          :rows-per-page-options="rowsPerPageOptions" binary-state-sort v-model:pagination="pagination"
-          @request="dataForTableRequested" class="std-table-non-morphing">
-
+        <q-table
+          :loading="isLoading"
+          title="Wallets"
+          :rows="rows"
+          :columns="columns"
+          row-key="_id"
+          flat
+          bordered
+          :rows-per-page-options="rowsPerPageOptions"
+          binary-state-sort
+          v-model:pagination="pagination"
+          @request="dataForTableRequested"
+          class="std-table-non-morphing"
+        >
           <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name"
-              placeholder="Search" class="search-field">
+            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
               <template v-slot:prepend>
                 <q-btn icon="search" flat round @click="dataForTableRequested" />
               </template>
@@ -34,12 +42,9 @@
               </q-btn-dropdown>
             </q-td>
           </template>
-
         </q-table>
       </div>
-
     </q-card>
-
   </q-page>
 </template>
 
@@ -58,7 +63,6 @@ export default defineComponent({
   name: "WalletsPage",
   components: {},
   setup() {
-
     const $q = useQuasar();
 
     // -----
@@ -74,24 +78,39 @@ export default defineComponent({
         label: "Name",
         align: "left",
         field: "name",
-        sortable: true
+        sortable: true,
       },
       {
-        name: "type", align: "left", label: "Type", sortable: true,
-        field: ((wallet: Wallet) => {
-          return walletTypeList.find(walletType => walletType.value === wallet.type)?.label;
-        }),
+        name: "type",
+        align: "left",
+        label: "Type",
+        sortable: true,
+        field: (wallet: Wallet) => {
+          return walletTypeList.find((walletType) => walletType.value === wallet.type)?.label;
+        },
       },
       {
-        name: "balance", align: "left", label: "Balance", sortable: true,
-        field: ((wallet: Wallet) => {
+        name: "balance",
+        align: "left",
+        label: "Balance",
+        sortable: true,
+        field: (wallet: Wallet) => {
           return `${wallet._currencySign!} ${wallet.initialBalance}`;
-        }),
+        },
+      },
+      {
+        name: "currency",
+        align: "left",
+        label: "Currency",
+        sortable: true,
+        field: (wallet: Wallet) => {
+          return `${wallet._currencySign!}`;
+        },
       },
       {
         name: "actions",
-        label: "Actions"
-      }
+        label: "Actions",
+      },
     ];
 
     let rows: Ref<any[]> = ref([]);
@@ -101,13 +120,12 @@ export default defineComponent({
       descending: false,
       page: 1,
       rowsPerPage: 5,
-      rowsNumber: 0
+      rowsNumber: 0,
     });
 
     // -----
 
     async function dataForTableRequested(props: any) {
-
       let inputPagination = props?.pagination || pagination.value;
 
       const { page, rowsPerPage, sortBy, descending } = inputPagination;
@@ -121,7 +139,7 @@ export default defineComponent({
       let docList = res.docs as Wallet[];
       if (searchFilter.value) {
         let regex = new RegExp(`.*${searchFilter.value}.*`, "i");
-        docList = docList.filter(doc => regex.test(doc.name));
+        docList = docList.filter((doc) => regex.test(doc.name));
       }
       docList.sort((a, b) => {
         if (sortBy === "name") {
@@ -137,8 +155,8 @@ export default defineComponent({
       let currentRows = docList.slice(skip, skip + limit);
 
       let currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-      currentRows.forEach(row => {
-        row._currencySign = currencyList.find(currency => currency._id === row.currencyId)?.sign;
+      currentRows.forEach((row) => {
+        row._currencySign = currencyList.find((currency) => currency._id === row.currencyId)?.sign;
       });
 
       console.debug({ currentRows });
@@ -152,7 +170,6 @@ export default defineComponent({
 
       isLoading.value = false;
     }
-
 
     async function addWalletClicked() {
       $q.dialog({ component: AddWallet }).onOk((res) => {
@@ -195,14 +212,16 @@ export default defineComponent({
     return {
       addWalletClicked,
       searchFilter,
-      rowsPerPageOptions, columns, rows,
+      rowsPerPageOptions,
+      columns,
+      rows,
       isLoading,
       editClicked,
       deleteClicked,
       pagination,
-      dataForTableRequested
+      dataForTableRequested,
     };
-  }
+  },
 });
 </script>
 

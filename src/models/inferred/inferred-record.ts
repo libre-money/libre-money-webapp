@@ -16,5 +16,10 @@ export type InferredRecord = Record & {
     party: Party;
     wallet: Wallet;
   };
+  moneyTransfer?: {
+    fromWallet: Wallet;
+    toWallet: Wallet;
+  };
   tagList: Tag[];
+  typePrettified: string;
 };

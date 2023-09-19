@@ -5,7 +5,7 @@ import { Party } from "src/models/party";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref } from "vue";
 
-const props = defineProps(["modelValue"]);
+const props = defineProps(["modelValue", "label"]);
 const emit = defineEmits(["update:modelValue"]);
 
 const value = computed({
@@ -14,7 +14,16 @@ const value = computed({
   },
   set(value) {
     emit("update:modelValue", value);
-  }
+  },
+});
+
+const label = computed({
+  get() {
+    return props.label;
+  },
+  set(value) {
+    return null;
+  },
 });
 
 const isLoading: Ref<boolean> = ref(true);
@@ -38,20 +47,33 @@ loadData();
 function filterWalletFn(val: string, update: any, abort: any) {
   update(() => {
     const needle = val.toLowerCase();
-    walletWalletList.value = fullWalletWalletList.value.filter(wallet => {
+    walletWalletList.value = fullWalletWalletList.value.filter((wallet) => {
       return wallet.name.toLowerCase().includes(needle);
     });
   });
 }
-
 </script>
 
 <template>
-  <div style="text-align: center;" v-if="isLoading">
+  <div style="text-align: center" v-if="isLoading">
     <q-spinner color="primary" size="40px" :thickness="4" />
   </div>
 
-  <q-select filled v-model="value" :options="walletWalletList" label="Wallet" emit-value map-options fill-input use-input
-    input-debounce="0" @filter="filterWalletFn" class="std-margin-bottom-32" option-value="_id" option-label="name"
-    hide-selected v-if="!isLoading" />
+  <q-select
+    filled
+    v-model="value"
+    :options="walletWalletList"
+    :label="label || 'Wallet'"
+    emit-value
+    map-options
+    fill-input
+    use-input
+    input-debounce="0"
+    @filter="filterWalletFn"
+    class="std-margin-bottom-32"
+    option-value="_id"
+    option-label="name"
+    hide-selected
+    v-if="!isLoading"
+  />
 </template>
