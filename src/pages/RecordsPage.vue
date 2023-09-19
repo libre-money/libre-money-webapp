@@ -21,43 +21,49 @@
 
       <div class="q-pa-md">
         <div class="sub-heading">Records</div>
-        <div v-for="(record, index) in rows" class="data-row" v-bind:key="record._id">
-          <!-- Expense - start -->
-          <div class="expense-row" v-if="record.type === RecordType.EXPENSE" :data-index="index">
-            <div class="row items-center primary-row">
-              <div class="expense-avenue">
-                {{ record.expense?.expenseAvenue.name }}
-              </div>
-              <div class="spacer"></div>
-              <div class="amount">
-                {{ dataInferenceService.prettifyAmount(record.expense?.amount!, record.expense?.currencyId!) }}
-              </div>
-            </div>
-
-            <div class="row payment-row">
-              <div class="party" v-if="record.expense?.partyId">Party: {{ record.expense.party.name }}</div>
-
-              <div class="unpaid-amount" v-if="record.expense?.amountUnpaid! > 0">
-                Unpaid:
-                {{ dataInferenceService.prettifyAmount(record.expense?.amountUnpaid!, record.expense?.currencyId!) }}
-              </div>
-            </div>
-
-            <div class="row tags-row">
-              <div class="record-type" :data-record-type="record.type">
-                {{ record.type }}
-              </div>
-              <div class="tag" v-for="tag in record.tagList" v-bind:key="tag._id">
-                {{ tag.name }}
-              </div>
-            </div>
-
-            <div class="notes" v-if="record.notes">{{ record.notes }}</div>
-          </div>
-          <!-- Expense - end -->
-
-          <div class="misc-row" v-else :data-index="index">{{ record.type }} {{ record.expense?.amount }} {{ record.notes }}</div>
+        <div class="loading-notifier" v-if="isLoading">
+          <q-spinner color="primary" size="32px"></q-spinner>
         </div>
+        <template v-if="!isLoading">
+          <div v-for="(record, index) in rows" class="record-row" v-bind:key="record._id">
+            <!-- Expense - start -->
+            <div class="expense-row row" v-if="record.type === RecordType.EXPENSE" :data-index="index">
+              <div class="details-section">
+                <div class="primary-line">
+                  {{ record.expense?.expenseAvenue.name }}
+                </div>
+
+                <div class="row secondary-line">
+                  <div class="party" v-if="record.expense?.partyId">Party: {{ record.expense.party.name }}</div>
+                </div>
+
+                <div class="notes" v-if="record.notes">{{ record.notes }}</div>
+
+                <div class="row tags-line">
+                  <div class="record-type" :data-record-type="record.type">
+                    {{ record.type }}
+                  </div>
+                  <div class="tag" v-for="tag in record.tagList" v-bind:key="tag._id">
+                    {{ tag.name }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="amounts-section">
+                <div class="amount">
+                  {{ dataInferenceService.prettifyAmount(record.expense?.amount!, record.expense?.currencyId!) }}
+                </div>
+                <div class="unpaid-amount" v-if="record.expense?.amountUnpaid! > 0">
+                  Unpaid:
+                  {{ dataInferenceService.prettifyAmount(record.expense?.amountUnpaid!, record.expense?.currencyId!) }}
+                </div>
+              </div>
+            </div>
+            <!-- Expense - end -->
+
+            <div class="misc-row" v-else :data-index="index">{{ record.type }} {{ record.expense?.amount }} {{ record.notes }}</div>
+          </div>
+        </template>
       </div>
     </q-card>
   </q-page>
@@ -84,11 +90,15 @@ const rows: Ref<InferredRecord[]> = ref([]);
 // ----- Functions
 
 async function loadData() {
+  isLoading.value = true;
+
   await dataInferenceService.updateCurrencyCache();
 
   let rawDataRows = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
   let dataRows = await Promise.all(rawDataRows.map((rawData) => dataInferenceService.inferRecord(rawData)));
   rows.value = dataRows;
+
+  isLoading.value = false;
 }
 
 // ----- Event Handlers
@@ -134,38 +144,60 @@ loadData();
   margin-bottom: 12px;
 }
 
-.record-type {
-  font-size: 12px;
-  padding: 2px 6px;
-  display: inline-block;
-  border-radius: 10px;
+.record-row {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #eaeaea;
 
-  &[data-record-type="expense"] {
-    background-color: $record-expense-primary-color;
-    color: $record-expense-text-color;
+  .details-section {
+    flex: 1;
+
+    .primary-line {
+      font-size: 16px;
+    }
+
+    .tags-line {
+      .record-type {
+        font-size: 12px;
+        padding: 2px 6px;
+        display: inline-block;
+        border-radius: 6px;
+
+        &[data-record-type="expense"] {
+          background-color: $record-expense-primary-color;
+          color: $record-expense-text-color;
+        }
+      }
+
+      .tag {
+        font-size: 12px;
+        padding: 2px 6px;
+        display: inline-block;
+        border-radius: 6px;
+        background-color: #666666;
+        color: rgb(245, 245, 245);
+        margin-left: 4px;
+      }
+    }
+  }
+
+  .amounts-section {
+    text-align: right;
+
+    .amount {
+      font-size: 24px;
+      display: inline-block;
+    }
   }
 }
 
-.tag {
-  font-size: 12px;
-  padding: 2px 6px;
-  display: inline-block;
-  border-radius: 10px;
-  background-color: #666666;
-  color: rgb(245, 245, 245);
-  margin-left: 4px;
-}
-
-.amount {
-  font-size: 24px;
-  display: inline-block;
-}
-
-.expense-avenue {
-  font-size: 16px;
-}
-
-.party {
-  margin-right: 8px;
+.loading-notifier {
+  width: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-items: center;
+  padding: 24px;
+  padding-top: 0px;
 }
 </style>

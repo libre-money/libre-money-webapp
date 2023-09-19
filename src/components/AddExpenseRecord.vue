@@ -47,6 +47,7 @@ import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
 import { dialogService } from "src/services/dialog-service";
+import { asAmount } from "src/utils/misc-utils";
 
 export default {
   props: {
@@ -141,12 +142,12 @@ export default {
         tagIdList: recordTagIdList.value,
         expense: {
           expenseAvenueId: recordExpenseAvenueId.value!,
-          amount: recordAmount.value,
+          amount: asAmount(recordAmount.value),
           currencyId: recordCurrencyId.value!,
           partyId: recordPartyId.value,
           walletId: recordWalletId.value!,
-          amountPaid: recordAmountPaid.value,
-          amountUnpaid: recordAmountUnpaid.value,
+          amountPaid: asAmount(recordAmountPaid.value),
+          amountUnpaid: asAmount(recordAmountUnpaid.value),
         },
       };
 

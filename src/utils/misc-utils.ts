@@ -7,3 +7,7 @@ export async function sleep(duration: number) {
 export function deepClone(object: any) {
   return JSON.parse(JSON.stringify(object));
 }
+
+export function asAmount(amount: number | string) {
+  return parseFloat(String(amount)) || 0;
+}
