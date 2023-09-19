@@ -1,15 +1,13 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide" persistent>
     <q-card class="q-dialog-plugin">
-
       <q-card-section>
         <div class="std-dialog-title q-pa-md">
           {{ existingRecordId ? "Editing an Expense Record" : "Adding an Expense Record" }}
         </div>
         <q-form class="q-gutter-md q-pa-md" ref="recordForm">
           <select-expense-avenue v-model="recordExpenseAvenueId"></select-expense-avenue>
-          <q-input type="number" filled v-model="recordAmount" label="Expense Amount" lazy-rules
-            :rules="validators.balance" />
+          <q-input type="number" filled v-model="recordAmount" label="Expense Amount" lazy-rules :rules="validators.balance" />
           <select-currency v-model="recordCurrencyId"></select-currency>
 
           <q-tabs v-model="paymentType" inline-label class="bg-grey text-white shadow-2 std-margin-bottom-32">
@@ -18,17 +16,13 @@
             <q-tab name="unpaid" label="Unpaid" />
           </q-tabs>
 
-          <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'">
-          </select-wallet>
-          <q-input type="number" filled v-model="recordAmountPaid" label="Amount Paid" lazy-rules
-            :rules="validators.balance" v-if="paymentType == 'partial'" />
+          <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'"> </select-wallet>
+          <q-input type="number" filled v-model="recordAmountPaid" label="Amount Paid" lazy-rules :rules="validators.balance" v-if="paymentType == 'partial'" />
           <div v-if="paymentType == 'partial'">Amount remaining: {{ recordAmountUnpaid }}</div>
 
-          <select-party v-model="recordPartyId"
-            :mandatory="paymentType == 'unpaid' || paymentType == 'partial'"></select-party>
+          <select-party v-model="recordPartyId" :mandatory="paymentType == 'unpaid' || paymentType == 'partial'"></select-party>
           <select-tag v-model="recordTagIdList"></select-tag>
           <q-input type="textarea" filled v-model="recordNotes" label="Notes" lazy-rules :rules="validators.notes" />
-
         </q-form>
       </q-card-section>
 
@@ -47,7 +41,6 @@ import { validators } from "src/utils/validators";
 import { Collection, RecordType } from "src/constants/constants";
 import { Record } from "src/models/record";
 import { pouchdbService } from "src/services/pouchdb-service";
-import { Party } from "src/models/party";
 import SelectCurrency from "./SelectCurrency.vue";
 import SelectExpenseAvenue from "./SelectExpenseAvenue.vue";
 import SelectWallet from "./SelectWallet.vue";
@@ -60,7 +53,7 @@ export default {
     existingRecordId: {
       type: String,
       required: false,
-      default: null
+      default: null,
     },
   },
 
@@ -69,12 +62,10 @@ export default {
     SelectExpenseAvenue,
     SelectWallet,
     SelectParty,
-    SelectTag
+    SelectTag,
   },
 
-  emits: [
-    ...useDialogPluginComponent.emits
-  ],
+  emits: [...useDialogPluginComponent.emits],
 
   setup(props) {
     const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
@@ -135,11 +126,11 @@ export default {
     }
 
     async function okClicked() {
-      if (!await recordForm.value?.validate()) {
+      if (!(await recordForm.value?.validate())) {
         return;
       }
 
-      if (!await performManualValidation()) {
+      if (!(await performManualValidation())) {
         return;
       }
 
@@ -156,7 +147,7 @@ export default {
           walletId: recordWalletId.value!,
           amountPaid: recordAmountPaid.value,
           amountUnpaid: recordAmountUnpaid.value,
-        }
+        },
       };
 
       if (initialDoc) {
@@ -189,9 +180,7 @@ export default {
       recordTagIdList,
       recordNotes,
     };
-  }
+  },
 };
 </script>
-<style scoped lang="ts">
-
-</style>
+<style scoped lang="ts"></style>
