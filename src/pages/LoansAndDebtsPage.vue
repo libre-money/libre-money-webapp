@@ -67,16 +67,20 @@ import { Party } from "src/models/party";
 import { Record } from "src/models/record";
 import AddLendingRecord from "src/components/AddLendingRecord.vue";
 import AddBorrowingRecord from "src/components/AddBorrowingRecord.vue";
+import AddRepaymentReceivedRecord from "src/components/AddRepaymentReceivedRecord.vue";
+import AddRepaymentGivenRecord from "src/components/AddRepaymentGivenRecord.vue";
 
 type LoanAndDebtSummary = {
   partyId: string;
   partyName: string;
   totalLoansGivenToParty: number;
   totalLoansTakenFromParty: number;
+  totalRepaidToParty: number;
+  totalRepaidByParty: number;
   totalOwedToParty: number;
   totalOwedByParty: number;
   currencyId: string;
-  currencyName: string;
+  currencySign: string;
 };
 
 export default defineComponent({
@@ -103,40 +107,52 @@ export default defineComponent({
       {
         name: "totalLoansGivenToParty",
         align: "left",
-        label: "Loans Given",
+        label: "Loans Given to Party",
         sortable: true,
         field: "totalLoansGivenToParty",
       },
       {
         name: "totalLoansTakenFromParty",
         align: "left",
-        label: "Loans Taken",
+        label: "Loans Taken from Party",
         sortable: true,
         field: "totalLoansTakenFromParty",
       },
       {
-        name: "totalOwedToParty",
+        name: "totalRepaidByParty",
         align: "left",
-        label: "Total Owed To",
+        label: "Repaid by Party",
         sortable: true,
-        field: "totalOwedToParty",
+        field: "totalRepaidByParty",
+      },
+      {
+        name: "totalRepaidToParty",
+        align: "left",
+        label: "Repaid By Party",
+        sortable: true,
+        field: "totalRepaidToParty",
       },
       {
         name: "totalOwedByParty",
         align: "left",
-        label: "Total Owed From",
+        label: "Party owes you",
         sortable: true,
         field: "totalOwedByParty",
       },
-      // {
-      //   name: "currency",
-      //   align: "left",
-      //   label: "Currency",
-      //   sortable: true,
-      //   field: (wallet: Wallet) => {
-      //     return `${wallet._currencySign!}`;
-      //   },
-      // },
+      {
+        name: "totalOwedToParty",
+        align: "left",
+        label: "You owe party",
+        sortable: true,
+        field: "totalOwedToParty",
+      },
+      {
+        name: "currency",
+        align: "left",
+        label: "Currency",
+        sortable: true,
+        field: "currencySign",
+      },
       {
         name: "actions",
         label: "Actions",
@@ -171,31 +187,63 @@ export default defineComponent({
       let res2 = await pouchdbService.listByCollection(Collection.RECORD);
       let recordList = res2.docs as Record[];
 
+      let res3 = await pouchdbService.listByCollection(Collection.CURRENCY);
+      let currencyList = res3.docs as Currency[];
+
       let loanAndDebtSummaryList: LoanAndDebtSummary[] = [];
 
-      for (let party of partyList) {
-        let partyId = party._id!;
+      for (let currency of currencyList) {
+        for (let party of partyList) {
+          let partyId = party._id!;
 
-        let totalLoansGivenToParty = recordList
-          .filter((record) => record.type === RecordType.LENDING && record.lending?.partyId === partyId)
-          .reduce((sum, record) => sum + record.lending!.amount, 0);
+          let totalLoansGivenToParty = recordList
+            .filter((record) => record.type === RecordType.LENDING && record.lending?.partyId === partyId && record.lending?.currencyId === currency._id)
+            .reduce((sum, record) => sum + record.lending!.amount, 0);
 
-        let totalLoansTakenFromParty = recordList
-          .filter((record) => record.type === RecordType.BORROWING && record.borrowing?.partyId === partyId)
-          .reduce((sum, record) => sum + record.borrowing!.amount, 0);
+          let totalLoansTakenFromParty = recordList
+            .filter((record) => record.type === RecordType.BORROWING && record.borrowing?.partyId === partyId && record.borrowing?.currencyId === currency._id)
+            .reduce((sum, record) => sum + record.borrowing!.amount, 0);
 
-        let summary: LoanAndDebtSummary = {
-          partyId,
-          partyName: party.name,
-          totalLoansGivenToParty,
-          totalLoansTakenFromParty,
-          totalOwedToParty: 0,
-          totalOwedByParty: 0,
-          currencyId: "TODO",
-          currencyName: "XDT",
-        };
+          let totalRepaidToParty = recordList
+            .filter(
+              (record) =>
+                record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven?.partyId === partyId && record.repaymentGiven?.currencyId === currency._id
+            )
+            .reduce((sum, record) => sum + record.repaymentGiven!.amount, 0);
 
-        loanAndDebtSummaryList.push(summary);
+          let totalRepaidByParty = recordList
+            .filter(
+              (record) =>
+                record.type === RecordType.REPAYMENT_RECEIVED &&
+                record.repaymentReceived?.partyId === partyId &&
+                record.repaymentReceived?.currencyId === currency._id
+            )
+            .reduce((sum, record) => sum + record.repaymentReceived!.amount, 0);
+
+          let totalOwedToParty = totalLoansTakenFromParty - totalLoansGivenToParty + totalRepaidByParty - totalRepaidToParty;
+          let totalOwedByParty = 0;
+          if (totalOwedToParty < 0) {
+            totalOwedByParty = totalOwedToParty * -1;
+            totalOwedToParty = 0;
+          }
+
+          let summary: LoanAndDebtSummary = {
+            partyId,
+            partyName: party.name,
+            totalLoansGivenToParty,
+            totalLoansTakenFromParty,
+            totalRepaidByParty,
+            totalRepaidToParty,
+            totalOwedToParty,
+            totalOwedByParty,
+            currencyId: currency._id!,
+            currencySign: currency.sign,
+          };
+
+          if (summary.totalLoansGivenToParty > 0 || summary.totalLoansTakenFromParty > 0 || summary.totalOwedToParty > 0 || summary.totalOwedByParty > 0) {
+            loanAndDebtSummaryList.push(summary);
+          }
+        }
       }
 
       let docList = loanAndDebtSummaryList;
@@ -210,6 +258,10 @@ export default defineComponent({
           return b.totalLoansGivenToParty - a.totalLoansGivenToParty * (descending ? -1 : 1);
         } else if (sortBy === "totalLoansTakenFromParty") {
           return b.totalLoansTakenFromParty - a.totalLoansTakenFromParty * (descending ? -1 : 1);
+        } else if (sortBy === "totalRepaidByParty") {
+          return b.totalRepaidByParty - a.totalRepaidByParty * (descending ? -1 : 1);
+        } else if (sortBy === "totalRepaidToParty") {
+          return b.totalRepaidToParty - a.totalRepaidToParty * (descending ? -1 : 1);
         } else if (sortBy === "totalOwedToParty") {
           return b.totalOwedToParty - a.totalOwedToParty * (descending ? -1 : 1);
         } else if (sortBy === "totalOwedByParty") {
@@ -257,15 +309,27 @@ export default defineComponent({
     }
 
     async function addRepaymentReceivedRecordClicked(summary: LoanAndDebtSummary) {
-      // $q.dialog({ component: AddWallet, componentProps: { existingWalletId: wallet._id } }).onOk((res) => {
-      //   loadData();
-      // });
+      let suggestedAmount = summary.totalOwedByParty;
+      let suggestedPartyId = summary.partyId;
+      let suggestedCurrencyId = summary.currencyId;
+      $q.dialog({
+        component: AddRepaymentReceivedRecord,
+        componentProps: { existingRecordId: null, suggestedPartyId, suggestedAmount, suggestedCurrencyId },
+      }).onOk((res) => {
+        loadData();
+      });
     }
 
     async function addRepaymentGivenRecordClicked(summary: LoanAndDebtSummary) {
-      // $q.dialog({ component: AddWallet, componentProps: { existingWalletId: wallet._id } }).onOk((res) => {
-      //   loadData();
-      // });
+      let suggestedAmount = summary.totalOwedToParty;
+      let suggestedPartyId = summary.partyId;
+      let suggestedCurrencyId = summary.currencyId;
+      $q.dialog({
+        component: AddRepaymentGivenRecord,
+        componentProps: { existingRecordId: null, suggestedPartyId, suggestedAmount, suggestedCurrencyId },
+      }).onOk((res) => {
+        loadData();
+      });
     }
 
     // -----

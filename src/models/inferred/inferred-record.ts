@@ -32,12 +32,10 @@ export type InferredRecord = Record & {
   repaymentGiven?: {
     party: Party;
     wallet: Wallet;
-    originalBorrowingRecordId: string;
   };
   repaymentReceived?: {
     party: Party;
     wallet: Wallet;
-    originalLendingRecordId: string;
   };
 
   tagList: Tag[];

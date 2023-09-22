@@ -67,7 +67,6 @@ export type Record = {
     walletId: string;
     currencyId: string;
     partyId: string;
-    originalBorrowingRecordId: string;
   };
   repaymentReceived?: {
     // essential
@@ -75,7 +74,6 @@ export type Record = {
     walletId: string;
     currencyId: string;
     partyId: string;
-    originalLendingRecordId: string;
   };
   moneyTransfer?: {
     fromWalletId: string;
