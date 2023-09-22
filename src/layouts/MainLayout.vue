@@ -28,6 +28,11 @@
         <EssentialLink v-for="link in reportList" :key="link.title" v-bind="link" />
       </q-list>
 
+      <q-list>
+        <q-item-label header> MISC </q-item-label>
+        <EssentialLink v-for="link in miscList" :key="link.title" v-bind="link" />
+      </q-list>
+
       <div style="flex: 1"></div>
 
       <div class="drawer-bottom">
@@ -117,7 +122,16 @@ const reportList = [
     title: "Monthly Report",
     caption: "",
     icon: "school",
-    link: "",
+    link: "#/report/monthly",
+  },
+];
+
+const miscList = [
+  {
+    title: "Debug",
+    caption: "",
+    icon: "school",
+    link: "#/debug",
   },
 ];
 
@@ -143,7 +157,7 @@ export default defineComponent({
         isLeftDrawerOpen.value = !isLeftDrawerOpen.value;
       },
       appVersion: "v0.0.1 (POC)",
-
+      miscList,
       userStore,
     };
   },
