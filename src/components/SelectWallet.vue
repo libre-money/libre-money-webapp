@@ -5,7 +5,7 @@ import { Party } from "src/models/party";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref } from "vue";
 
-const props = defineProps(["modelValue", "label"]);
+const props = defineProps(["modelValue", "label", "limitByCurrencyId"]);
 const emit = defineEmits(["update:modelValue"]);
 
 const value = computed({
@@ -26,13 +26,27 @@ const label = computed({
   },
 });
 
+const limitByCurrencyId = computed({
+  get() {
+    return props.limitByCurrencyId;
+  },
+  set(value) {
+    return null;
+  },
+});
+
 const isLoading: Ref<boolean> = ref(true);
 const walletWalletList: Ref<Wallet[]> = ref([]);
 const fullWalletWalletList: Ref<Wallet[]> = ref([]);
 
 async function loadData() {
   isLoading.value = true;
-  fullWalletWalletList.value = (await pouchdbService.listByCollection(Collection.WALLET)).docs as Wallet[];
+
+  let list = (await pouchdbService.listByCollection(Collection.WALLET)).docs as Wallet[];
+  if (props.limitByCurrencyId) {
+    list = list.filter((item) => item.currencyId === props.limitByCurrencyId);
+  }
+  fullWalletWalletList.value = list;
   walletWalletList.value = fullWalletWalletList.value;
   isLoading.value = false;
   setTimeout(() => {
