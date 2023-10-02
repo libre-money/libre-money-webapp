@@ -78,6 +78,7 @@ import { Asset } from "src/models/asset";
 import { dialogService } from "src/services/dialog-service";
 import { sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
+import { computationService } from "src/services/computation-service";
 
 export default defineComponent({
   name: "AssetsPage",
@@ -169,27 +170,7 @@ export default defineComponent({
         }
       });
 
-      let res2 = await pouchdbService.listByCollection(Collection.RECORD);
-      let recordList = res2.docs as Record[];
-
-      docList.forEach((asset) => {
-        let totalPurchases = recordList
-          .filter((record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase?.assetId === asset._id)
-          .reduce((sum, record) => sum + record.assetPurchase!.amount, 0);
-
-        let totalSales = recordList
-          .filter((record) => record.type === RecordType.ASSET_SALE && record.assetSale?.assetId === asset._id)
-          .reduce((sum, record) => sum + record.assetSale!.amount, 0);
-
-        let totalAppreciation = recordList
-          .filter((record) => record.type === RecordType.ASSET_APPRECIATION_DEPRECIATION && record.assetAppreciationDepreciation?.assetId === asset._id)
-          .reduce(
-            (sum, record) => sum + record.assetAppreciationDepreciation!.amount * (record.assetAppreciationDepreciation!.type === "appreciation" ? 1 : -1),
-            0
-          );
-
-        asset._balance = totalPurchases - totalSales + totalAppreciation;
-      });
+      await computationService.computeBalancesForAssets(docList);
 
       let totalRowCount = docList.length;
       let currentRows = docList.slice(skip, skip + limit);

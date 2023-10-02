@@ -69,19 +69,8 @@ import AddLendingRecord from "src/components/AddLendingRecord.vue";
 import AddBorrowingRecord from "src/components/AddBorrowingRecord.vue";
 import AddRepaymentReceivedRecord from "src/components/AddRepaymentReceivedRecord.vue";
 import AddRepaymentGivenRecord from "src/components/AddRepaymentGivenRecord.vue";
-
-type LoanAndDebtSummary = {
-  partyId: string;
-  partyName: string;
-  totalLoansGivenToParty: number;
-  totalLoansTakenFromParty: number;
-  totalRepaidToParty: number;
-  totalRepaidByParty: number;
-  totalOwedToParty: number;
-  totalOwedByParty: number;
-  currencyId: string;
-  currencySign: string;
-};
+import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
+import { computationService } from "src/services/computation-service";
 
 export default defineComponent({
   name: "WalletsPage",
@@ -181,72 +170,8 @@ export default defineComponent({
       const skip = (page - 1) * rowsPerPage;
       const limit = rowsPerPage;
 
-      let res = await pouchdbService.listByCollection(Collection.PARTY);
-      let partyList = res.docs as Party[];
+      let docList = await computationService.prepareLoanAndDebtSummary();
 
-      let res2 = await pouchdbService.listByCollection(Collection.RECORD);
-      let recordList = res2.docs as Record[];
-
-      let res3 = await pouchdbService.listByCollection(Collection.CURRENCY);
-      let currencyList = res3.docs as Currency[];
-
-      let loanAndDebtSummaryList: LoanAndDebtSummary[] = [];
-
-      for (let currency of currencyList) {
-        for (let party of partyList) {
-          let partyId = party._id!;
-
-          let totalLoansGivenToParty = recordList
-            .filter((record) => record.type === RecordType.LENDING && record.lending?.partyId === partyId && record.lending?.currencyId === currency._id)
-            .reduce((sum, record) => sum + record.lending!.amount, 0);
-
-          let totalLoansTakenFromParty = recordList
-            .filter((record) => record.type === RecordType.BORROWING && record.borrowing?.partyId === partyId && record.borrowing?.currencyId === currency._id)
-            .reduce((sum, record) => sum + record.borrowing!.amount, 0);
-
-          let totalRepaidToParty = recordList
-            .filter(
-              (record) =>
-                record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven?.partyId === partyId && record.repaymentGiven?.currencyId === currency._id
-            )
-            .reduce((sum, record) => sum + record.repaymentGiven!.amount, 0);
-
-          let totalRepaidByParty = recordList
-            .filter(
-              (record) =>
-                record.type === RecordType.REPAYMENT_RECEIVED &&
-                record.repaymentReceived?.partyId === partyId &&
-                record.repaymentReceived?.currencyId === currency._id
-            )
-            .reduce((sum, record) => sum + record.repaymentReceived!.amount, 0);
-
-          let totalOwedToParty = totalLoansTakenFromParty - totalLoansGivenToParty + totalRepaidByParty - totalRepaidToParty;
-          let totalOwedByParty = 0;
-          if (totalOwedToParty < 0) {
-            totalOwedByParty = totalOwedToParty * -1;
-            totalOwedToParty = 0;
-          }
-
-          let summary: LoanAndDebtSummary = {
-            partyId,
-            partyName: party.name,
-            totalLoansGivenToParty,
-            totalLoansTakenFromParty,
-            totalRepaidByParty,
-            totalRepaidToParty,
-            totalOwedToParty,
-            totalOwedByParty,
-            currencyId: currency._id!,
-            currencySign: currency.sign,
-          };
-
-          if (summary.totalLoansGivenToParty > 0 || summary.totalLoansTakenFromParty > 0 || summary.totalOwedToParty > 0 || summary.totalOwedByParty > 0) {
-            loanAndDebtSummaryList.push(summary);
-          }
-        }
-      }
-
-      let docList = loanAndDebtSummaryList;
       if (searchFilter.value) {
         let regex = new RegExp(`.*${searchFilter.value}.*`, "i");
         docList = docList.filter((doc) => regex.test(doc.partyName));
