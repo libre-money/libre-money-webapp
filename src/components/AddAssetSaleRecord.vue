@@ -68,6 +68,11 @@ export default {
       required: false,
       default: null,
     },
+    existingAssetId: {
+      type: String,
+      required: false,
+      default: null,
+    },
   },
 
   components: {
@@ -138,6 +143,12 @@ export default {
 
         isLoading.value = false;
       })();
+    } else {
+      if (props.existingAssetId) {
+        setTimeout(() => {
+          recordAssetId.value = props.existingAssetId;
+        }, 10);
+      }
     }
 
     async function performManualValidation() {

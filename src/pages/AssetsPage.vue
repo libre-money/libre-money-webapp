@@ -65,12 +65,13 @@
 
 <script lang="ts">
 import { Ref, defineComponent, ref, watch } from "vue";
-import { Collection, assetTypeList, rowsPerPageOptions } from "./../constants/constants";
+import { Collection, RecordType, assetTypeList, rowsPerPageOptions } from "./../constants/constants";
 import { useQuasar } from "quasar";
 import AddAsset from "./../components/AddAsset.vue";
 import AddAssetPurchaseRecord from "./../components/AddAssetPurchaseRecord.vue";
 import AddAssetSaleRecord from "./../components/AddAssetSaleRecord.vue";
 import AddAssetAppreciationDepreciationRecord from "./../components/AddAssetAppreciationDepreciationRecord.vue";
+import { Record } from "src/models/record";
 
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Asset } from "src/models/asset";
@@ -111,7 +112,7 @@ export default defineComponent({
       {
         name: "balance",
         align: "left",
-        label: "Balance",
+        label: "Calculated Value",
         sortable: true,
         field: "_balance",
       },
@@ -168,9 +169,26 @@ export default defineComponent({
         }
       });
 
-      docList.forEach((doc) => {
-        // TODO Compute balance
-        doc._balance = 0;
+      let res2 = await pouchdbService.listByCollection(Collection.RECORD);
+      let recordList = res2.docs as Record[];
+
+      docList.forEach((asset) => {
+        let totalPurchases = recordList
+          .filter((record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase?.assetId === asset._id)
+          .reduce((sum, record) => sum + record.assetPurchase!.amount, 0);
+
+        let totalSales = recordList
+          .filter((record) => record.type === RecordType.ASSET_SALE && record.assetSale?.assetId === asset._id)
+          .reduce((sum, record) => sum + record.assetSale!.amount, 0);
+
+        let totalAppreciation = recordList
+          .filter((record) => record.type === RecordType.ASSET_APPRECIATION_DEPRECIATION && record.assetAppreciationDepreciation?.assetId === asset._id)
+          .reduce(
+            (sum, record) => sum + record.assetAppreciationDepreciation!.amount * (record.assetAppreciationDepreciation!.type === "appreciation" ? 1 : -1),
+            0
+          );
+
+        asset._balance = totalPurchases - totalSales + totalAppreciation;
       });
 
       let totalRowCount = docList.length;
