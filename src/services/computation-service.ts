@@ -114,8 +114,25 @@ class ComputationService {
     return loanAndDebtSummaryList;
   }
 
+  private normalizeEpochRange(startEpoch: number, endEpoch: number) {
+    const date1 = new Date(startEpoch);
+    date1.setHours(0);
+    date1.setMinutes(0);
+    date1.setSeconds(0);
+    startEpoch = date1.getTime();
+
+    const date2 = new Date(endEpoch);
+    date2.setHours(23);
+    date2.setMinutes(59);
+    date2.setSeconds(59);
+    endEpoch = date2.getTime();
+    return [startEpoch, endEpoch];
+  }
+
   async computeOverview(startEpoch: number, endEpoch: number, currencyId: string): Promise<Overview> {
     await dataInferenceService.updateCurrencyCache();
+
+    [startEpoch, endEpoch] = this.normalizeEpochRange(startEpoch, endEpoch);
 
     // ============== Preparation
 
@@ -140,19 +157,21 @@ class ComputationService {
     res = await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE);
     const expenseAvenueList = res.docs as ExpenseAvenue[];
 
-    const recordList = fullRecordList.filter((record) => {
-      if (record.income && record.income.currencyId === currencyId) return true;
-      if (record.expense && record.expense.currencyId === currencyId) return true;
-      if (record.lending && record.lending.currencyId === currencyId) return true;
-      if (record.borrowing && record.borrowing.currencyId === currencyId) return true;
-      if (record.repaymentGiven && record.repaymentGiven.currencyId === currencyId) return true;
-      if (record.repaymentReceived && record.repaymentReceived.currencyId === currencyId) return true;
-      if (record.assetPurchase && record.assetPurchase.currencyId === currencyId) return true;
-      if (record.assetSale && record.assetSale.currencyId === currencyId) return true;
-      if (record.assetAppreciationDepreciation && record.assetAppreciationDepreciation.currencyId === currencyId) return true;
-      if (record.moneyTransfer && record.moneyTransfer.fromCurrencyId === currencyId) return true;
-      if (record.moneyTransfer && record.moneyTransfer.toCurrencyId === currencyId) return true;
-    });
+    const recordList = fullRecordList
+      .filter((record) => {
+        if (record.income && record.income.currencyId === currencyId) return true;
+        if (record.expense && record.expense.currencyId === currencyId) return true;
+        if (record.lending && record.lending.currencyId === currencyId) return true;
+        if (record.borrowing && record.borrowing.currencyId === currencyId) return true;
+        if (record.repaymentGiven && record.repaymentGiven.currencyId === currencyId) return true;
+        if (record.repaymentReceived && record.repaymentReceived.currencyId === currencyId) return true;
+        if (record.assetPurchase && record.assetPurchase.currencyId === currencyId) return true;
+        if (record.assetSale && record.assetSale.currencyId === currencyId) return true;
+        if (record.assetAppreciationDepreciation && record.assetAppreciationDepreciation.currencyId === currencyId) return true;
+        if (record.moneyTransfer && record.moneyTransfer.fromCurrencyId === currencyId) return true;
+        if (record.moneyTransfer && record.moneyTransfer.toCurrencyId === currencyId) return true;
+      })
+      .filter((record) => record.transactionEpoch <= endEpoch);
 
     // ============== Cached Fetcher
 
@@ -213,7 +232,9 @@ class ComputationService {
     // ============== Income
 
     {
-      const finerRecordList = recordList.filter((record) => record.type === RecordType.INCOME && record.income);
+      const finerRecordList = recordList
+        .filter((record) => record.type === RecordType.INCOME && record.income)
+        .filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
       const map: any = {};
       for (const record of finerRecordList) {
         const incomeSourceId = record.income!.incomeSourceId;
@@ -244,7 +265,9 @@ class ComputationService {
     // ============== Expense
 
     {
-      const finerRecordList = recordList.filter((record) => record.type === RecordType.EXPENSE && record.expense);
+      const finerRecordList = recordList
+        .filter((record) => record.type === RecordType.EXPENSE && record.expense)
+        .filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
       const map: any = {};
       for (const record of finerRecordList) {
         const expenseAvenueId = record.expense!.expenseAvenueId;
