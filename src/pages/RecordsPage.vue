@@ -113,7 +113,7 @@
                     <div class="amount amount-in">
                       In {{ dataInferenceService.prettifyAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}
                     </div>
-                    <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
+                    <div class="wallet">({{ record.moneyTransfer.toWallet.name }})</div>
                   </div>
                 </div>
 
