@@ -66,4 +66,14 @@ export type Overview = {
     totalExpensePayables: number;
     totalPurchasePayables: number;
   };
+  loanAndDebts: {
+    list: {
+      partyId: string;
+      theyOweUserAmount: number;
+      userOwesThemAmount: number;
+      party: Party;
+    }[];
+    userIsOwedTotalAmount: number;
+    userOwesTotalAmount: number;
+  };
 };

@@ -162,6 +162,8 @@ class ComputationService {
 
     const getExpenseAvenue = (id: string) => expenseAvenueList.find((item) => item._id === id);
 
+    const getParty = (id: string) => partyList.find((item) => item._id === id);
+
     // ============== Overview
 
     const overview: Overview = {
@@ -196,6 +198,11 @@ class ComputationService {
         list: [],
         totalExpensePayables: 0,
         totalPurchasePayables: 0,
+      },
+      loanAndDebts: {
+        list: [],
+        userIsOwedTotalAmount: 0,
+        userOwesTotalAmount: 0,
       },
     };
 
@@ -427,6 +434,31 @@ class ComputationService {
 
       overview.computedPayables.list = overview.computedPayables.list.filter((item) => {
         return item.expensePayable > 0 || item.purchasePayable > 0;
+      });
+    }
+
+    // ============== Loans and Debts
+
+    {
+      const summaryList = (await computationService.prepareLoanAndDebtSummary()).filter((summary) => summary.currencyId === currencyId);
+
+      for (const summary of summaryList) {
+        const { partyId } = summary;
+        const theyOweUserAmount = summary.totalOwedByParty;
+        const userOwesThemAmount = summary.totalOwedToParty;
+        const party = getParty(partyId)!;
+        overview.loanAndDebts.list.push({
+          party,
+          partyId,
+          userOwesThemAmount,
+          theyOweUserAmount,
+        });
+        overview.loanAndDebts.userIsOwedTotalAmount += theyOweUserAmount;
+        overview.loanAndDebts.userOwesTotalAmount += userOwesThemAmount;
+      }
+
+      overview.loanAndDebts.list = overview.loanAndDebts.list.filter((item) => {
+        return item.userOwesThemAmount > 0 || item.theyOweUserAmount > 0;
       });
     }
 

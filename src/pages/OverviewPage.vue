@@ -178,6 +178,34 @@
       </div>
     </q-card>
 
+    <q-card class="std-card" v-if="!isLoading && overview">
+      <div class="title-row q-pa-md q-gutter-sm">
+        <div class="title">Loans and Debts</div>
+      </div>
+
+      <div class="q-pa-md">
+        <table class="overview-table">
+          <tbody>
+            <tr>
+              <th>Party</th>
+              <th>They owe you</th>
+              <th>You owe them</th>
+            </tr>
+            <tr v-for="row in overview.loanAndDebts.list" v-bind:key="row.partyId">
+              <td>{{ row.party.name }}</td>
+              <td>{{ printAmount(row.theyOweUserAmount) }}</td>
+              <td>{{ printAmount(row.userOwesThemAmount) }}</td>
+            </tr>
+            <tr>
+              <th>Grand Total</th>
+              <th>{{ printAmount(overview.loanAndDebts.userIsOwedTotalAmount) }}</th>
+              <th>{{ printAmount(overview.loanAndDebts.userOwesTotalAmount) }}</th>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </q-card>
+
     <br />
     <div style="min-height: 120px; min-width: 300px; display: block"></div>
   </q-page>
