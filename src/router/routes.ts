@@ -78,6 +78,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import("pages/CurrenciesPage.vue"),
         meta: { requiresAuthentication: true, title: "Currencies" },
       },
+      // --- Entities:
+      {
+        path: "combined-report",
+        name: "combined-report",
+        component: () => import("pages/CombinedReportPage.vue"),
+        meta: { requiresAuthentication: true, title: "Combined Report" },
+      },
       // --- Debug:
       {
         path: "debug",

@@ -119,10 +119,10 @@ const entityList = [
 
 const reportList = [
   {
-    title: "Monthly Report",
+    title: "Combined Report",
     caption: "",
     icon: "school",
-    link: "#/report/monthly",
+    link: "#/combined-report",
   },
 ];
 
