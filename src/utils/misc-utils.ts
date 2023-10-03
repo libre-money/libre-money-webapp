@@ -10,7 +10,7 @@ export function deepClone(object: any) {
   return JSON.parse(JSON.stringify(object));
 }
 
-export function asAmount(amount: number | string) {
+export function asAmount(amount: number | string | null | undefined) {
   return parseFloat(String(amount)) || 0;
 }
 

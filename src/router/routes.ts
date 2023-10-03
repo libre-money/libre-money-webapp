@@ -18,6 +18,12 @@ const routes: RouteRecordRaw[] = [
       },
       // --- Core:
       {
+        path: "overview",
+        name: "overview",
+        component: () => import("pages/OverviewPage.vue"),
+        meta: { requiresAuthentication: true, title: "Overview" },
+      },
+      {
         path: "records",
         name: "records",
         component: () => import("pages/RecordsPage.vue"),
