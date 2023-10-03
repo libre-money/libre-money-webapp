@@ -1,12 +1,32 @@
 <template>
   <q-page class="items-center justify-evenly page">
     <q-card class="std-card">
-      <div class="filter-row q-pa-md q-gutter-sm" v-if="!isLoading">
-        <div class="title">Filters</div>
-        <select-currency v-model="recordCurrencyId"></select-currency>
-        <date-input v-model="startEpoch" label="Start Date"></date-input>
-        <date-input v-model="endEpoch" label="End Date"></date-input>
-        <q-btn color="primary" label="Submit" @click="submitClicked" />
+      <div class="filter-section q-pa-md q-gutter-sm" v-if="!isLoading">
+        <div class="main-row">
+          <select-currency v-model="recordCurrencyId"></select-currency>
+          <div style="width: 8px; height: 1px"></div>
+          <date-input v-model="startEpoch" label="Start Date"></date-input>
+          <div style="width: 8px; height: 1px"></div>
+          <date-input v-model="endEpoch" label="End Date"></date-input>
+        </div>
+        <div class="action-row">
+          <q-btn-dropdown class="preset-selector" size="md" color="secondary" label="Use Preset: Current Month" split @click="presetClicked('current-month')">
+            <q-list>
+              <q-item clickable v-close-popup @click="presetClicked('last-month')">
+                <q-item-section>
+                  <q-item-label>Last Month</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item clickable v-close-popup @click="presetClicked('current-year')">
+                <q-item-section>
+                  <q-item-label>Current Year</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+
+          <q-btn color="primary" label="Submit" @click="submitClicked" />
+        </div>
       </div>
 
       <div class="q-pa-md" v-if="isLoading">
@@ -322,6 +342,30 @@ async function submitClicked() {
   loadData();
 }
 
+async function presetClicked(rangeIdentifier: string) {
+  const now = Date.now();
+
+  if (rangeIdentifier === "current-month") {
+    endEpoch.value = now;
+    let date = new Date(now);
+    date.setDate(1);
+    startEpoch.value = date.getTime();
+  } else if (rangeIdentifier === "last-month") {
+    let date = new Date(now);
+    date.setDate(0);
+    endEpoch.value = date.getTime();
+    date.setDate(1);
+    startEpoch.value = date.getTime();
+  }
+  if (rangeIdentifier === "current-year") {
+    endEpoch.value = now;
+    let date = new Date(now);
+    date.setMonth(0);
+    date.setDate(1);
+    startEpoch.value = date.getTime();
+  }
+}
+
 // ----- Computed and Embedded
 
 function printAmount(amount: number) {
@@ -384,9 +428,22 @@ watch(recordCurrencyId, (newValue, __) => {
   color: whitesmoke;
 }
 
-.filter-row {
-  display: flex;
-  align-items: baseline;
+.filter-section {
+  .main-row {
+    display: flex;
+    align-items: baseline;
+
+    > {
+      margin-right: 8px !important;
+    }
+  }
+
+  .action-row {
+    margin-top: -12px;
+    .preset-selector {
+      margin-right: 8px;
+    }
+  }
 }
 
 .page {
