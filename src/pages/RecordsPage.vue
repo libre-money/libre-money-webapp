@@ -128,6 +128,10 @@
             <div class="misc-row" v-else :data-index="index">{{ record }}</div>
           </div>
         </template>
+
+        <div class="q-pa-lg flex flex-center">
+          <q-pagination v-model="paginationCurrentPage" :max="paginationMaxPage" input />
+        </div>
       </div>
     </q-card>
   </q-page>
@@ -164,6 +168,10 @@ const searchFilter: Ref<string | null> = ref(null);
 const isLoading = ref(false);
 const rows: Ref<InferredRecord[]> = ref([]);
 
+const recordCountPerPage = 5;
+const paginationCurrentPage: Ref<number> = ref(1);
+const paginationMaxPage: Ref<number> = ref(1);
+
 // ----- Functions
 
 async function loadData() {
@@ -174,7 +182,14 @@ async function loadData() {
   let rawDataRows = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
   let dataRows = await Promise.all(rawDataRows.map((rawData) => dataInferenceService.inferRecord(rawData)));
   dataRows.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
-  rows.value = dataRows;
+
+  paginationMaxPage.value = Math.ceil(dataRows.length / recordCountPerPage);
+  if (paginationCurrentPage.value > paginationMaxPage.value) {
+    paginationCurrentPage.value = paginationMaxPage.value;
+  }
+
+  let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
+  rows.value = dataRows.slice(startIndex, startIndex + recordCountPerPage);
 
   isLoading.value = false;
 }
@@ -183,18 +198,21 @@ async function loadData() {
 
 async function addExpenseClicked() {
   $q.dialog({ component: AddExpenseRecord }).onOk((res) => {
+    paginationCurrentPage.value = 1;
     loadData();
   });
 }
 
 async function addIncomeClicked() {
   $q.dialog({ component: AddIncomeRecord }).onOk((res) => {
+    paginationCurrentPage.value = 1;
     loadData();
   });
 }
 
 async function addMoneyTransferClicked() {
   $q.dialog({ component: AddMoneyTransferRecord }).onOk((res) => {
+    paginationCurrentPage.value = 1;
     loadData();
   });
 }
@@ -305,6 +323,10 @@ function getString(record: InferredRecord, key: string): string | null {
 // ----- Watchers
 
 watch(searchFilter, (_, __) => {
+  loadData();
+});
+
+watch(paginationCurrentPage, (currentPage, previousPage) => {
   loadData();
 });
 
