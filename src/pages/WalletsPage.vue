@@ -58,6 +58,7 @@ import { Wallet } from "src/models/wallet";
 import { dialogService } from "src/services/dialog-service";
 import { sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
+import { computationService } from "src/services/computation-service";
 
 export default defineComponent({
   name: "WalletsPage",
@@ -95,7 +96,7 @@ export default defineComponent({
         label: "Balance",
         sortable: true,
         field: (wallet: Wallet) => {
-          return `${wallet._currencySign!} ${wallet.initialBalance}`;
+          return `${wallet._currencySign!} ${wallet._balance}`;
         },
       },
       {
@@ -137,6 +138,9 @@ export default defineComponent({
 
       let res = await pouchdbService.listByCollection(Collection.WALLET);
       let docList = res.docs as Wallet[];
+
+      computationService.computeBalancesForWallets(docList);
+
       if (searchFilter.value) {
         let regex = new RegExp(`.*${searchFilter.value}.*`, "i");
         docList = docList.filter((doc) => regex.test(doc.name));

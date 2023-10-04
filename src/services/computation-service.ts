@@ -46,6 +46,55 @@ class ComputationService {
     });
   }
 
+  async computeBalancesForWallets(walletList: Wallet[]): Promise<void> {
+    const res = await pouchdbService.listByCollection(Collection.RECORD);
+    const recordList = res.docs as Record[];
+
+    for (const wallet of walletList) {
+      wallet._balance = asAmount(wallet.initialBalance);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.INCOME && record.income?.walletId === wallet._id)
+        .reduce((balance, record) => balance + asAmount(record.income?.amountPaid), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.EXPENSE && record.expense?.walletId === wallet._id)
+        .reduce((balance, record) => balance - asAmount(record.expense?.amountPaid), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase?.walletId === wallet._id)
+        .reduce((balance, record) => balance - asAmount(record.assetPurchase?.amountPaid), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.ASSET_SALE && record.assetSale?.walletId === wallet._id)
+        .reduce((balance, record) => balance + asAmount(record.assetSale?.amountPaid), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.LENDING && record.lending?.walletId === wallet._id)
+        .reduce((balance, record) => balance - asAmount(record.lending?.amount), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.BORROWING && record.borrowing?.walletId === wallet._id)
+        .reduce((balance, record) => balance + asAmount(record.borrowing?.amount), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven?.walletId === wallet._id)
+        .reduce((balance, record) => balance - asAmount(record.repaymentGiven?.amount), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.REPAYMENT_RECEIVED && record.repaymentReceived?.walletId === wallet._id)
+        .reduce((balance, record) => balance + asAmount(record.repaymentReceived?.amount), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer?.fromWalletId === wallet._id)
+        .reduce((balance, record) => balance - asAmount(record.moneyTransfer?.fromAmount), 0);
+
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer?.toWalletId === wallet._id)
+        .reduce((balance, record) => balance + asAmount(record.moneyTransfer?.toAmount), 0);
+    }
+  }
+
   async prepareLoanAndDebtSummary(): Promise<LoanAndDebtSummary[]> {
     let res = await pouchdbService.listByCollection(Collection.PARTY);
     const partyList = res.docs as Party[];

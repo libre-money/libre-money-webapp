@@ -7,4 +7,5 @@ export type Wallet = {
   initialBalance: number;
   currencyId: string;
   _currencySign?: string;
+  _balance?: number;
 };
