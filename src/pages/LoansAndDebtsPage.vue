@@ -32,8 +32,13 @@
 
           <template v-slot:body-cell-actions="rowWrapper">
             <q-td :props="rowWrapper">
-              <q-btn-dropdown size="sm" color="primary" label="View Records" split @click="viewRecordsClicked(rowWrapper.row)">
+              <q-btn-dropdown size="sm" color="primary" label="View Details" split @click="viewDetailsClicked(rowWrapper.row)">
                 <q-list>
+                  <q-item clickable v-close-popup @click="viewRecordsClicked(rowWrapper.row)">
+                    <q-item-section>
+                      <q-item-label>View Records</q-item-label>
+                    </q-item-section>
+                  </q-item>
                   <q-item clickable v-close-popup @click="addRepaymentReceivedRecordClicked(rowWrapper.row)">
                     <q-item-section>
                       <q-item-label>Record Repayment Received</q-item-label>
@@ -74,6 +79,7 @@ import { computationService } from "src/services/computation-service";
 import { useRouter } from "vue-router";
 import { RecordFilters } from "src/models/inferred/record-filters";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
+import LoansAndDebtsDetailsDialog from "src/components/LoansAndDebtsDetailsDialog.vue";
 
 const recordFiltersStore = useRecordFiltersStore();
 
@@ -100,53 +106,22 @@ export default defineComponent({
         sortable: true,
       },
       {
-        name: "totalLoansGivenToParty",
-        align: "left",
-        label: "Loans Given to Party",
-        sortable: true,
-        field: "totalLoansGivenToParty",
-      },
-      {
-        name: "totalLoansTakenFromParty",
-        align: "left",
-        label: "Loans Taken from Party",
-        sortable: true,
-        field: "totalLoansTakenFromParty",
-      },
-      {
-        name: "totalRepaidByParty",
-        align: "left",
-        label: "Repaid by Party",
-        sortable: true,
-        field: "totalRepaidByParty",
-      },
-      {
-        name: "totalRepaidToParty",
-        align: "left",
-        label: "Repaid By Party",
-        sortable: true,
-        field: "totalRepaidToParty",
-      },
-      {
         name: "totalOwedByParty",
         align: "left",
         label: "Party owes you",
         sortable: true,
-        field: "totalOwedByParty",
+        field: (summary: LoanAndDebtSummary) => {
+          return `${summary.currencySign!} ${summary.totalOwedByParty}`;
+        },
       },
       {
         name: "totalOwedToParty",
         align: "left",
         label: "You owe party",
         sortable: true,
-        field: "totalOwedToParty",
-      },
-      {
-        name: "currency",
-        align: "left",
-        label: "Currency",
-        sortable: true,
-        field: "currencySign",
+        field: (summary: LoanAndDebtSummary) => {
+          return `${summary.currencySign!} ${summary.totalOwedToParty}`;
+        },
       },
       {
         name: "actions",
@@ -233,6 +208,13 @@ export default defineComponent({
       dataForTableRequested(null);
     }
 
+    async function viewDetailsClicked(summary: LoanAndDebtSummary) {
+      $q.dialog({
+        component: LoansAndDebtsDetailsDialog,
+        componentProps: { summary },
+      });
+    }
+
     async function viewRecordsClicked(summary: LoanAndDebtSummary) {
       let recordFilter: RecordFilters = {
         startEpoch: 0,
@@ -287,6 +269,7 @@ export default defineComponent({
       rows,
       isLoading,
       viewRecordsClicked,
+      viewDetailsClicked,
       addRepaymentGivenRecordClicked,
       addRepaymentReceivedRecordClicked,
       pagination,
