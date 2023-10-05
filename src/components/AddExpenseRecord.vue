@@ -27,16 +27,18 @@
         </q-form>
       </q-card-section>
 
-      <q-card-actions class="row justify-end">
-        <q-btn color="primary" label="OK" @click="okClicked" />
-        <q-btn color="primary" label="Cancel" @click="cancelClicked" />
+      <q-card-actions class="row justify-end bottom-action-row">
+        <q-btn color="secondary" label="Save as template" @click="saveAsTemplateClicked" />
+        <div class="spacer"></div>
+        <q-btn color="primary" label="Save" @click="okClicked" />
+        <q-btn color="warning" label="Cancel" @click="cancelClicked" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script lang="ts">
-import { QForm, useDialogPluginComponent } from "quasar";
+import { QForm, useDialogPluginComponent, useQuasar } from "quasar";
 import { Ref, ref, watch } from "vue";
 import { validators } from "src/utils/validators";
 import { Collection, RecordType } from "src/constants/constants";
@@ -58,6 +60,11 @@ export default {
       required: false,
       default: null,
     },
+    useTemplateId: {
+      type: String,
+      required: false,
+      default: null,
+    },
   },
 
   components: {
@@ -73,6 +80,8 @@ export default {
 
   setup(props) {
     const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+
+    const $q = useQuasar();
 
     let initialDoc: Record | null = null;
     const isLoading = ref(false);
@@ -125,6 +134,47 @@ export default {
         }
 
         transactionEpoch.value = initialDoc.transactionEpoch || Date.now();
+
+        isLoading.value = false;
+      })();
+    } else if (props.useTemplateId) {
+      isLoading.value = true;
+      (async function () {
+        isLoading.value = true;
+        let templateDoc = (await pouchdbService.getDocById(props.useTemplateId)) as Record;
+
+        if (!templateDoc.expense) {
+          // TODO show error message
+          return;
+        }
+
+        if (templateDoc.expense.expenseAvenueId) {
+          recordExpenseAvenueId.value = templateDoc.expense.expenseAvenueId;
+        }
+        if (templateDoc.expense.currencyId) {
+          recordCurrencyId.value = templateDoc.expense.currencyId;
+        }
+        if (templateDoc.expense.partyId) {
+          recordPartyId.value = templateDoc.expense.partyId;
+        }
+        if (templateDoc.expense.walletId) {
+          recordWalletId.value = templateDoc.expense.walletId;
+        }
+        recordAmount.value = asAmount(templateDoc.expense.amount);
+        recordAmountPaid.value = asAmount(templateDoc.expense.amountPaid);
+        recordAmountUnpaid.value = asAmount(templateDoc.expense.amountUnpaid);
+        recordTagIdList.value = templateDoc.tagIdList;
+        recordNotes.value = templateDoc.notes;
+
+        if (templateDoc.expense.amount === templateDoc.expense.amountPaid) {
+          paymentType.value = "full";
+        } else if (templateDoc.expense.amountPaid === 0) {
+          paymentType.value = "unpaid";
+        } else {
+          paymentType.value = "partial";
+        }
+
+        transactionEpoch.value = Date.now();
 
         isLoading.value = false;
       })();
@@ -191,9 +241,43 @@ export default {
       onDialogOK();
     }
 
+    async function saveAsTemplateClicked() {
+      $q.dialog({
+        title: "Saving as template",
+        message: "Provide a unique name for the template",
+        prompt: {
+          model: "",
+          type: "text",
+        },
+        cancel: true,
+        persistent: true,
+      }).onOk((templateName: string) => {
+        let partialRecord: Record = {
+          $collection: Collection.RECORD_TEMPLATE,
+          templateName,
+          notes: recordNotes.value!,
+          type: recordType,
+          tagIdList: recordTagIdList.value,
+          transactionEpoch: transactionEpoch.value,
+          expense: {
+            expenseAvenueId: recordExpenseAvenueId.value!,
+            amount: asAmount(recordAmount.value),
+            currencyId: recordCurrencyId.value!,
+            partyId: recordPartyId.value,
+            walletId: recordWalletId.value!,
+            amountPaid: asAmount(recordAmountPaid.value),
+            amountUnpaid: asAmount(recordAmountUnpaid.value),
+          },
+        };
+
+        pouchdbService.upsertDoc(partialRecord);
+      });
+    }
+
     return {
       dialogRef,
       onDialogHide,
+      saveAsTemplateClicked,
       okClicked,
       cancelClicked: onDialogCancel,
       isLoading,
@@ -214,4 +298,10 @@ export default {
   },
 };
 </script>
-<style scoped lang="ts"></style>
+<style scoped lang="scss">
+.bottom-action-row {
+  margin-left: 26px;
+  margin-right: 26px;
+  margin-bottom: 26px;
+}
+</style>

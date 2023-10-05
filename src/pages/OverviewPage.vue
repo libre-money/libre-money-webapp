@@ -102,7 +102,6 @@ async function loadData() {
 
   let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
   overview.value = newOverview;
-  console.log({ newOverview });
 
   isLoading.value = false;
 }

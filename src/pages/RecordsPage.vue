@@ -5,8 +5,14 @@
         <q-btn color="secondary" label="Edit Filters" @click="setFiltersClicked" />
         <q-btn color="warning" label="Clear Filters" @click="clearFiltersClicked" v-if="recordFilters" />
         <div class="title"></div>
+        <q-btn color="secondary" label="Templates" @click="addExpenseFromTemplateClicked" />
         <q-btn-dropdown size="md" color="primary" label="Add Expenses" split @click="addExpenseClicked">
           <q-list>
+            <q-item clickable v-close-popup @click="addExpenseFromTemplateClicked">
+              <q-item-section>
+                <q-item-label>Add Expense from Templates</q-item-label>
+              </q-item-section>
+            </q-item>
             <q-item clickable v-close-popup @click="addIncomeClicked">
               <q-item-section>
                 <q-item-label>Add Income</q-item-label>
@@ -165,6 +171,7 @@ import { Asset } from "src/models/asset";
 import { RecordFilters } from "src/models/inferred/record-filters";
 import FilterRecordsDialog from "src/components/FilterRecordsDialog.vue";
 import { normalizeEpochRange } from "src/utils/date-utils";
+import SelectTemplateDialog from "src/components/SelectTemplateDialog.vue";
 
 const $q = useQuasar();
 
@@ -219,6 +226,15 @@ async function addExpenseClicked() {
   $q.dialog({ component: AddExpenseRecord }).onOk((res) => {
     paginationCurrentPage.value = 1;
     loadData();
+  });
+}
+
+async function addExpenseFromTemplateClicked() {
+  $q.dialog({ component: SelectTemplateDialog, componentProps: { templateType: "expense" } }).onOk((selectedTemplate: Record) => {
+    $q.dialog({ component: AddExpenseRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk((res) => {
+      paginationCurrentPage.value = 1;
+      loadData();
+    });
   });
 }
 

@@ -36,6 +36,7 @@ export const Collection = {
   WALLET: "wallet",
   ASSET: "asset",
   RECORD: "record",
+  RECORD_TEMPLATE: "record-template",
 };
 
 export const RecordType = {
