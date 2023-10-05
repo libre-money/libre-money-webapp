@@ -7,7 +7,11 @@
         </div>
         <q-form class="q-gutter-md q-pa-md" ref="recordForm">
           <select-expense-avenue v-model="recordExpenseAvenueId"></select-expense-avenue>
-          <q-input type="number" filled v-model="recordAmount" label="Expense Amount" lazy-rules :rules="validators.balance" />
+          <q-input type="number" filled v-model="recordAmount" label="Expense Amount" lazy-rules :rules="validators.balance">
+            <template v-slot:append>
+              <div class="currency-label">{{ recordCurrencySign }}</div>
+            </template>
+          </q-input>
           <select-currency v-model="recordCurrencyId"></select-currency>
 
           <q-tabs v-model="paymentType" inline-label class="bg-grey text-white shadow-2 std-margin-bottom-32">
@@ -16,7 +20,8 @@
             <q-tab name="unpaid" label="Unpaid" />
           </q-tabs>
 
-          <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'"> </select-wallet>
+          <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'" :limitByCurrencyId="recordCurrencyId">
+          </select-wallet>
           <q-input type="number" filled v-model="recordAmountPaid" label="Amount Paid" lazy-rules :rules="validators.balance" v-if="paymentType == 'partial'" />
           <div v-if="paymentType == 'partial'">Amount remaining: {{ recordAmountUnpaid }}</div>
 
@@ -52,6 +57,7 @@ import SelectTag from "./SelectTag.vue";
 import { dialogService } from "src/services/dialog-service";
 import { asAmount } from "src/utils/misc-utils";
 import DateTimeInput from "./lib/DateTimeInput.vue";
+import { dataInferenceService } from "src/services/data-inference-service";
 
 export default {
   props: {
@@ -94,6 +100,7 @@ export default {
     const recordExpenseAvenueId: Ref<string | null> = ref(null);
     const recordAmount: Ref<number> = ref(0);
     const recordCurrencyId: Ref<string | null> = ref(null);
+    const recordCurrencySign: Ref<string | null> = ref(null);
     const recordPartyId: Ref<string | null> = ref(null);
     const recordWalletId: Ref<string | null> = ref(null);
     const recordAmountPaid: Ref<number> = ref(0);
@@ -274,6 +281,11 @@ export default {
       });
     }
 
+    watch(recordCurrencyId, async (newCurrencyId: any) => {
+      let currency = await dataInferenceService.getCurrency(newCurrencyId);
+      recordCurrencySign.value = currency.sign;
+    });
+
     return {
       dialogRef,
       onDialogHide,
@@ -294,6 +306,7 @@ export default {
       recordAmountUnpaid,
       recordTagIdList,
       recordNotes,
+      recordCurrencySign,
     };
   },
 };
