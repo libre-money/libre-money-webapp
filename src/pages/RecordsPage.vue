@@ -172,6 +172,9 @@ import { RecordFilters } from "src/models/inferred/record-filters";
 import FilterRecordsDialog from "src/components/FilterRecordsDialog.vue";
 import { normalizeEpochRange } from "src/utils/date-utils";
 import SelectTemplateDialog from "src/components/SelectTemplateDialog.vue";
+import { useRecordFiltersStore } from "src/stores/record-filters-store";
+
+const recordFiltersStore = useRecordFiltersStore();
 
 const $q = useQuasar();
 
@@ -184,7 +187,8 @@ const recordCountPerPage = 5;
 const paginationCurrentPage: Ref<number> = ref(1);
 const paginationMaxPage: Ref<number> = ref(1);
 
-const recordFilters: Ref<RecordFilters | null> = ref(null);
+const recordFilters: Ref<RecordFilters | null> = ref(recordFiltersStore.recordFilters || null);
+recordFiltersStore.setRecordFilters(null);
 
 // ----- Functions
 
@@ -197,12 +201,26 @@ async function loadData() {
   let dataRows = await Promise.all(rawDataRows.map((rawData) => dataInferenceService.inferRecord(rawData)));
 
   if (recordFilters.value) {
-    let { recordTypeList } = recordFilters.value;
+    let { recordTypeList, partyId } = recordFilters.value;
     recordTypeList = recordTypeList.map((type) => (RecordType as any)[type]);
     let [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
 
     if (recordTypeList.length) {
       dataRows = dataRows.filter((record) => recordTypeList.indexOf(record.type) > -1);
+    }
+
+    if (partyId) {
+      dataRows = dataRows.filter(
+        (record) =>
+          record.income?.partyId === partyId ||
+          record.expense?.partyId === partyId ||
+          record.assetPurchase?.partyId === partyId ||
+          record.assetSale?.partyId === partyId ||
+          record.lending?.partyId === partyId ||
+          record.borrowing?.partyId === partyId ||
+          record.repaymentGiven?.partyId === partyId ||
+          record.repaymentReceived?.partyId === partyId
+      );
     }
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
   }

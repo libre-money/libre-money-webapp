@@ -8,6 +8,9 @@
         <date-input v-model="recordFilters.endEpoch" label="End Date"></date-input>
         <br />
         <select-record-type v-model="recordFilters.recordTypeList" />
+        <div style="margin-top: -12px">
+          <select-party v-model="recordFilters.partyId" :mandatory="false"></select-party>
+        </div>
       </q-card-section>
 
       <q-card-actions class="row justify-end">
@@ -29,6 +32,7 @@ import { RecordFilters } from "src/models/inferred/record-filters";
 import DateInput from "src/components/lib/DateInput.vue";
 import SelectRecordType from "./SelectRecordType.vue";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
+import SelectParty from "./SelectParty.vue";
 
 export default {
   props: {
@@ -39,7 +43,7 @@ export default {
     },
   },
 
-  components: { DateInput, SelectRecordType },
+  components: { DateInput, SelectRecordType, SelectParty },
 
   emits: [...useDialogPluginComponent.emits],
 
@@ -58,11 +62,13 @@ export default {
         startEpoch: setDateToTheFirstDateOfMonth(Date.now()),
         endEpoch: Date.now(),
         recordTypeList: [],
+        partyId: null,
       };
     }
     isLoading.value = false;
 
     async function okClicked() {
+      console.log("FILTERS", recordFilters.value?.recordTypeList);
       onDialogOK(recordFilters.value);
     }
 
