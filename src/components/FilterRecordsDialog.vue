@@ -68,7 +68,6 @@ export default {
     isLoading.value = false;
 
     async function okClicked() {
-      console.log("FILTERS", recordFilters.value?.recordTypeList);
       onDialogOK(recordFilters.value);
     }
 
