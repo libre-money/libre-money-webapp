@@ -94,6 +94,8 @@ export default {
           await dialogService.alert("Sync Ended", `Sync ended with ${errorCount} non-fatal errors. Please inform administrator to avoid data loss.`);
         }
 
+        // FIXME: Remove hack
+        window.location.reload();
         onDialogCancel();
       } catch (error) {
         await dialogService.alert("Sync Error", "Encountered error while trying to sync with remote. Ensure you have working internet connection");
