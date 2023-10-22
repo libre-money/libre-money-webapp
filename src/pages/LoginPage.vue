@@ -4,11 +4,9 @@
       <div class="app-name q-pa-xs">Cash Keeper</div>
       <div class="title q-pa-xs">Login</div>
       <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md q-pa-md">
-        <q-input filled v-model="username" label="Username" hint="Your username" lazy-rules
-          :rules="validators.username" />
+        <q-input filled v-model="username" label="Username" hint="Your username" lazy-rules :rules="validators.username" />
 
-        <q-input type="password" filled v-model="password" label="Password" hint="Your password" lazy-rules
-          :rules="validators.password" />
+        <q-input type="password" filled v-model="password" label="Password" hint="Your password" lazy-rules :rules="validators.password" />
 
         <div>
           <q-btn label="Login" type="submit" color="primary" />
@@ -18,10 +16,10 @@
     </q-card>
   </q-page>
 </template>
-  
-<script lang="ts">
 
+<script lang="ts">
 import { useQuasar } from "quasar";
+import { dialogService } from "src/services/dialog-service";
 import { loginService } from "src/services/login-service";
 import { validators } from "src/utils/validators";
 import { Ref, defineComponent, ref } from "vue";
@@ -44,13 +42,17 @@ export default defineComponent({
       password,
 
       async onSubmit() {
+        let [successful, failureReason] = await loginService.login(username.value!, password.value!);
+        if (!successful) {
+          await dialogService.alert("Login Error", failureReason as string);
+          return;
+        }
 
-        loginService.login(username.value!, password.value!);
         $q.notify({
           color: "green-4",
           textColor: "white",
           icon: "cloud_done",
-          message: "Successfully logged in!"
+          message: "Successfully logged in!",
         });
 
         if (route.query && route.query.next) {
@@ -58,23 +60,17 @@ export default defineComponent({
         } else {
           await router.push("/");
         }
-
-
-
-
       },
 
       onReset() {
         username.value = null;
         password.value = null;
-      }
-
-
+      },
     };
-  }
+  },
 });
 </script>
-  
+
 <style scoped lang="scss">
 .title {
   text-align: center;
