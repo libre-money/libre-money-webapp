@@ -46,6 +46,7 @@ export const pouchdbService = {
 
     doc = JSON.parse(JSON.stringify(doc));
     doc.modifiedByUsername = userStore.currentUser?.username;
+    doc.modifiedEpoch = Date.now();
     stripKnownTemporaryFields(doc);
     if (doc._id) {
       return pouchdb.put(doc);

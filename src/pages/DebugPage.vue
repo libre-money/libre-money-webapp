@@ -67,6 +67,7 @@ type EditableDocument = {
   _id: string;
   collection: string;
   content: string;
+  modifiedEpoch: number;
 };
 
 export default defineComponent({
@@ -147,6 +148,7 @@ export default defineComponent({
         return {
           _id: row.id,
           collection,
+          modifiedEpoch: (row.doc as any)?.modifiedEpoch || 0,
           content: JSON.stringify(row.doc!),
         };
       });
@@ -156,6 +158,10 @@ export default defineComponent({
         docList = docList.filter((doc) => regex.test(doc.content));
       }
       docList.sort((a, b) => {
+        if (a.modifiedEpoch !== b.modifiedEpoch) {
+          return (b.modifiedEpoch - a.modifiedEpoch) * (descending ? -1 : 1);
+        }
+
         if (sortBy === "id") {
           return a._id.localeCompare(b._id) * (descending ? -1 : 1);
         } else {
