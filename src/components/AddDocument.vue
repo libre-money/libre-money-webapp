@@ -1,17 +1,19 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" persistent>
+  <q-dialog ref="dialogRef" @hide="onDialogHide" persistent full-width full-height>
     <q-card class="q-dialog-plugin">
       <q-card-section>
         <div class="std-dialog-title q-pa-md">{{ existingDocumentId ? "Editing a Document" : "Adding a Document" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="documentForm">
           <q-input
+            class="content-input"
             type="textarea"
             filled
             v-model="contentString"
             label="Content"
             lazy-rules
-            :rules="validators.notes"
+            :rules="validators.document"
             style="font-family: 'Courier New', Courier, monospace"
+            input-style="min-height: 50vh"
           />
         </q-form>
       </q-card-section>
@@ -97,4 +99,4 @@ export default {
   },
 };
 </script>
-<style scoped lang="ts"></style>
+<style scoped lang="scss"></style>

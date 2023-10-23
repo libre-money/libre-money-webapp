@@ -18,4 +18,5 @@ export const validators = {
     },
   ],
   notes: [(val: string) => !val || (val && val.length < 1000) || "Note must be less than 1000 characters"],
+  document: [(val: string) => !val || (val && val.length < 10000) || "Document must be less than 10000 characters"],
 };
