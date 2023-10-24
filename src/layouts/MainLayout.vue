@@ -79,7 +79,7 @@ const operationList = [
   },
   {
     title: "Records",
-    caption: "Income, Expenses and everything else",
+    caption: "Income, Expenses and more",
     icon: "format_list_bulleted",
     link: "#/records",
   },
