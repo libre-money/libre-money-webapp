@@ -1,7 +1,7 @@
 <template>
   <q-page class="row items-center justify-evenly">
     <q-card class="login-card">
-      <div class="app-name q-pa-xs">Cash Keeper</div>
+      <div class="app-name q-pa-xs"><img class="logo" src="icons/logo.png" alt="CK" />Cash Keeper</div>
       <div class="title q-pa-xs">Login</div>
       <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md q-pa-md">
         <q-input filled v-model="username" label="Username" hint="Your username" lazy-rules :rules="validators.username" />
@@ -82,10 +82,20 @@ export default defineComponent({
 
 .app-name {
   text-align: center;
-  background-color: antiquewhite;
+  background-color: rgb(35, 35, 35);
+  color: white;
   text-transform: uppercase;
   font-size: 20px;
-  // padding-bottom: 8px;/
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  .logo {
+    margin-right: 8px;
+    margin-bottom: 4px;
+    width: 40px;
+    height: 40px;
+  }
 }
 
 .login-card {
