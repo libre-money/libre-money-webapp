@@ -2,6 +2,8 @@ import { remoteDataDatabaseName, remoteServerUrl } from "src/constants/config";
 import { sleep } from "src/utils/misc-utils";
 import { credentialService } from "./credential-service";
 import { useUserStore } from "src/stores/user";
+import { deletionService } from "./deletion-service";
+import { dialogService } from "./dialog-service";
 
 const userStore = useUserStore();
 
@@ -83,6 +85,11 @@ export const pouchdbService = {
 
   async removeDoc(doc: PouchDB.Core.PostDocument<any>) {
     await delayIntentionally();
+
+    if (!(await deletionService.canDeleteDoc(doc))) {
+      await dialogService.alert("Deletion failed", "The item you are trying to delete is in use by other sections on the app");
+      return;
+    }
 
     return await pouchdb.remove(doc._id, doc._rev);
   },
