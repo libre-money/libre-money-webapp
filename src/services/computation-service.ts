@@ -14,6 +14,7 @@ import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
 import { Overview } from "src/models/inferred/overview";
 import { dataInferenceService } from "./data-inference-service";
 import { normalizeEpochRange } from "src/utils/date-utils";
+import { Budget } from "src/models/budget";
 
 let currencyCacheList: Currency[] = [];
 
@@ -269,6 +270,7 @@ class ComputationService {
       },
       finalCurrentBalanceWithHighLiquidity: {
         totalAsset: 0,
+        highLiquidiyAssetValue: 0,
         totalLiability: 0,
       },
     };
@@ -581,6 +583,45 @@ class ComputationService {
       overview.computedPayables.totalExpensePayables + overview.computedPayables.totalPurchasePayables + overview.loanAndDebts.userOwesTotalAmount;
 
     return overview;
+  }
+
+  async computeUsedAmountForBudgetListInPlace(budgetList: Budget[]) {
+    const res = await pouchdbService.listByCollection(Collection.RECORD);
+    const fullRecordList = res.docs as Record[];
+
+    for (const budget of budgetList) {
+      let narrowedRecordList = fullRecordList.filter((record) => record.transactionEpoch >= budget.startEpoch && record.transactionEpoch <= budget.endEpoch);
+
+      if (budget.tagIdWhiteList.length > 0) {
+        narrowedRecordList = narrowedRecordList.filter((record) => {
+          return record.tagIdList.some((tagId) => budget.tagIdWhiteList.includes(tagId));
+        });
+      }
+
+      if (budget.tagIdBlackList.length > 0) {
+        narrowedRecordList = narrowedRecordList.filter((record) => {
+          return !record.tagIdList.some((tagId) => budget.tagIdBlackList.includes(tagId));
+        });
+      }
+
+      let usedAmount = 0;
+
+      if (budget.includeExpenses) {
+        const finerRecordList = narrowedRecordList.filter(
+          (record) => record.type === RecordType.EXPENSE && record.expense && record.expense.currencyId === budget.currencyId
+        );
+        usedAmount += finerRecordList.reduce((sum, record) => record.expense!.amount, 0);
+      }
+
+      if (budget.includeAssetPurchases) {
+        const finerRecordList = narrowedRecordList.filter(
+          (record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase && record.assetPurchase.currencyId === budget.currencyId
+        );
+        usedAmount += finerRecordList.reduce((sum, record) => record.expense!.amount, 0);
+      }
+
+      budget._usedAmount = usedAmount;
+    }
   }
 }
 

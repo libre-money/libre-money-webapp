@@ -84,12 +84,6 @@ const operationList = [
     link: "#/records",
   },
   {
-    title: "Loans & Debts",
-    caption: "Receivables and Payables",
-    icon: "request_quote",
-    link: "#/loans-and-debts",
-  },
-  {
     title: "Wallets",
     caption: "Cash, Bank and Digital Money",
     icon: "account_balance_wallet",
@@ -100,6 +94,18 @@ const operationList = [
     caption: "Properties and Valuables",
     icon: "account_balance",
     link: "#/assets",
+  },
+  {
+    title: "Loans & Debts",
+    caption: "Receivables and Payables",
+    icon: "request_quote",
+    link: "#/loans-and-debts",
+  },
+  {
+    title: "Budgets",
+    caption: "Budget and save more",
+    icon: "energy_savings_leaf",
+    link: "#/budgets",
   },
 ];
 

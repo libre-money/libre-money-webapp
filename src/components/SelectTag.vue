@@ -4,7 +4,7 @@ import { Tag } from "src/models/tag";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref } from "vue";
 
-const props = defineProps(["modelValue"]);
+const props = defineProps(["modelValue", "label"]);
 const emit = defineEmits(["update:modelValue"]);
 
 const value = computed({
@@ -13,6 +13,15 @@ const value = computed({
   },
   set(value) {
     emit("update:modelValue", value);
+  },
+});
+
+const label = computed({
+  get() {
+    return props.label;
+  },
+  set(value) {
+    return null;
   },
 });
 
@@ -65,7 +74,7 @@ function filterTagFn(val: string, update: any, abort: any) {
     filled
     v-model="value"
     :options="tagTagList"
-    label="Tags"
+    :label="label || 'Tags'"
     emit-value
     map-options
     use-input

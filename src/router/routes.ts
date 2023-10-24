@@ -36,16 +36,22 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuthentication: true, title: "Wallets" },
       },
       {
+        path: "assets",
+        name: "assets",
+        component: () => import("pages/AssetsPage.vue"),
+        meta: { requiresAuthentication: true, title: "Assets" },
+      },
+      {
         path: "loans-and-debts",
         name: "loans-and-debts",
         component: () => import("pages/LoansAndDebtsPage.vue"),
         meta: { requiresAuthentication: true, title: "Loans & Debts" },
       },
       {
-        path: "assets",
-        name: "assets",
-        component: () => import("pages/AssetsPage.vue"),
-        meta: { requiresAuthentication: true, title: "Assets" },
+        path: "budgets",
+        name: "budgets",
+        component: () => import("pages/BudgetsPage.vue"),
+        meta: { requiresAuthentication: true, title: "Budgets" },
       },
       // --- Entities:
       {
