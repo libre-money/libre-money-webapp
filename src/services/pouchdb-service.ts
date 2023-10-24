@@ -83,12 +83,12 @@ export const pouchdbService = {
     return await pouchdb.get(_id);
   },
 
-  async removeDoc(doc: PouchDB.Core.PostDocument<any>) {
+  async removeDoc(doc: PouchDB.Core.PostDocument<any>, forceDelete = false) {
     await delayIntentionally();
 
-    if (!(await deletionService.canDeleteDoc(doc))) {
+    if (!forceDelete && !(await deletionService.canDeleteDoc(doc))) {
       await dialogService.alert("Deletion failed", "The item you are trying to delete is in use by other sections on the app");
-      return;
+      return { ok: false };
     }
 
     return await pouchdb.remove(doc._id, doc._rev);

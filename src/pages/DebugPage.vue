@@ -2,8 +2,6 @@
   <q-page class="row items-center justify-evenly">
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
-        <q-btn color="red" text-color="white" label="Remove Local Data" @click="removeLocalDataClicked" />
-
         <div class="title"></div>
         <q-btn color="primary" text-color="white" label="Add Document" @click="addDocumentClicked" />
       </div>
@@ -47,6 +45,11 @@
           </template>
         </q-table>
       </div>
+
+      <div class="title-row q-pa-md q-gutter-sm">
+        <q-btn color="red" text-color="white" label="Remove All Local Data" @click="removeLocalDataClicked" />
+        <q-btn color="secondary" text-color="white" label="Download All Local Data" @click="downloadLocalDataClicked" />
+      </div>
     </q-card>
   </q-page>
 </template>
@@ -62,6 +65,7 @@ import { sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
 import { loginService } from "src/services/login-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
+import { dataBackupService } from "src/services/data-backup-service";
 
 type EditableDocument = {
   _id: string;
@@ -214,12 +218,17 @@ export default defineComponent({
       window.location.reload(true);
     }
 
+    async function downloadLocalDataClicked() {
+      let jsonData = await dataBackupService.exportAllDataToJson();
+      await dataBackupService.initiateFileDownload(jsonData);
+    }
+
     async function deleteClicked(doc: EditableDocument) {
       let answer = await dialogService.confirm("Remove document", `Are you sure you want to remove the document "${doc._id}"?`);
       if (!answer) return;
 
-      let res = await pouchdbService.removeDoc(JSON.parse(doc.content));
-      if (!res.ok) {
+      let res = await pouchdbService.removeDoc(JSON.parse(doc.content), true);
+      if (!res || !res.ok) {
         await dialogService.alert("Error", "There was an error trying to remove the document.");
       }
 
@@ -248,6 +257,7 @@ export default defineComponent({
       pagination,
       dataForTableRequested,
       removeLocalDataClicked,
+      downloadLocalDataClicked,
     };
   },
 });
