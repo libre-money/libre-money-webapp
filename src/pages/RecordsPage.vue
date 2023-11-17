@@ -27,7 +27,7 @@
       </div>
 
       <div class="q-pa-md">
-        <div class="sub-heading">Records</div>
+        <div class="sub-heading">Records {{ recordFilters ? "(Filtered)" : "(Current Month)" }}</div>
         <div class="loading-notifier" v-if="isLoading">
           <q-spinner color="primary" size="32px"></q-spinner>
         </div>
@@ -203,12 +203,18 @@ async function loadData() {
   let dataRows = await Promise.all(rawDataRows.map((rawData) => dataInferenceService.inferRecord(rawData)));
 
   if (recordFilters.value) {
-    let { recordTypeList, partyId } = recordFilters.value;
+    let { recordTypeList, partyId, tagList } = recordFilters.value;
     recordTypeList = recordTypeList.map((type) => (RecordType as any)[type]);
     let [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
 
     if (recordTypeList.length) {
       dataRows = dataRows.filter((record) => recordTypeList.indexOf(record.type) > -1);
+    }
+
+    if (tagList.length) {
+      dataRows = dataRows.filter((record) => {
+        return record.tagIdList.some((tagId) => tagList.includes(tagId));
+      });
     }
 
     if (partyId) {
@@ -224,6 +230,13 @@ async function loadData() {
           record.repaymentReceived?.partyId === partyId
       );
     }
+    dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+  } else {
+    let rangeStart = new Date();
+    rangeStart.setDate(1);
+    let rangeEnd = new Date();
+
+    let [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
   }
 

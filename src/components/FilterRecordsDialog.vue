@@ -11,6 +11,9 @@
         <div style="margin-top: -12px">
           <select-party v-model="recordFilters.partyId" :mandatory="false"></select-party>
         </div>
+        <div style="margin-top: -12px">
+          <select-tag v-model="recordFilters.tagList"></select-tag>
+        </div>
       </q-card-section>
 
       <q-card-actions class="row justify-end">
@@ -33,6 +36,7 @@ import DateInput from "src/components/lib/DateInput.vue";
 import SelectRecordType from "./SelectRecordType.vue";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
 import SelectParty from "./SelectParty.vue";
+import SelectTag from "./SelectTag.vue";
 
 export default {
   props: {
@@ -43,7 +47,7 @@ export default {
     },
   },
 
-  components: { DateInput, SelectRecordType, SelectParty },
+  components: { DateInput, SelectRecordType, SelectParty, SelectTag },
 
   emits: [...useDialogPluginComponent.emits],
 
@@ -62,6 +66,7 @@ export default {
         startEpoch: setDateToTheFirstDateOfMonth(Date.now()),
         endEpoch: Date.now(),
         recordTypeList: [],
+        tagList: [],
         partyId: null,
       };
     }
