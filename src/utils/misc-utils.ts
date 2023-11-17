@@ -46,6 +46,14 @@ export function guessFontColorCode(colorCode: string) {
   }
 }
 
+export function prettifyAmount(amount: number | string | null | undefined) {
+  return asAmount(amount).toLocaleString("en-US");
+}
+
+export function prettifyCount(amount: number | string | null | undefined) {
+  return asAmount(amount).toLocaleString("en-US");
+}
+
 export function prettifyDate(timestamp: number) {
   return date.formatDate(timestamp, "YYYY MMM DD");
 }

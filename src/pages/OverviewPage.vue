@@ -105,7 +105,7 @@ import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
-import { asAmount } from "src/utils/misc-utils";
+import { asAmount, prettifyAmount } from "src/utils/misc-utils";
 
 import { Ref, ref, watch } from "vue";
 
@@ -148,11 +148,7 @@ async function submitClicked() {
 // ----- Computed and Embedded
 
 function printAmount(amount: number) {
-  return `${overview.value?.currency.sign} ${amount.toLocaleString("en-US")}`;
-}
-
-function printCount(count: number) {
-  return `${count.toLocaleString("en-US")}`;
+  return `${overview.value?.currency.sign} ${prettifyAmount(amount)}`;
 }
 
 function printUsedPercentage(budget: Budget) {
@@ -176,16 +172,6 @@ watch(recordCurrencyId, (newValue, __) => {
 </script>
 
 <style scoped lang="scss">
-.loading-notifier {
-  width: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  justify-items: center;
-  padding: 24px;
-  padding-top: 0px;
-}
-
 .overview-table {
   font-family: Arial, Helvetica, sans-serif;
   border-collapse: collapse;

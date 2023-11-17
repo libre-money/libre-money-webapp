@@ -69,12 +69,12 @@
 
               <div class="amounts-section">
                 <div class="amount">
-                  {{ dataInferenceService.prettifyAmount(getNumber(record, "amount")!, getString(record, "currencyId")!) }}
+                  {{ dataInferenceService.getPrintableAmount(getNumber(record, "amount")!, getString(record, "currencyId")!) }}
                 </div>
                 <div class="wallet" v-if="getWallet(record)">({{ getWallet(record)!.name }})</div>
                 <div class="unpaid-amount" v-if="getNumber(record, 'amountUnpaid')! > 0">
                   Unpaid:
-                  {{ dataInferenceService.prettifyAmount(getNumber(record, "amountUnpaid")!, getString(record, "currencyId")!) }}
+                  {{ dataInferenceService.getPrintableAmount(getNumber(record, "amountUnpaid")!, getString(record, "currencyId")!) }}
                 </div>
                 <div class="controls">
                   <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editSingleAmountRecordClicked(record)" />
@@ -112,13 +112,13 @@
                 <div class="row">
                   <div class="amount-left-col">
                     <div class="amount amount-out">
-                      Out {{ dataInferenceService.prettifyAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}
+                      Out {{ dataInferenceService.getPrintableAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}
                     </div>
                     <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
                   </div>
                   <div>
                     <div class="amount amount-in">
-                      In {{ dataInferenceService.prettifyAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}
+                      In {{ dataInferenceService.getPrintableAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}
                     </div>
                     <div class="wallet">({{ record.moneyTransfer.toWallet.name }})</div>
                   </div>
@@ -497,15 +497,5 @@ loadData();
   .amount-out {
     color: rgb(112, 7, 7);
   }
-}
-
-.loading-notifier {
-  width: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  justify-items: center;
-  padding: 24px;
-  padding-top: 0px;
 }
 </style>

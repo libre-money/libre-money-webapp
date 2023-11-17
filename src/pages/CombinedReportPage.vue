@@ -453,7 +453,7 @@ import DateInput from "src/components/lib/DateInput.vue";
 import { Overview } from "src/models/inferred/overview";
 import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
-import { asAmount } from "src/utils/misc-utils";
+import { asAmount, prettifyAmount, prettifyCount } from "src/utils/misc-utils";
 import { dataInferenceService } from "src/services/data-inference-service";
 
 import { Ref, ref, watch } from "vue";
@@ -520,11 +520,11 @@ async function presetClicked(rangeIdentifier: string) {
 // ----- Computed and Embedded
 
 function printAmount(amount: number) {
-  return `${overview.value?.currency.sign} ${amount.toLocaleString("en-US")}`;
+  return `${overview.value?.currency.sign} ${prettifyAmount(amount)}`;
 }
 
 function printCount(count: number) {
-  return `${count.toLocaleString("en-US")}`;
+  return `${prettifyCount(count)}`;
 }
 
 // ----- Watchers

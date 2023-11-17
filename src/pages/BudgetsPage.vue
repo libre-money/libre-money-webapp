@@ -56,7 +56,7 @@ import AddBudget from "./../components/AddBudget.vue";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Budget } from "src/models/budget";
 import { dialogService } from "src/services/dialog-service";
-import { sleep } from "src/utils/misc-utils";
+import { prettifyAmount, sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
 import { computationService } from "src/services/computation-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
@@ -99,7 +99,7 @@ export default defineComponent({
         label: "Used",
         sortable: true,
         field: (budget: Budget) => {
-          return `${budget._currencySign!} ${budget._usedAmount}`;
+          return `${budget._currencySign!} ${prettifyAmount(budget._usedAmount)}`;
         },
       },
       {
@@ -108,7 +108,7 @@ export default defineComponent({
         label: "Limit",
         sortable: true,
         field: (budget: Budget) => {
-          return `${budget._currencySign!} ${budget.overflowLimit}`;
+          return `${budget._currencySign!} ${prettifyAmount(budget.overflowLimit)}`;
         },
       },
       {

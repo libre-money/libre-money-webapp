@@ -55,6 +55,7 @@ import SelectRecordType from "./SelectRecordType.vue";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
 import SelectParty from "./SelectParty.vue";
 import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
+import { asAmount, prettifyAmount } from "src/utils/misc-utils";
 
 export default {
   props: {
@@ -87,7 +88,7 @@ export default {
     }
 
     function printAmount(amount: number) {
-      return `${recordSummary.value?.currencySign} ${amount.toLocaleString("en-US")}`;
+      return `${recordSummary.value?.currencySign} ${prettifyAmount(amount)}`;
     }
 
     return {

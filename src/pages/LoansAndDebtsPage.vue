@@ -66,7 +66,7 @@ import { useQuasar } from "quasar";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Wallet } from "src/models/wallet";
 import { dialogService } from "src/services/dialog-service";
-import { sleep } from "src/utils/misc-utils";
+import { prettifyAmount, sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
 import { Party } from "src/models/party";
 import { Record } from "src/models/record";
@@ -112,7 +112,7 @@ export default defineComponent({
         label: "Party owes you",
         sortable: true,
         field: (summary: LoanAndDebtSummary) => {
-          return `${summary.currencySign!} ${summary.totalOwedByParty}`;
+          return `${summary.currencySign!} ${prettifyAmount(summary.totalOwedByParty)}`;
         },
       },
       {
@@ -121,7 +121,7 @@ export default defineComponent({
         label: "You owe party",
         sortable: true,
         field: (summary: LoanAndDebtSummary) => {
-          return `${summary.currencySign!} ${summary.totalOwedToParty}`;
+          return `${summary.currencySign!} ${prettifyAmount(summary.totalOwedToParty)}`;
         },
       },
       {

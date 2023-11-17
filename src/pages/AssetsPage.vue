@@ -76,7 +76,7 @@ import { Record } from "src/models/record";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Asset } from "src/models/asset";
 import { dialogService } from "src/services/dialog-service";
-import { sleep } from "src/utils/misc-utils";
+import { prettifyAmount, sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
 import { computationService } from "src/services/computation-service";
 import { dataInferenceService } from "src/services/data-inference-service";
@@ -113,7 +113,7 @@ export default defineComponent({
       {
         name: "liquidity",
         align: "left",
-        label: "LIquidity",
+        label: "Liquidity",
         sortable: true,
         field: dataInferenceService.toProperAssetLiquidity,
       },
@@ -122,15 +122,8 @@ export default defineComponent({
         align: "left",
         label: "Calculated Value",
         sortable: true,
-        field: "_balance",
-      },
-      {
-        name: "currency",
-        align: "left",
-        label: "Currency",
-        sortable: true,
         field: (asset: Asset) => {
-          return `${asset._currencySign!}`;
+          return `${asset._currencySign!} ${prettifyAmount(asset._balance)}`;
         },
       },
       {

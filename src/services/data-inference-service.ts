@@ -2,7 +2,7 @@ import { Collection, RecordType, assetLiquidityList, assetTypeList } from "src/c
 import { ExpenseAvenue } from "src/models/expense-avenue";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { Record } from "src/models/record";
-import { asAmount, deepClone } from "src/utils/misc-utils";
+import { asAmount, deepClone, prettifyAmount } from "src/utils/misc-utils";
 import { pouchdbService } from "./pouchdb-service";
 import { Party } from "src/models/party";
 import { Tag } from "src/models/tag";
@@ -18,9 +18,9 @@ class DataInferenceService {
     currencyCacheList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
   }
 
-  prettifyAmount(amount: number, currencyId: string) {
+  getPrintableAmount(amount: number, currencyId: string) {
     const currency = currencyCacheList.find((_currency) => _currency._id === currencyId);
-    return `${asAmount(amount)} ${currency!.sign}`;
+    return `${prettifyAmount(amount)} ${currency!.sign}`;
   }
 
   async inferRecord(record: Record): Promise<InferredRecord> {
