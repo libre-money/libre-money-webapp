@@ -1,5 +1,5 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" persistent full-width full-height>
+  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss full-width full-height>
     <q-card class="q-dialog-plugin">
       <q-card-section>
         <div class="std-dialog-title q-pa-md">{{ existingDocumentId ? "Editing a Document" : "Adding a Document" }}</div>
