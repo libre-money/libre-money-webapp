@@ -306,6 +306,8 @@ class ComputationService {
         overview.income.grandSum += map[key].sum;
         overview.income.totalTransactionCount += map[key].transactionCount;
       });
+
+      overview.income.list.sort((a, b) => b.sum - a.sum);
     }
 
     // ============== Expense
@@ -339,6 +341,8 @@ class ComputationService {
         overview.expense.grandSum += map[key].sum;
         overview.expense.totalTransactionCount += map[key].transactionCount;
       });
+
+      overview.expense.list.sort((a, b) => b.sum - a.sum);
     }
 
     // ============== Wallet
@@ -408,6 +412,8 @@ class ComputationService {
         overview.wallets.list.push(map[key]);
         overview.wallets.sumOfBalances += map[key].balance;
       });
+
+      overview.wallets.list.sort((a, b) => b.balance - a.balance);
     }
 
     // ============== Asset
@@ -444,6 +450,8 @@ class ComputationService {
         overview.assets.list.push(map[key]);
         overview.assets.sumOfBalances += map[key].balance;
       });
+
+      overview.assets.list.sort((a, b) => b.balance - a.balance);
 
       overview.assets.sumByLiquidity = assetLiquidityList.map((assetLiquidity) => {
         const sum = overview.assets.list.filter((asset) => asset.asset.liquidity === assetLiquidity.value).reduce((sum, asset) => asset.balance + sum, 0);
