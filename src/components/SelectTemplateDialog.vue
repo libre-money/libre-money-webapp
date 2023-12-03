@@ -64,6 +64,8 @@ export default {
 
     async function loadData() {
       let rawDataRows = (await pouchdbService.listByCollection(Collection.RECORD_TEMPLATE)).docs as Record[];
+      rawDataRows.sort((a, b) => a.templateName?.localeCompare(b.templateName || "") || 0);
+
       templateList.value = rawDataRows;
     }
 

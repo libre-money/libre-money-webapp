@@ -32,6 +32,7 @@ async function loadData() {
       label,
     };
   });
+  list.sort((a, b) => a.label.localeCompare(b.label));
 
   fullRecordTypeList.value = list;
   recordTypeList.value = fullRecordTypeList.value;

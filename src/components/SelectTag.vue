@@ -26,19 +26,20 @@ const label = computed({
 });
 
 const isLoading: Ref<boolean> = ref(true);
-const tagTagList: Ref<Tag[]> = ref([]);
-const fullTagTagList: Ref<Tag[]> = ref([]);
+const tagList: Ref<Tag[]> = ref([]);
+const fullTagList: Ref<Tag[]> = ref([]);
 
 const mvalue: any = ref(null);
 
 async function loadData() {
   isLoading.value = true;
-  fullTagTagList.value = (await pouchdbService.listByCollection(Collection.TAG)).docs as Tag[];
-  tagTagList.value = fullTagTagList.value;
+  fullTagList.value = (await pouchdbService.listByCollection(Collection.TAG)).docs as Tag[];
+  fullTagList.value.sort((a, b) => a.name.localeCompare(b.name));
+  tagList.value = fullTagList.value;
   isLoading.value = false;
   setTimeout(() => {
-    if (fullTagTagList.value.length && !value.value) {
-      value.value = fullTagTagList.value[0]._id;
+    if (fullTagList.value.length && !value.value) {
+      value.value = fullTagList.value[0]._id;
     }
   }, 10);
 }
@@ -48,7 +49,7 @@ loadData();
 function createValue(val: string, done: any) {
   console.debug("createValue", { val });
   if (val.length > 2) {
-    if (!fullTagTagList.value.find((tag) => tag.name.toLowerCase().includes(val))) {
+    if (!fullTagList.value.find((tag) => tag.name.toLowerCase().includes(val))) {
       done(val, "add-unique");
     }
   }
@@ -58,7 +59,7 @@ function filterTagFn(val: string, update: any, abort: any) {
   update(() => {
     console.debug("filterTagFn", { val });
     const needle = val.toLowerCase();
-    tagTagList.value = fullTagTagList.value.filter((tag) => {
+    tagList.value = fullTagList.value.filter((tag) => {
       return tag.name.toLowerCase().includes(needle);
     });
   });
@@ -73,7 +74,7 @@ function filterTagFn(val: string, update: any, abort: any) {
   <q-select
     filled
     v-model="value"
-    :options="tagTagList"
+    :options="tagList"
     :label="label || 'Tags'"
     emit-value
     map-options

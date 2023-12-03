@@ -24,17 +24,19 @@ const value = computed({
 });
 
 const isLoading: Ref<boolean> = ref(true);
-const partyPartyList: Ref<Party[]> = ref([]);
-const fullPartyPartyList: Ref<Party[]> = ref([]);
+const partyList: Ref<Party[]> = ref([]);
+const fullPartyList: Ref<Party[]> = ref([]);
 
 async function loadData() {
   isLoading.value = true;
-  fullPartyPartyList.value = (await pouchdbService.listByCollection(Collection.PARTY)).docs as Party[];
-  partyPartyList.value = fullPartyPartyList.value;
+  fullPartyList.value = (await pouchdbService.listByCollection(Collection.PARTY)).docs as Party[];
+  fullPartyList.value.sort((a, b) => a.name.localeCompare(b.name));
+
+  partyList.value = fullPartyList.value;
   isLoading.value = false;
   setTimeout(() => {
-    if (fullPartyPartyList.value.length && !value.value && props.mandatory) {
-      value.value = fullPartyPartyList.value[0]._id;
+    if (fullPartyList.value.length && !value.value && props.mandatory) {
+      value.value = fullPartyList.value[0]._id;
     }
   }, 10);
 }
@@ -44,7 +46,7 @@ loadData();
 function filterPartyFn(val: string, update: any, abort: any) {
   update(() => {
     const needle = val.toLowerCase();
-    partyPartyList.value = fullPartyPartyList.value.filter((party) => {
+    partyList.value = fullPartyList.value.filter((party) => {
       return party.name.toLowerCase().includes(needle);
     });
   });
@@ -59,7 +61,7 @@ function filterPartyFn(val: string, update: any, abort: any) {
   <q-select
     filled
     v-model="value"
-    :options="partyPartyList"
+    :options="partyList"
     label="Party / Vendor"
     emit-value
     map-options

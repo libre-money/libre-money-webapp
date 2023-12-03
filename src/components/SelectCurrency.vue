@@ -24,6 +24,8 @@ const fullWalletCurrencyList: Ref<Currency[]> = ref([]);
 async function loadData() {
   isLoading.value = true;
   fullWalletCurrencyList.value = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
+  fullWalletCurrencyList.value.sort((a, b) => a.name.localeCompare(b.name));
+
   walletCurrencyList.value = fullWalletCurrencyList.value;
   isLoading.value = false;
   setTimeout(() => {

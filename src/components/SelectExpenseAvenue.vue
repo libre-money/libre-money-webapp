@@ -23,6 +23,8 @@ const fullWalletExpenseAvenueList: Ref<ExpenseAvenue[]> = ref([]);
 async function loadData() {
   isLoading.value = true;
   fullWalletExpenseAvenueList.value = (await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE)).docs as ExpenseAvenue[];
+  fullWalletExpenseAvenueList.value.sort((a, b) => a.name.localeCompare(b.name));
+
   walletExpenseAvenueList.value = fullWalletExpenseAvenueList.value;
   isLoading.value = false;
   setTimeout(() => {

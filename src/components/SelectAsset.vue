@@ -46,6 +46,8 @@ async function loadData() {
   if (props.limitByCurrencyId) {
     list = list.filter((item) => item.currencyId === props.limitByCurrencyId);
   }
+  list.sort((a, b) => a.name.localeCompare(b.name));
+
   fullAssetAssetList.value = list;
   assetAssetList.value = fullAssetAssetList.value;
   isLoading.value = false;

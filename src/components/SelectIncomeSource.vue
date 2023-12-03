@@ -23,6 +23,8 @@ const fullWalletIncomeSourceList: Ref<IncomeSource[]> = ref([]);
 async function loadData() {
   isLoading.value = true;
   fullWalletIncomeSourceList.value = (await pouchdbService.listByCollection(Collection.INCOME_SOURCE)).docs as IncomeSource[];
+  fullWalletIncomeSourceList.value.sort((a, b) => a.name.localeCompare(b.name));
+
   walletIncomeSourceList.value = fullWalletIncomeSourceList.value;
   isLoading.value = false;
   setTimeout(() => {
