@@ -26,8 +26,12 @@
         </q-btn-dropdown>
       </div>
 
-      <div class="q-pa-md">
-        <div class="sub-heading">Records {{ recordFilters ? "(Filtered)" : "(Current Month)" }}</div>
+      <div class="q-pa-md" style="padding-top: 0px">
+        <div class="sub-heading" v-if="recordFilters">Filtered Records</div>
+        <div class="month-and-year-input-wrapper" v-else>
+          <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear" @selection="monthAndYearSelected()"></month-and-year-input>
+        </div>
+
         <div class="loading-notifier" v-if="isLoading">
           <q-spinner color="primary" size="32px"></q-spinner>
         </div>
@@ -175,6 +179,7 @@ import FilterRecordsDialog from "src/components/FilterRecordsDialog.vue";
 import { normalizeEpochRange } from "src/utils/date-utils";
 import SelectTemplateDialog from "src/components/SelectTemplateDialog.vue";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
+import MonthAndYearInput from "src/components/lib/MonthAndYearInput.vue";
 
 const recordFiltersStore = useRecordFiltersStore();
 
@@ -191,6 +196,9 @@ const paginationMaxPage: Ref<number> = ref(1);
 
 const recordFilters: Ref<RecordFilters | null> = ref(recordFiltersStore.recordFilters || null);
 recordFiltersStore.setRecordFilters(null);
+
+const filterMonth: Ref<number> = ref(new Date().getMonth());
+const filterYear: Ref<number> = ref(new Date().getFullYear());
 
 // ----- Functions
 
@@ -231,9 +239,12 @@ async function loadData() {
     }
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
   } else {
-    let rangeStart = new Date();
-    rangeStart.setDate(1);
-    let rangeEnd = new Date();
+    let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
+    let rangeEnd = new Date(filterYear.value, filterMonth.value, 1);
+    rangeEnd.setMonth(rangeEnd.getMonth() + 1);
+    rangeEnd.setDate(rangeEnd.getDate() - 1);
+
+    console.log(rangeStart, rangeEnd);
 
     let [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
@@ -255,6 +266,10 @@ async function loadData() {
 }
 
 // ----- Event Handlers
+
+async function monthAndYearSelected() {
+  loadData();
+}
 
 async function addExpenseClicked() {
   $q.dialog({ component: AddExpenseRecord }).onOk((res) => {
@@ -525,5 +540,9 @@ loadData();
 
 .party-type {
   text-transform: capitalize;
+}
+
+.month-and-year-input-wrapper {
+  text-align: center;
 }
 </style>
