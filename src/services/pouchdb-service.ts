@@ -32,10 +32,18 @@ function stripKnownTemporaryFields(doc: any) {
   });
 }
 
-const INTENTIONAL_DELAY = 1;
-
+const INTENTIONAL_DELAY_MS = 1;
+const INTENTIONAL_DELAY_THRESHOLD = 500;
+let undelayedRequestCount = 0;
+let intentionalDelayIterationCount = 0;
 async function delayIntentionally() {
-  await sleep(INTENTIONAL_DELAY);
+  undelayedRequestCount += 1;
+  if (undelayedRequestCount >= INTENTIONAL_DELAY_THRESHOLD) {
+    intentionalDelayIterationCount += 1;
+    console.debug(`intentionalDelayIterationCount: ${intentionalDelayIterationCount}`);
+    await sleep(INTENTIONAL_DELAY_MS);
+    undelayedRequestCount = 0;
+  }
 }
 
 export const pouchdbService = {
