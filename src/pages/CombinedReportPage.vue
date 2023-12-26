@@ -457,8 +457,10 @@ import { asAmount, prettifyAmount, prettifyCount } from "src/utils/misc-utils";
 import { dataInferenceService } from "src/services/data-inference-service";
 
 import { Ref, ref, watch } from "vue";
+import { useSettingsStore } from "src/stores/settings";
 
 const $q = useQuasar();
+const settingsStore = useSettingsStore();
 
 function computeStartEpoch(now: number) {
   let date = new Date(now);
@@ -468,7 +470,7 @@ function computeStartEpoch(now: number) {
 
 // ----- Refs
 
-const recordCurrencyId: Ref<string | null> = ref(null);
+const recordCurrencyId: Ref<string | null> = ref(settingsStore.defaultCurrencyId);
 
 const startEpoch: Ref<number> = ref(computeStartEpoch(Date.now()));
 const endEpoch: Ref<number> = ref(Date.now());

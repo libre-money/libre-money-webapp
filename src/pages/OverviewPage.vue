@@ -1,14 +1,10 @@
 <template>
-  <q-page class="items-center justify-evenly page">
-    <q-card class="std-card">
-      <div class="filter-row q-pa-md q-gutter-sm" v-if="!isLoading" style="display: none">
-        <div class="title">Filters</div>
-        <select-currency v-model="recordCurrencyId"></select-currency>
-        <date-input v-model="startEpoch" label="Start Date"></date-input>
-        <date-input v-model="endEpoch" label="End Date"></date-input>
-        <q-btn color="primary" label="Submit" @click="submitClicked" />
-      </div>
+  <q-page class="items-center page">
+    <div class="q-pa-md row justify-end" style="margin-bottom: -56px; width: 100%">
+      <select-currency v-model="recordCurrencyId"></select-currency>
+    </div>
 
+    <q-card class="std-card">
       <div class="q-pa-md" v-if="isLoading">
         <div class="loading-notifier">
           <q-spinner color="primary" size="32px"></q-spinner>
@@ -104,16 +100,18 @@ import { Overview } from "src/models/inferred/overview";
 import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
 import { pouchdbService } from "src/services/pouchdb-service";
+import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
 import { asAmount, prettifyAmount } from "src/utils/misc-utils";
 
 import { Ref, ref, watch } from "vue";
 
 const $q = useQuasar();
+const settingsStore = useSettingsStore();
 
 // ----- Refs
 
-const recordCurrencyId: Ref<string | null> = ref(null);
+const recordCurrencyId: Ref<string | null> = ref(settingsStore.defaultCurrencyId);
 
 const startEpoch: Ref<number> = ref(setDateToTheFirstDateOfMonth(Date.now()));
 const endEpoch: Ref<number> = ref(Date.now());
@@ -168,7 +166,7 @@ watch(recordCurrencyId, (newValue, __) => {
 
 // ----- Execution
 
-// loadData();
+loadData();
 </script>
 
 <style scoped lang="scss">
