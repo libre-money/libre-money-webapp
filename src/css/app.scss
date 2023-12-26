@@ -20,7 +20,7 @@ body {
 .std-card {
   min-width: 300px;
   max-width: 900px;
-  width: 100%;
+  width: calc(100% - 12px - 12px);
   margin: 12px;
 
   .title-row {
