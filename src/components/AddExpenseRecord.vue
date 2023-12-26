@@ -58,6 +58,7 @@ import { dialogService } from "src/services/dialog-service";
 import { asAmount } from "src/utils/misc-utils";
 import DateTimeInput from "./lib/DateTimeInput.vue";
 import { dataInferenceService } from "src/services/data-inference-service";
+import { useSettingsStore } from "src/stores/settings";
 
 export default {
   props: {
@@ -88,6 +89,7 @@ export default {
     const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
     const $q = useQuasar();
+    const settingsStore = useSettingsStore();
 
     let initialDoc: Record | null = null;
     const isLoading = ref(false);
@@ -185,6 +187,10 @@ export default {
 
         isLoading.value = false;
       })();
+    } else {
+      setTimeout(() => {
+        recordCurrencyId.value = settingsStore.defaultCurrencyId;
+      }, 0);
     }
 
     async function performManualValidation() {
