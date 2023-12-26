@@ -19,6 +19,9 @@
         <div style="margin-top: -12px">
           <select-wallet v-model="recordFilters.walletId"></select-wallet>
         </div>
+        <div style="margin-top: -12px">
+          <q-input filled v-model="recordFilters.searchString" label="Search in notes" />
+        </div>
       </q-card-section>
 
       <q-card-actions class="row justify-end">
@@ -84,6 +87,7 @@ export default {
         tagList: [],
         partyId: null,
         walletId: null,
+        searchString: "",
       };
     }
     isLoading.value = false;

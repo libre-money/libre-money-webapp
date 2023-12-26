@@ -214,7 +214,7 @@ async function loadData() {
   let dataRows = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
 
   if (recordFilters.value) {
-    let { recordTypeList, partyId, tagList, walletId } = recordFilters.value;
+    let { recordTypeList, partyId, tagList, walletId, searchString } = recordFilters.value;
     recordTypeList = recordTypeList.map((type) => (RecordType as any)[type]);
     let [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
 
@@ -256,6 +256,11 @@ async function loadData() {
           record.moneyTransfer?.toWalletId === walletId
       );
     }
+
+    if (searchString && searchString.length > 0) {
+      dataRows = dataRows.filter((record) => record.notes && String(record.notes).indexOf(searchString) > -1);
+    }
+
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
   } else {
     let rangeStart = new Date(filterYear.value, filterMonth.value, 1);

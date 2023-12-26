@@ -5,4 +5,5 @@ export type RecordFilters = {
   tagList: string[];
   partyId?: string | null;
   walletId?: string | null;
+  searchString: string;
 };
