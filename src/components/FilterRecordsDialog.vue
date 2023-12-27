@@ -3,7 +3,7 @@
     <q-card class="q-dialog-plugin">
       <q-card-section v-if="recordFilters">
         <div class="std-dialog-title q-pa-md">Record Filters</div>
-        <q-select filled v-model="selectedPreset" :options="filterPresetList" label="Preset" emit-value map-options />
+        <q-select filled v-model="selectedPreset" :options="dateRangePresetList" label="Preset" emit-value map-options />
         <div class="row no-wrap" style="margin-top: 8px">
           <date-input v-model="recordFilters.startEpoch" label="Start Date" @update:model-value="startEpochChanged"></date-input>
           <date-input v-model="recordFilters.endEpoch" label="End Date" @update:model-value="endEpochChanged" style="margin-left: 4px"></date-input>
@@ -36,7 +36,7 @@
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Ref, ref, watch } from "vue";
 import { validators } from "src/utils/validators";
-import { Collection, defaultPartyType, partyTypeList } from "src/constants/constants";
+import { Collection, dateRangePresetList, defaultPartyType, partyTypeList } from "src/constants/constants";
 import { Party } from "src/models/party";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { RecordFilters } from "src/models/inferred/record-filters";
@@ -53,6 +53,7 @@ import {
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
 import SelectWallet from "./SelectWallet.vue";
+import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
 
 export default {
   props: {
@@ -81,7 +82,7 @@ export default {
       recordFilters.value = props.inputFilters as RecordFilters;
     } else {
       recordFilters.value = {
-        startEpoch: setDateToTheFirstDateOfYear(Date.now()),
+        startEpoch: Date.now(),
         endEpoch: Date.now(),
         recordTypeList: [],
         tagList: [],
@@ -104,37 +105,19 @@ export default {
       selectedPreset.value = "custom";
     }
 
-    const filterPresetList = [
-      { value: "current-year", label: "Current Year" },
-      { value: "previous-year", label: "Previous Year" },
-      { value: "current-month", label: "Current Month" },
-      { value: "previous-month", label: "Previous Month" },
-      { value: "all-time", label: "All time" },
-      { value: "custom", label: "Custom" },
-    ];
-
     function applyPreset(newPreset: string) {
-      if (newPreset === "current-year") {
-        recordFilters.value!.startEpoch = setDateToTheFirstDateOfYear(Date.now());
-        recordFilters.value!.endEpoch = Date.now();
-      } else if (newPreset === "previous-year") {
-        recordFilters.value!.startEpoch = setDateToTheFirstDateOfPreviousYear(Date.now());
-        recordFilters.value!.startEpoch = setDateToTheLastDateOfPreviousYear(Date.now());
-      } else if (newPreset === "current-month") {
-        recordFilters.value!.startEpoch = setDateToTheFirstDateOfMonth(Date.now());
-        recordFilters.value!.endEpoch = Date.now();
-      } else if (newPreset === "previous-month") {
-        recordFilters.value!.startEpoch = setDateToTheFirstDateOfPreviousMonth(Date.now());
-        recordFilters.value!.endEpoch = setDateToTheLastDateOfPreviousMonth(Date.now());
-      } else if (newPreset === "all-time") {
-        recordFilters.value!.startEpoch = 0;
-        recordFilters.value!.endEpoch = Date.now();
+      const range = getStartAndEndEpochFromPreset(newPreset);
+      if (range) {
+        const { startEpoch, endEpoch } = range;
+        [recordFilters.value!.startEpoch, recordFilters.value!.endEpoch] = [startEpoch, endEpoch];
       }
     }
 
     watch(selectedPreset, async (newPreset: any) => {
       applyPreset(newPreset);
     });
+
+    applyPreset(selectedPreset.value!);
 
     return {
       dialogRef,
@@ -145,7 +128,7 @@ export default {
       partyTypeList,
       validators,
       recordFilters,
-      filterPresetList,
+      dateRangePresetList,
       selectedPreset,
       startEpochChanged,
       endEpochChanged,

@@ -64,3 +64,12 @@ export const RecordType = {
 };
 
 export const defaultTagColor = "#444444";
+
+export const dateRangePresetList = [
+  { value: "current-year", label: "Current Year" },
+  { value: "previous-year", label: "Previous Year" },
+  { value: "current-month", label: "Current Month" },
+  { value: "previous-month", label: "Previous Month" },
+  { value: "all-time", label: "All time" },
+  { value: "custom", label: "Custom" },
+];
