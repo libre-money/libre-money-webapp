@@ -50,7 +50,13 @@
       <div style="flex: 1"></div>
 
       <div class="drawer-bottom">
-        <div class="app-version"><img class="logo" src="icons/android-chrome-192x192.png" alt="CK" />Cash Keeper {{ appVersion }}</div>
+        <div class="app-version">
+          <img class="logo" src="icons/android-chrome-192x192.png" alt="CK" />
+          <div @click="verionClicked" style="cursor: pointer">
+            <div style="font-size: 16px">Cash Keeper</div>
+            <div style="font-size: 10px; color: rgb(187, 186, 186)">Version: {{ appVersion }} (Alpha)</div>
+          </div>
+        </div>
       </div>
     </q-drawer>
 
@@ -186,6 +192,10 @@ export default defineComponent({
 
     const userStore = useUserStore();
 
+    const appVersion = "0.1.2";
+    const internalBuild = "DEV_BUILD";
+    const buildDate = "NOT_APPLICABLE";
+
     async function logoutClicked() {
       let [successful, failureReason] = await loginService.logout();
       if (!successful) {
@@ -200,6 +210,12 @@ export default defineComponent({
       $q.dialog({ component: SyncDialog, componentProps: { bidirectional: true } });
     }
 
+    async function verionClicked() {
+      const title = `Version ${appVersion}`;
+      const body = `Internal Build: ${internalBuild}, Release Date: ${buildDate}`;
+      await dialogService.alert(title, body);
+    }
+
     return {
       operationList,
       entityList,
@@ -209,11 +225,14 @@ export default defineComponent({
       toggleLeftDrawer() {
         isLeftDrawerOpen.value = !isLeftDrawerOpen.value;
       },
-      appVersion: "ver 0.1.1 (Alpha)",
+      appVersion,
+      internalBuild,
+      buildDate,
       miscList,
       userStore,
       logoutClicked,
       syncClicked,
+      verionClicked,
     };
   },
 });
@@ -221,6 +240,7 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .drawer-bottom {
+  margin-top: 8px;
   background: rgb(29, 29, 29);
   padding: 18px;
   font-size: 12px;
@@ -228,7 +248,7 @@ export default defineComponent({
 }
 .app-version {
   display: flex;
-  align-items: center;
+  align-items: start;
 }
 .logo {
   margin-right: 8px;
