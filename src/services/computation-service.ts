@@ -137,7 +137,32 @@ class ComputationService {
           )
           .reduce((sum, record) => sum + record.repaymentReceived!.amount, 0);
 
-        let totalOwedToParty = totalLoansTakenFromParty - totalLoansGivenToParty + totalRepaidByParty - totalRepaidToParty;
+        const incomeReceivable = recordList
+          .filter((record) => record.type === RecordType.INCOME && record.income?.partyId === party._id && record.income?.currencyId === currency._id)
+          .reduce((sum, record) => sum + record.income!.amountUnpaid, 0);
+
+        const salesReceivable = recordList
+          .filter((record) => record.type === RecordType.ASSET_SALE && record.assetSale?.partyId === party._id && record.assetSale?.currencyId === currency._id)
+          .reduce((sum, record) => sum + record.assetSale!.amountUnpaid, 0);
+
+        const expensePayable = recordList
+          .filter((record) => record.type === RecordType.EXPENSE && record.expense?.partyId === party._id && record.expense?.currencyId === currency._id)
+          .reduce((sum, record) => sum + record.expense!.amountUnpaid, 0);
+
+        const purchasePayable = recordList
+          .filter(
+            (record) =>
+              record.type === RecordType.ASSET_PURCHASE && record.assetPurchase?.partyId === party._id && record.assetPurchase?.currencyId === currency._id
+          )
+          .reduce((sum, record) => sum + record.assetPurchase!.amountUnpaid, 0);
+
+        let totalOwedToParty =
+          totalLoansTakenFromParty -
+          totalLoansGivenToParty +
+          totalRepaidByParty -
+          totalRepaidToParty +
+          (expensePayable + purchasePayable) -
+          (incomeReceivable + salesReceivable);
         let totalOwedByParty = 0;
         if (totalOwedToParty < 0) {
           totalOwedByParty = totalOwedToParty * -1;
@@ -147,6 +172,10 @@ class ComputationService {
         const summary: LoanAndDebtSummary = {
           partyId,
           partyName: party.name,
+          incomeReceivable,
+          salesReceivable,
+          expensePayable,
+          purchasePayable,
           totalLoansGivenToParty,
           totalLoansTakenFromParty,
           totalRepaidByParty,

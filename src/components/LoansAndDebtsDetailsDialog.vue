@@ -5,8 +5,24 @@
         <div class="std-dialog-title q-pa-md">Loan and Debt Summary</div>
         <div class="dialog-card">
           <div>
-            <span class="key">Party:</span>
+            <span class="key">Party/Vendor:</span>
             <span class="value">{{ recordSummary.partyName }}</span>
+          </div>
+          <div>
+            <span class="key">Receivables (Income):</span>
+            <span class="value">{{ printAmount(recordSummary.incomeReceivable) }}</span>
+          </div>
+          <div>
+            <span class="key">Receivables (Sales):</span>
+            <span class="value">{{ printAmount(recordSummary.salesReceivable) }}</span>
+          </div>
+          <div>
+            <span class="key">Payables (Expense):</span>
+            <span class="value">{{ printAmount(recordSummary.expensePayable) }}</span>
+          </div>
+          <div>
+            <span class="key">Payables (Purchase):</span>
+            <span class="value">{{ printAmount(recordSummary.purchasePayable) }}</span>
           </div>
           <div>
             <span class="key">Total loans given by you:</span>
