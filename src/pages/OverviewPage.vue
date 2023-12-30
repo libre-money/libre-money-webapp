@@ -116,6 +116,7 @@ import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
 import { asAmount, prettifyAmount } from "src/utils/misc-utils";
 
 import { Ref, ref, watch } from "vue";
+import debounceAsync from "src/utils/debounce";
 
 const $q = useQuasar();
 const settingsStore = useSettingsStore();
@@ -133,11 +134,16 @@ const isLoading = ref(false);
 
 // ----- Functions
 
+async function loadOverview() {
+  let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
+  overview.value = newOverview;
+}
+const loadOverviewDebounced = debounceAsync(loadOverview, 100, { leading: false });
+
 async function loadData() {
   isLoading.value = true;
 
-  let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
-  overview.value = newOverview;
+  await loadOverviewDebounced();
 
   let res = await pouchdbService.listByCollection(Collection.BUDGET);
   let newBudgetList = res.docs as Budget[];
