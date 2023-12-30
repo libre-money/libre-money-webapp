@@ -172,62 +172,6 @@
 
     <q-card class="std-card" v-if="!isLoading && overview">
       <div class="title-row q-pa-md q-gutter-sm">
-        <div class="title">Receivables (Calculated)</div>
-      </div>
-
-      <div class="q-pa-md">
-        <table class="overview-table">
-          <tbody>
-            <tr>
-              <th>Party</th>
-              <th>Income Receivable</th>
-              <th>Asset Sales Receivable</th>
-            </tr>
-            <tr v-for="row in overview.computedReceivables.list" v-bind:key="row.partyId">
-              <td>{{ row.party.name }}</td>
-              <td>{{ printAmount(row.incomeReceivable) }}</td>
-              <td>{{ printAmount(row.salesReceivable) }}</td>
-            </tr>
-            <tr>
-              <th>Grand Total</th>
-              <th>{{ printAmount(overview.computedReceivables.totalIncomeReceivables) }}</th>
-              <th>{{ printAmount(overview.computedReceivables.totalSalesReceivables) }}</th>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </q-card>
-
-    <q-card class="std-card" v-if="!isLoading && overview">
-      <div class="title-row q-pa-md q-gutter-sm">
-        <div class="title">Payables (Calculated)</div>
-      </div>
-
-      <div class="q-pa-md">
-        <table class="overview-table">
-          <tbody>
-            <tr>
-              <th>Party</th>
-              <th>Expense Payable</th>
-              <th>Asset Purchase Payable</th>
-            </tr>
-            <tr v-for="row in overview.computedPayables.list" v-bind:key="row.partyId">
-              <td>{{ row.party.name }}</td>
-              <td>{{ printAmount(row.expensePayable) }}</td>
-              <td>{{ printAmount(row.purchasePayable) }}</td>
-            </tr>
-            <tr>
-              <th>Grand Total</th>
-              <th>{{ printAmount(overview.computedPayables.totalExpensePayables) }}</th>
-              <th>{{ printAmount(overview.computedPayables.totalPurchasePayables) }}</th>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </q-card>
-
-    <q-card class="std-card" v-if="!isLoading && overview">
-      <div class="title-row q-pa-md q-gutter-sm">
         <div class="title">Loans and Debts</div>
       </div>
 
@@ -273,29 +217,9 @@
               <td></td>
             </tr>
             <tr>
-              <td>Income Receivables</td>
-              <td>{{ printAmount(overview.computedReceivables.totalIncomeReceivables) }}</td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>Sales Receivables</td>
-              <td>{{ printAmount(overview.computedReceivables.totalSalesReceivables) }}</td>
-              <td></td>
-            </tr>
-            <tr>
               <td>Loans (Receivables)</td>
               <td>{{ printAmount(overview.loanAndDebts.userIsOwedTotalAmount) }}</td>
               <td></td>
-            </tr>
-            <tr>
-              <td>Expense Payables</td>
-              <td></td>
-              <td>{{ printAmount(overview.computedPayables.totalExpensePayables) }}</td>
-            </tr>
-            <tr>
-              <td>Asset Purchase Payables</td>
-              <td></td>
-              <td>{{ printAmount(overview.computedPayables.totalPurchasePayables) }}</td>
             </tr>
             <tr>
               <td>Debt (Payables)</td>
@@ -337,36 +261,15 @@
               <td></td>
             </tr>
             <tr>
-              <td>Income Receivables</td>
-              <td>{{ printAmount(overview.computedReceivables.totalIncomeReceivables) }}</td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>Sales Receivables</td>
-              <td>{{ printAmount(overview.computedReceivables.totalSalesReceivables) }}</td>
-              <td></td>
-            </tr>
-            <tr>
               <td>Loans (Receivables)</td>
               <td>{{ printAmount(overview.loanAndDebts.userIsOwedTotalAmount) }}</td>
               <td></td>
-            </tr>
-            <tr>
-              <td>Expense Payables</td>
-              <td></td>
-              <td>{{ printAmount(overview.computedPayables.totalExpensePayables) }}</td>
-            </tr>
-            <tr>
-              <td>Asset Purchase Payables</td>
-              <td></td>
-              <td>{{ printAmount(overview.computedPayables.totalPurchasePayables) }}</td>
             </tr>
             <tr>
               <td>Debt (Payables)</td>
               <td></td>
               <td>{{ printAmount(overview.loanAndDebts.userOwesTotalAmount) }}</td>
             </tr>
-
             <tr>
               <th>Grand Total</th>
               <th>{{ printAmount(overview.finalCurrentBalanceWithHighLiquidity.totalAsset) }}</th>
@@ -401,29 +304,9 @@
               <td></td>
             </tr>
             <tr>
-              <td>Income Receivables</td>
-              <td>{{ printAmount(overview.computedReceivables.totalIncomeReceivables) }}</td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>Sales Receivables</td>
-              <td>{{ printAmount(overview.computedReceivables.totalSalesReceivables) }}</td>
-              <td></td>
-            </tr>
-            <tr>
               <td>Loans (Receivables)</td>
               <td>{{ printAmount(overview.loanAndDebts.userIsOwedTotalAmount) }}</td>
               <td></td>
-            </tr>
-            <tr>
-              <td>Expense Payables</td>
-              <td></td>
-              <td>{{ printAmount(overview.computedPayables.totalExpensePayables) }}</td>
-            </tr>
-            <tr>
-              <td>Asset Purchase Payables</td>
-              <td></td>
-              <td>{{ printAmount(overview.computedPayables.totalPurchasePayables) }}</td>
             </tr>
             <tr>
               <td>Debt (Payables)</td>

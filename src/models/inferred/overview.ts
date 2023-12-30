@@ -50,26 +50,6 @@ export type Overview = {
     }[];
     sumOfBalances: number;
   };
-  computedReceivables: {
-    list: {
-      partyId: string;
-      incomeReceivable: number;
-      salesReceivable: number;
-      party: Party;
-    }[];
-    totalIncomeReceivables: number;
-    totalSalesReceivables: number;
-  };
-  computedPayables: {
-    list: {
-      partyId: string;
-      expensePayable: number;
-      purchasePayable: number;
-      party: Party;
-    }[];
-    totalExpensePayables: number;
-    totalPurchasePayables: number;
-  };
   loanAndDebts: {
     list: {
       partyId: string;

@@ -1,6 +1,10 @@
 export type LoanAndDebtSummary = {
   partyId: string;
   partyName: string;
+  incomeReceivable: number;
+  salesReceivable: number;
+  expensePayable: number;
+  purchasePayable: number;
   totalLoansGivenToParty: number;
   totalLoansTakenFromParty: number;
   totalRepaidToParty: number;

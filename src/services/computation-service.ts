@@ -137,7 +137,32 @@ class ComputationService {
           )
           .reduce((sum, record) => sum + record.repaymentReceived!.amount, 0);
 
-        let totalOwedToParty = totalLoansTakenFromParty - totalLoansGivenToParty + totalRepaidByParty - totalRepaidToParty;
+        const incomeReceivable = recordList
+          .filter((record) => record.type === RecordType.INCOME && record.income?.partyId === party._id && record.income?.currencyId === currency._id)
+          .reduce((sum, record) => sum + record.income!.amountUnpaid, 0);
+
+        const salesReceivable = recordList
+          .filter((record) => record.type === RecordType.ASSET_SALE && record.assetSale?.partyId === party._id && record.assetSale?.currencyId === currency._id)
+          .reduce((sum, record) => sum + record.assetSale!.amountUnpaid, 0);
+
+        const expensePayable = recordList
+          .filter((record) => record.type === RecordType.EXPENSE && record.expense?.partyId === party._id && record.expense?.currencyId === currency._id)
+          .reduce((sum, record) => sum + record.expense!.amountUnpaid, 0);
+
+        const purchasePayable = recordList
+          .filter(
+            (record) =>
+              record.type === RecordType.ASSET_PURCHASE && record.assetPurchase?.partyId === party._id && record.assetPurchase?.currencyId === currency._id
+          )
+          .reduce((sum, record) => sum + record.assetPurchase!.amountUnpaid, 0);
+
+        let totalOwedToParty =
+          totalLoansTakenFromParty -
+          totalLoansGivenToParty +
+          totalRepaidByParty -
+          totalRepaidToParty +
+          (expensePayable + purchasePayable) -
+          (incomeReceivable + salesReceivable);
         let totalOwedByParty = 0;
         if (totalOwedToParty < 0) {
           totalOwedByParty = totalOwedToParty * -1;
@@ -147,6 +172,10 @@ class ComputationService {
         const summary: LoanAndDebtSummary = {
           partyId,
           partyName: party.name,
+          incomeReceivable,
+          salesReceivable,
+          expensePayable,
+          purchasePayable,
           totalLoansGivenToParty,
           totalLoansTakenFromParty,
           totalRepaidByParty,
@@ -249,16 +278,6 @@ class ComputationService {
         list: [],
         sumByLiquidity: [],
         sumOfBalances: 0,
-      },
-      computedReceivables: {
-        list: [],
-        totalIncomeReceivables: 0,
-        totalSalesReceivables: 0,
-      },
-      computedPayables: {
-        list: [],
-        totalExpensePayables: 0,
-        totalPurchasePayables: 0,
       },
       loanAndDebts: {
         list: [],
@@ -467,72 +486,6 @@ class ComputationService {
       });
     }
 
-    // ============== Computed Receivables
-
-    {
-      const map: any = {};
-      for (const party of partyList) {
-        const key = `${party._id}`;
-        map[key] = {
-          partyId: party._id,
-          incomeReceivable: 0,
-          salesReceivable: 0,
-          party,
-        };
-
-        map[key].incomeReceivable = recordList
-          .filter((record) => record.type === RecordType.INCOME && record.income?.partyId === party._id)
-          .reduce((sum, record) => sum + record.income!.amountUnpaid, 0);
-
-        map[key].salesReceivable = recordList
-          .filter((record) => record.type === RecordType.ASSET_SALE && record.assetSale?.partyId === party._id)
-          .reduce((sum, record) => sum + record.assetSale!.amountUnpaid, 0);
-      }
-
-      Object.keys(map).forEach((key) => {
-        overview.computedReceivables.list.push(map[key]);
-        overview.computedReceivables.totalIncomeReceivables += map[key].incomeReceivable;
-        overview.computedReceivables.totalSalesReceivables += map[key].salesReceivable;
-      });
-
-      overview.computedReceivables.list = overview.computedReceivables.list.filter((item) => {
-        return item.incomeReceivable > 0 || item.salesReceivable > 0;
-      });
-    }
-
-    // ============== Computed Payables
-
-    {
-      const map: any = {};
-      for (const party of partyList) {
-        const key = `${party._id}`;
-        map[key] = {
-          partyId: party._id,
-          expensePayable: 0,
-          purchasePayable: 0,
-          party,
-        };
-
-        map[key].expensePayable = recordList
-          .filter((record) => record.type === RecordType.EXPENSE && record.expense?.partyId === party._id)
-          .reduce((sum, record) => sum + record.expense!.amountUnpaid, 0);
-
-        map[key].purchasePayable = recordList
-          .filter((record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase?.partyId === party._id)
-          .reduce((sum, record) => sum + record.assetPurchase!.amountUnpaid, 0);
-      }
-
-      Object.keys(map).forEach((key) => {
-        overview.computedPayables.list.push(map[key]);
-        overview.computedPayables.totalExpensePayables += map[key].expensePayable;
-        overview.computedPayables.totalPurchasePayables += map[key].purchasePayable;
-      });
-
-      overview.computedPayables.list = overview.computedPayables.list.filter((item) => {
-        return item.expensePayable > 0 || item.purchasePayable > 0;
-      });
-    }
-
     // ============== Loans and Debts
 
     {
@@ -560,40 +513,24 @@ class ComputationService {
 
     // ============== Final Current Balance
 
-    overview.finalCurrentBalance.totalAsset =
-      overview.wallets.sumOfBalances +
-      overview.computedReceivables.totalIncomeReceivables +
-      overview.computedReceivables.totalSalesReceivables +
-      overview.loanAndDebts.userIsOwedTotalAmount;
+    overview.finalCurrentBalance.totalAsset = overview.wallets.sumOfBalances + overview.loanAndDebts.userIsOwedTotalAmount;
 
-    overview.finalBalance.totalLiability =
-      overview.computedPayables.totalExpensePayables + overview.computedPayables.totalPurchasePayables + overview.loanAndDebts.userOwesTotalAmount;
+    overview.finalBalance.totalLiability = overview.loanAndDebts.userOwesTotalAmount;
 
     // ============== Final Current Balance with High Liquidity
 
     overview.finalCurrentBalanceWithHighLiquidity.highLiquidiyAssetValue = overview.assets.sumByLiquidity.find((sum) => sum.liquidity === "High")!.sum;
 
     overview.finalCurrentBalanceWithHighLiquidity.totalAsset =
-      overview.wallets.sumOfBalances +
-      overview.finalCurrentBalanceWithHighLiquidity.highLiquidiyAssetValue +
-      overview.computedReceivables.totalIncomeReceivables +
-      overview.computedReceivables.totalSalesReceivables +
-      overview.loanAndDebts.userIsOwedTotalAmount;
+      overview.wallets.sumOfBalances + overview.finalCurrentBalanceWithHighLiquidity.highLiquidiyAssetValue + overview.loanAndDebts.userIsOwedTotalAmount;
 
-    overview.finalCurrentBalanceWithHighLiquidity.totalLiability =
-      overview.computedPayables.totalExpensePayables + overview.computedPayables.totalPurchasePayables + overview.loanAndDebts.userOwesTotalAmount;
+    overview.finalCurrentBalanceWithHighLiquidity.totalLiability = overview.loanAndDebts.userOwesTotalAmount;
 
     // ============== Final Balance
 
-    overview.finalBalance.totalAsset =
-      overview.wallets.sumOfBalances +
-      overview.assets.sumOfBalances +
-      overview.computedReceivables.totalIncomeReceivables +
-      overview.computedReceivables.totalSalesReceivables +
-      overview.loanAndDebts.userIsOwedTotalAmount;
+    overview.finalBalance.totalAsset = overview.wallets.sumOfBalances + overview.assets.sumOfBalances + overview.loanAndDebts.userIsOwedTotalAmount;
 
-    overview.finalBalance.totalLiability =
-      overview.computedPayables.totalExpensePayables + overview.computedPayables.totalPurchasePayables + overview.loanAndDebts.userOwesTotalAmount;
+    overview.finalBalance.totalLiability = overview.loanAndDebts.userOwesTotalAmount;
 
     return overview;
   }
@@ -637,7 +574,7 @@ class ComputationService {
     }
   }
 
-  async computeQuickSummaryForCurrency(startEpoch: number, endEpoch: number, currency: Currency): Promise<QuickSummary> {
+  async computeQuickSummaryForCurrency(startEpoch: number, endEpoch: number, currency: Currency, fullRecordList: Record[] = []): Promise<QuickSummary> {
     [startEpoch, endEpoch] = normalizeEpochRange(startEpoch, endEpoch);
     const currencyId = currency._id!;
 
@@ -650,8 +587,6 @@ class ComputationService {
       totalOutFlow: 0,
       totalFlowBalance: 0,
     };
-
-    const fullRecordList = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
 
     const recordList = fullRecordList
       .filter((record) => {
@@ -738,12 +673,12 @@ class ComputationService {
     return quickSummary;
   }
 
-  async computeQuickSummary(startEpoch: number, endEpoch: number): Promise<QuickSummary[]> {
+  async computeQuickSummary(startEpoch: number, endEpoch: number, recordList: Record[]): Promise<QuickSummary[]> {
     const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
 
     return await Promise.all(
       currencyList.map(async (currency) => {
-        return computationService.computeQuickSummaryForCurrency(startEpoch, endEpoch, currency);
+        return computationService.computeQuickSummaryForCurrency(startEpoch, endEpoch, currency, recordList);
       })
     );
   }

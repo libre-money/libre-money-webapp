@@ -176,8 +176,8 @@
                 <td class="amount-out">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalOutFlow) }}</td>
               </tr>
               <tr>
-                <td>Profit Balance</td>
-                <td>{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalProfit) }}</td>
+                <td></td>
+                <td></td>
                 <td>Cash Flow Balance</td>
                 <td>{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalFlowBalance) }}</td>
               </tr>
@@ -305,7 +305,7 @@ async function loadData() {
 
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
 
-    quickSummaryList.value = await computationService.computeQuickSummary(startEpoch, endEpoch);
+    quickSummaryList.value = await computationService.computeQuickSummary(startEpoch, endEpoch, dataRows);
   } else {
     let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
     let rangeEnd = new Date(filterYear.value, filterMonth.value, 1);
@@ -315,7 +315,7 @@ async function loadData() {
     let [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
 
-    quickSummaryList.value = await computationService.computeQuickSummary(rangeStart.getTime(), rangeEnd.getTime());
+    quickSummaryList.value = await computationService.computeQuickSummary(rangeStart.getTime(), rangeEnd.getTime(), dataRows);
   }
 
   dataRows.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));

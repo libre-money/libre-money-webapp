@@ -101,7 +101,7 @@ export default defineComponent({
       {
         name: "partyName",
         required: true,
-        label: "Party",
+        label: "Party/Vendor",
         align: "left",
         field: "partyName",
         sortable: true,
@@ -109,7 +109,7 @@ export default defineComponent({
       {
         name: "totalOwedByParty",
         align: "left",
-        label: "Party owes you",
+        label: "They owe you",
         sortable: true,
         field: (summary: LoanAndDebtSummary) => {
           return `${summary.currencySign!} ${prettifyAmount(summary.totalOwedByParty)}`;
@@ -118,7 +118,7 @@ export default defineComponent({
       {
         name: "totalOwedToParty",
         align: "left",
-        label: "You owe party",
+        label: "You owe them",
         sortable: true,
         field: (summary: LoanAndDebtSummary) => {
           return `${summary.currencySign!} ${prettifyAmount(summary.totalOwedToParty)}`;
@@ -222,8 +222,10 @@ export default defineComponent({
       let recordFilter: RecordFilters = {
         startEpoch: 0,
         endEpoch: Date.now(),
-        recordTypeList: ["LENDING", "BORROWING", "REPAYMENT_GIVEN", "REPAYMENT_RECEIVED"],
+        recordTypeList: [],
         partyId: summary.partyId,
+        tagList: [],
+        searchString: "",
       };
       recordFiltersStore.setRecordFilters(recordFilter);
       router.push({ name: "records" });
