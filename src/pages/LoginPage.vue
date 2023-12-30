@@ -3,7 +3,9 @@
     <q-card class="login-card">
       <div class="app-name q-pa-xs"><img class="logo" src="icons/logo.png" alt="CK" />Cash Keeper</div>
       <div class="title q-pa-xs">Login</div>
-      <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md q-pa-md">
+      <q-form ref="loginForm" @submit="onSubmit" @reset="onReset" class="q-gutter-md q-pa-md">
+        <q-input filled v-model="domain" label="Domain" hint="Your domain" lazy-rules :rules="validators.domain" />
+
         <q-input filled v-model="username" label="Username" hint="Your username" lazy-rules :rules="validators.username" />
 
         <q-input type="password" filled v-model="password" label="Password" hint="Your password" lazy-rules :rules="validators.password" />
@@ -20,7 +22,8 @@
 </template>
 
 <script lang="ts">
-import { useQuasar } from "quasar";
+import { QForm, dom, useQuasar } from "quasar";
+import { configService } from "src/services/config-service";
 import { dialogService } from "src/services/dialog-service";
 import { loginService } from "src/services/login-service";
 import { validators } from "src/utils/validators";
@@ -37,6 +40,10 @@ export default defineComponent({
 
     const isLoading = ref(false);
 
+    const loginForm: Ref<QForm | null> = ref(null);
+
+    const domain: Ref<string | null> = ref(configService.getDomainName(false));
+
     const username: Ref<string | null> = ref(null);
     const password: Ref<string | null> = ref(null);
 
@@ -44,11 +51,18 @@ export default defineComponent({
 
     return {
       validators,
+      domain,
       username,
       password,
+      loginForm,
       shouldRememberPassword,
 
       async onSubmit() {
+        const isValid = await loginForm.value!.validate();
+        if (!isValid) return;
+
+        configService.setDomainName(domain.value || "");
+
         isLoading.value = true;
         let [successful, failureReason] = await loginService.login(username.value!, password.value!, shouldRememberPassword.value);
         isLoading.value = false;

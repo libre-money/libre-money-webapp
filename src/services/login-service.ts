@@ -4,8 +4,8 @@ import { useUserStore } from "src/stores/user";
 const userStore = useUserStore();
 
 import axios, { AxiosError } from "axios";
-import { remoteDataDatabaseName, remoteServerUrl } from "src/constants/config";
 import { credentialService } from "./credential-service";
+import { configService } from "./config-service";
 
 export const loginService = {
   async logout() {
@@ -29,7 +29,7 @@ export const loginService = {
     try {
       await credentialService.storeCredentials(username, password, shouldRememberPassword);
 
-      const validateUrl = `${remoteServerUrl}/${remoteDataDatabaseName}/_all_docs`;
+      const validateUrl = `${configService.getRemoteServerUrl()}/${configService.getDomainName()}/_all_docs`;
       const validateResponse = await axios.get(validateUrl, {
         auth: credentialService.getCredentials(),
       });
@@ -55,9 +55,9 @@ export const loginService = {
 
   async updateAndTestCredentials(username: string, password: string) {
     try {
-      await credentialService.storeCredentials(username, password);
+      await credentialService.storeCredentials(username, password, false);
 
-      const validateUrl = `${remoteServerUrl}/${remoteDataDatabaseName}/_all_docs`;
+      const validateUrl = `${configService.getRemoteServerUrl()}/${configService.getDomainName()}/_all_docs`;
       const validateResponse = await axios.get(validateUrl, {
         auth: credentialService.getCredentials(),
       });

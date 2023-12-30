@@ -1,9 +1,9 @@
-import { remoteDataDatabaseName, remoteServerUrl } from "src/constants/config";
 import { sleep } from "src/utils/misc-utils";
 import { credentialService } from "./credential-service";
 import { useUserStore } from "src/stores/user";
 import { deletionService } from "./deletion-service";
 import { dialogService } from "./dialog-service";
+import { configService } from "./config-service";
 
 const userStore = useUserStore();
 
@@ -104,7 +104,7 @@ export const pouchdbService = {
 
   async sync() {
     return await new Promise((accept, reject) => {
-      const remoteDbUrl = `${remoteServerUrl}/${remoteDataDatabaseName}`;
+      const remoteDbUrl = `${configService.getRemoteServerUrl()}/${configService.getDomainName()}`;
       const remoteDB = new PouchDB(remoteDbUrl, {
         auth: credentialService.getCredentials(),
       });
