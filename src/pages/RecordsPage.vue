@@ -152,6 +152,41 @@
         </div>
       </div>
     </q-card>
+
+    <!-- Quick Summary - Start -->
+    <q-card class="std-card" v-if="!isLoading && quickSummaryList.length > 0">
+      <div class="q-pa-md">
+        <div class="quick-summary-title">Summary</div>
+        <div v-for="quickSummary in quickSummaryList" v-bind:key="quickSummary.currency._id!" style="padding-bottom: 12px">
+          <table class="overview-table quick-summary-table">
+            <tbody>
+              <tr>
+                <th colspan="4">{{ quickSummary.currency.name }}</th>
+              </tr>
+              <tr>
+                <td>Total Income</td>
+                <td class="amount-in">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalIncome) }}</td>
+                <td>Total In-flow</td>
+                <td class="amount-in">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalInFlow) }}</td>
+              </tr>
+              <tr>
+                <td>Total Expense</td>
+                <td class="amount-out">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalExpense) }}</td>
+                <td>Total Out-flow</td>
+                <td class="amount-out">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalOutFlow) }}</td>
+              </tr>
+              <tr>
+                <td>Profit Balance</td>
+                <td>{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalProfit) }}</td>
+                <td>Cash Flow Balance</td>
+                <td>{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalFlowBalance) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </q-card>
+    <!-- Quick Summary - End -->
   </q-page>
 </template>
 
@@ -164,7 +199,7 @@ import { dialogService } from "src/services/dialog-service";
 import { Collection, RecordType } from "src/constants/constants";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { dataInferenceService } from "src/services/data-inference-service";
-import { guessFontColorCode, prettifyDate } from "src/utils/misc-utils";
+import { guessFontColorCode, prettifyAmount, prettifyDate } from "src/utils/misc-utils";
 import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
 import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
 import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
@@ -185,6 +220,8 @@ import SelectTemplateDialog from "src/components/SelectTemplateDialog.vue";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
 import MonthAndYearInput from "src/components/lib/MonthAndYearInput.vue";
 import { useRecordPaginationSizeStore } from "src/stores/record-pagination";
+import { QuickSummary } from "src/models/inferred/quick-summary";
+import { computationService } from "src/services/computation-service";
 
 const recordFiltersStore = useRecordFiltersStore();
 
@@ -206,6 +243,8 @@ recordFiltersStore.setRecordFilters(null);
 
 const filterMonth: Ref<number> = ref(new Date().getMonth());
 const filterYear: Ref<number> = ref(new Date().getFullYear());
+
+const quickSummaryList: Ref<QuickSummary[]> = ref([]);
 
 // ----- Functions
 
@@ -265,6 +304,8 @@ async function loadData() {
     }
 
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+
+    quickSummaryList.value = await computationService.computeQuickSummary(startEpoch, endEpoch);
   } else {
     let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
     let rangeEnd = new Date(filterYear.value, filterMonth.value, 1);
@@ -273,6 +314,8 @@ async function loadData() {
 
     let [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+
+    quickSummaryList.value = await computationService.computeQuickSummary(rangeStart.getTime(), rangeEnd.getTime());
   }
 
   dataRows.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
@@ -465,6 +508,8 @@ loadData();
 </script>
 
 <style scoped lang="scss">
+@import url(./../css/table.scss);
+
 .sub-heading {
   font-size: 20px;
   margin-bottom: 12px;
@@ -527,14 +572,6 @@ loadData();
       display: inline-block;
     }
 
-    .amount-in {
-      color: rgb(7, 112, 7);
-    }
-
-    .amount-out {
-      color: rgb(112, 7, 7);
-    }
-
     .wallet {
       font-size: 10px;
     }
@@ -558,14 +595,6 @@ loadData();
     margin-right: 12px;
   }
 
-  .amount-in {
-    color: rgb(7, 112, 7);
-  }
-
-  .amount-out {
-    color: rgb(112, 7, 7);
-  }
-
   @media (max-width: $breakpoint-xs-max) {
     .amount-left-col {
       margin-right: 0px;
@@ -585,5 +614,25 @@ loadData();
 
 .month-and-year-input-wrapper {
   text-align: center;
+}
+
+.amount-in {
+  color: rgb(7, 112, 7);
+}
+
+.amount-out {
+  color: rgb(112, 7, 7);
+}
+
+.quick-summary-title {
+  font-size: 16px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  text-align: right;
+}
+
+.quick-summary-table {
+  font-size: 12px;
+  margin-bottom: 0px;
 }
 </style>

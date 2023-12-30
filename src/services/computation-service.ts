@@ -15,6 +15,7 @@ import { Overview } from "src/models/inferred/overview";
 import { dataInferenceService } from "./data-inference-service";
 import { normalizeEpochRange } from "src/utils/date-utils";
 import { Budget } from "src/models/budget";
+import { QuickSummary } from "src/models/inferred/quick-summary";
 
 let currencyCacheList: Currency[] = [];
 
@@ -630,6 +631,117 @@ class ComputationService {
 
       budget._usedAmount = usedAmount;
     }
+  }
+
+  async computeQuickSummaryForCurrency(startEpoch: number, endEpoch: number, currency: Currency): Promise<QuickSummary> {
+    [startEpoch, endEpoch] = normalizeEpochRange(startEpoch, endEpoch);
+    const currencyId = currency._id!;
+
+    const quickSummary: QuickSummary = {
+      currency: currency,
+      totalIncome: 0,
+      totalExpense: 0,
+      totalProfit: 0,
+      totalInFlow: 0,
+      totalOutFlow: 0,
+      totalFlowBalance: 0,
+    };
+
+    const fullRecordList = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
+
+    const recordList = fullRecordList
+      .filter((record) => {
+        if (record.income && record.income.currencyId === currencyId) return true;
+        if (record.expense && record.expense.currencyId === currencyId) return true;
+        if (record.lending && record.lending.currencyId === currencyId) return true;
+        if (record.borrowing && record.borrowing.currencyId === currencyId) return true;
+        if (record.repaymentGiven && record.repaymentGiven.currencyId === currencyId) return true;
+        if (record.repaymentReceived && record.repaymentReceived.currencyId === currencyId) return true;
+        if (record.assetPurchase && record.assetPurchase.currencyId === currencyId) return true;
+        if (record.assetSale && record.assetSale.currencyId === currencyId) return true;
+        if (record.assetAppreciationDepreciation && record.assetAppreciationDepreciation.currencyId === currencyId) return true;
+        if (record.moneyTransfer && record.moneyTransfer.fromCurrencyId === currencyId) return true;
+        if (record.moneyTransfer && record.moneyTransfer.toCurrencyId === currencyId) return true;
+      })
+      .filter((record) => record.transactionEpoch <= endEpoch);
+
+    // ============== Income
+    {
+      const finerRecordList = recordList
+        .filter((record) => record.type === RecordType.INCOME && record.income)
+        .filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+      quickSummary.totalIncome = finerRecordList.reduce((sum, record) => {
+        return sum + asAmount(record.income!.amount);
+      }, 0);
+    }
+
+    // ============== Expense
+    {
+      const finerRecordList = recordList
+        .filter((record) => record.type === RecordType.EXPENSE && record.expense)
+        .filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+      quickSummary.totalExpense = finerRecordList.reduce((sum, record) => {
+        return sum + asAmount(record.expense!.amount);
+      }, 0);
+    }
+
+    // ============== In-Flow and Out-Flow
+    {
+      const finerRecordList = recordList.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+      for (const record of finerRecordList) {
+        // in-flow
+        if (record.type === RecordType.INCOME && record.income) {
+          quickSummary.totalInFlow += asAmount(record.income.amountPaid);
+        } else if (record.type === RecordType.ASSET_SALE && record.assetSale) {
+          quickSummary.totalInFlow += asAmount(record.assetSale.amountPaid);
+        } else if (record.type === RecordType.BORROWING && record.borrowing) {
+          quickSummary.totalInFlow += asAmount(record.borrowing.amount);
+        } else if (record.type === RecordType.REPAYMENT_RECEIVED && record.repaymentReceived) {
+          quickSummary.totalInFlow += asAmount(record.repaymentReceived.amount);
+        }
+        // out-flow
+        else if (record.type === RecordType.EXPENSE && record.expense) {
+          quickSummary.totalOutFlow += asAmount(record.expense.amountPaid);
+        } else if (record.type === RecordType.ASSET_PURCHASE && record.assetPurchase) {
+          quickSummary.totalOutFlow += asAmount(record.assetPurchase.amountPaid);
+        } else if (record.type === RecordType.LENDING && record.lending) {
+          quickSummary.totalOutFlow += asAmount(record.lending.amount);
+        } else if (record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven) {
+          quickSummary.totalOutFlow += asAmount(record.repaymentGiven.amount);
+        }
+        // complex/mixed
+        else if (record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer) {
+          if (record.moneyTransfer.toCurrencyId === currencyId) {
+            quickSummary.totalInFlow += asAmount(record.moneyTransfer.toAmount);
+          }
+          if (record.moneyTransfer.fromCurrencyId === currencyId) {
+            quickSummary.totalOutFlow += asAmount(record.moneyTransfer.fromAmount);
+          }
+        } else if (record.type === RecordType.ASSET_APPRECIATION_DEPRECIATION && record.assetAppreciationDepreciation) {
+          if (record.assetAppreciationDepreciation.type === "appreciation") {
+            quickSummary.totalInFlow += asAmount(record.assetAppreciationDepreciation.amount);
+          } else {
+            quickSummary.totalOutFlow += asAmount(record.assetAppreciationDepreciation.amount);
+          }
+        }
+      }
+    }
+
+    quickSummary.totalProfit = quickSummary.totalIncome - quickSummary.totalExpense;
+
+    quickSummary.totalFlowBalance = quickSummary.totalInFlow - quickSummary.totalOutFlow;
+
+    return quickSummary;
+  }
+
+  async computeQuickSummary(startEpoch: number, endEpoch: number): Promise<QuickSummary[]> {
+    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
+
+    return await Promise.all(
+      currencyList.map(async (currency) => {
+        return computationService.computeQuickSummaryForCurrency(startEpoch, endEpoch, currency);
+      })
+    );
   }
 }
 
