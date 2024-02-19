@@ -142,7 +142,10 @@
                 <div class="controls">
                   <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editMoneyTransferClicked(record)" />
                   <q-btn class="control-button" round color="negative" icon="delete" size="8px" @click="deleteClicked(record)" />
-                  <div class="username" v-if="record.modifiedByUsername">{{ record.modifiedByUsername }}</div>
+                  <div class="username" v-if="record.modifiedByUsername">
+                    <q-icon name="account_circle"></q-icon>
+                    {{ record.modifiedByUsername }}
+                  </div>
                 </div>
               </div>
             </div>
