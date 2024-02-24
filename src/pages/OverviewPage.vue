@@ -25,7 +25,7 @@
 
     <q-card class="std-card" v-if="!isLoading && budgetList.length > 0">
       <div class="title-row q-pa-md q-gutter-sm">
-        <div class="title">Budgets (Active)</div>
+        <div class="title">Budgets</div>
       </div>
 
       <div class="q-pa-md">
@@ -149,6 +149,7 @@ async function loadData() {
   let newBudgetList = res.docs as Budget[];
   newBudgetList = newBudgetList.filter((budget) => budget.currencyId === recordCurrencyId.value!);
   await computationService.computeUsedAmountForBudgetListInPlace(newBudgetList);
+  newBudgetList.sort((a, b) => a.name.localeCompare(b.name));
   budgetList.value = newBudgetList;
 
   isLoading.value = false;
