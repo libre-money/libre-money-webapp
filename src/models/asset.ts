@@ -5,6 +5,7 @@ export type Asset = {
   name: string;
   type: string;
   liquidity: string;
+  initialBalance: number;
   currencyId: string;
   _currencySign?: string;
   _balance?: number;

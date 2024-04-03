@@ -5,9 +5,13 @@
         <div class="std-dialog-title q-pa-md">{{ existingWalletId ? "Editing a Wallet" : "Adding a Wallet" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="walletForm">
           <q-input filled v-model="walletName" label="Name of the Wallet" lazy-rules :rules="validators.name" />
-          <q-select filled v-model="walletType" :options="walletTypeList" label="Type" emit-value map-options class="std-margin-bottom-32" />
-          <q-input type="number" filled v-model="walletInitialBalance" label="Initial Balance" lazy-rules :rules="validators.balance" />
+          <q-select filled v-model="walletType" :options="walletTypeList" label="Type" emit-value map-options
+            class="std-margin-bottom-32 std-margin-top-12" />
           <select-currency v-model="walletCurrencyId"></select-currency>
+          <q-toggle class="std-toggle" v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options"
+            left-label v-if="existingWalletId" />
+          <q-input type="number" filled v-model="walletInitialBalance" label="Initial Balance" lazy-rules
+            :rules="validators.balance" v-if="!existingWalletId || shouldShowAdvancedOptions" />
         </q-form>
       </q-card-section>
 
@@ -48,6 +52,8 @@ export default {
     let initialDoc: Wallet | null = null;
 
     const isLoading = ref(false);
+
+    const shouldShowAdvancedOptions = ref(false);
 
     const walletForm: Ref<QForm | null> = ref(null);
 
@@ -105,8 +111,9 @@ export default {
       walletCurrencyId,
       validators,
       walletForm,
+      shouldShowAdvancedOptions
     };
   },
 };
 </script>
-<style scoped lang="ts"></style>
+<style scoped lang="scss"></style>

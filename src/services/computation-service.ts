@@ -29,6 +29,8 @@ class ComputationService {
     const recordList = res2.docs as Record[];
 
     assetList.forEach((asset) => {
+      const initialBalance = asAmount(asset.initialBalance);
+
       const totalPurchases = recordList
         .filter((record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase?.assetId === asset._id)
         .reduce((sum, record) => sum + record.assetPurchase!.amount, 0);
@@ -44,7 +46,7 @@ class ComputationService {
           0
         );
 
-      asset._balance = totalPurchases - totalSales + totalAppreciation;
+      asset._balance = initialBalance + totalPurchases - totalSales + totalAppreciation;
     });
   }
 
@@ -452,6 +454,8 @@ class ComputationService {
           balance: 0,
         };
 
+        const initialBalance = asAmount(asset.initialBalance);
+
         const totalPurchases = recordList
           .filter((record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase?.assetId === asset._id)
           .reduce((sum, record) => sum + record.assetPurchase!.amount, 0);
@@ -467,7 +471,7 @@ class ComputationService {
             0
           );
 
-        map[key].balance = totalPurchases - totalSales + totalAppreciation;
+        map[key].balance = initialBalance + totalPurchases - totalSales + totalAppreciation;
       }
 
       Object.keys(map).forEach((key) => {

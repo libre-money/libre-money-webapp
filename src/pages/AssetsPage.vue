@@ -7,22 +7,12 @@
       </div>
 
       <div class="q-pa-md">
-        <q-table
-          :loading="isLoading"
-          title="Assets"
-          :rows="rows"
-          :columns="columns"
-          row-key="_id"
-          flat
-          bordered
-          :rows-per-page-options="rowsPerPageOptions"
-          binary-state-sort
-          v-model:pagination="pagination"
-          @request="dataForTableRequested"
-          class="std-table-non-morphing"
-        >
+        <q-table :loading="isLoading" title="Assets" :rows="rows" :columns="columns" row-key="_id" flat bordered
+          :rows-per-page-options="rowsPerPageOptions" binary-state-sort v-model:pagination="pagination"
+          @request="dataForTableRequested" class="std-table-non-morphing">
           <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
+            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name"
+              placeholder="Search" class="search-field">
               <template v-slot:prepend>
                 <q-btn icon="search" flat round @click="dataForTableRequested" />
               </template>
@@ -43,7 +33,8 @@
                       <q-item-label>Add Sales Record</q-item-label>
                     </q-item-section>
                   </q-item>
-                  <q-item clickable v-close-popup @click="addAssetAppreciationDepreciationRecordClicked(rowWrapper.row)">
+                  <q-item clickable v-close-popup
+                    @click="addAssetAppreciationDepreciationRecordClicked(rowWrapper.row)">
                     <q-item-section>
                       <q-item-label>Add Appreciation/Depreciation Record</q-item-label>
                     </q-item-section>
@@ -120,7 +111,7 @@ export default defineComponent({
       {
         name: "balance",
         align: "left",
-        label: "Calculated Value",
+        label: "Current Value",
         sortable: true,
         field: (asset: Asset) => {
           return `${asset._currencySign!} ${prettifyAmount(asset._balance)}`;
