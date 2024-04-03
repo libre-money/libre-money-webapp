@@ -53,6 +53,7 @@ import { validators } from "src/utils/validators";
 import { defineComponent, ref } from "vue";
 import SelectCurrency from "./../components/SelectCurrency.vue";
 import { defaultViewOptionList } from "src/constants/constants";
+import { NotificationType, dialogService } from "src/services/dialog-service";
 
 export default defineComponent({
   name: "SettingsPage",
@@ -75,6 +76,8 @@ export default defineComponent({
       settingsStore.setDefaultCurrencyId(defaultCurrencyId.value!);
       settingsStore.setDefaultView(defaultView.value!);
       settingsStore.setRememberLastOpenedView(rememberLastOpenedView.value);
+
+      dialogService.notify(NotificationType.SUCCESS, "Settings saved.");
     }
 
     // -----

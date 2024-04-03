@@ -1,4 +1,10 @@
-import { Dialog } from "quasar";
+import { Dialog, Notify } from "quasar";
+
+export const NotificationType = {
+  SUCCESS: "SUCCESS",
+  LOGIN: "LOGIN",
+  FAILED: "FAILED",
+};
 
 export const dialogService = {
   alert(title: string, message: string) {
@@ -60,6 +66,27 @@ export const dialogService = {
         .onDismiss(() => {
           accept(null);
         });
+    });
+  },
+
+  notify(notificationType: string, message: string) {
+    let color = "green-4";
+    let textColor = "white";
+    let icon = "cloud_done";
+    if (notificationType === NotificationType.LOGIN) {
+      color = "green-4";
+      textColor = "white";
+      icon = "cloud_done";
+    } else if (notificationType === NotificationType.SUCCESS) {
+      color = "green-4";
+      textColor = "white";
+      icon = "done";
+    }
+    Notify.create({
+      color,
+      textColor,
+      icon,
+      message,
     });
   },
 };

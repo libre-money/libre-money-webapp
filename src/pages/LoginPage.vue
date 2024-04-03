@@ -6,9 +6,11 @@
       <q-form ref="loginForm" @submit="onSubmit" @reset="onReset" class="q-gutter-md q-pa-md">
         <q-input filled v-model="domain" label="Domain" hint="Your domain" lazy-rules :rules="validators.domain" />
 
-        <q-input filled v-model="username" label="Username" hint="Your username" lazy-rules :rules="validators.username" />
+        <q-input filled v-model="username" label="Username" hint="Your username" lazy-rules
+          :rules="validators.username" />
 
-        <q-input type="password" filled v-model="password" label="Password" hint="Your password" lazy-rules :rules="validators.password" />
+        <q-input type="password" filled v-model="password" label="Password" hint="Your password" lazy-rules
+          :rules="validators.password" />
 
         <q-checkbox v-model="shouldRememberPassword" label="Store password on this device" />
 
@@ -24,7 +26,7 @@
 <script lang="ts">
 import { QForm, dom, useQuasar } from "quasar";
 import { configService } from "src/services/config-service";
-import { dialogService } from "src/services/dialog-service";
+import { NotificationType, dialogService } from "src/services/dialog-service";
 import { loginService } from "src/services/login-service";
 import { validators } from "src/utils/validators";
 import { Ref, defineComponent, ref } from "vue";
@@ -72,12 +74,7 @@ export default defineComponent({
           return;
         }
 
-        $q.notify({
-          color: "green-4",
-          textColor: "white",
-          icon: "cloud_done",
-          message: "Successfully logged in!",
-        });
+        dialogService.notify(NotificationType.LOGIN, "Successfully logged in.");
 
         if (route.query && route.query.next) {
           await router.push(route.query.next as RouteLocationRaw);
@@ -114,6 +111,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: center;
+
   .logo {
     margin-right: 8px;
     margin-bottom: 4px;
