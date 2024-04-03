@@ -17,7 +17,10 @@
           <select-party v-model="recordFilters.partyId" :mandatory="false"></select-party>
         </div>
         <div style="margin-top: -12px">
-          <select-tag v-model="recordFilters.tagIdWhiteList"></select-tag>
+          <select-tag v-model="recordFilters.tagIdWhiteList" label="Only include records with these tags"></select-tag>
+        </div>
+        <div style="margin-top: -12px">
+          <select-tag v-model="recordFilters.tagIdBlackList" label="Exclude records with these tags"></select-tag>
         </div>
         <div style="margin-top: -12px">
           <select-wallet v-model="recordFilters.walletId"></select-wallet>

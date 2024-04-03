@@ -21,11 +21,12 @@
 
           <template v-slot:body-cell-actions="rowWrapper">
             <q-td :props="rowWrapper">
-              <q-btn-dropdown size="sm" color="primary" label="Edit" split @click="editClicked(rowWrapper.row)">
+              <q-btn-dropdown size="sm" color="primary" label="Records" split
+                @click="viewRecordsClicked(rowWrapper.row)">
                 <q-list>
-                  <q-item clickable v-close-popup @click="viewRecordsClicked(rowWrapper.row)">
+                  <q-item clickable v-close-popup @click="editClicked(rowWrapper.row)">
                     <q-item-section>
-                      <q-item-label>View Records</q-item-label>
+                      <q-item-label>Edit</q-item-label>
                     </q-item-section>
                   </q-item>
                   <q-item clickable v-close-popup @click="duplicateClicked(rowWrapper.row)">
@@ -50,7 +51,7 @@
 
 <script lang="ts">
 import { Ref, defineComponent, ref, watch } from "vue";
-import { Collection, rowsPerPageOptions } from "./../constants/constants";
+import { Collection, RecordType, rowsPerPageOptions } from "./../constants/constants";
 import { useQuasar } from "quasar";
 import AddBudget from "./../components/AddBudget.vue";
 import { pouchdbService } from "src/services/pouchdb-service";
@@ -60,12 +61,17 @@ import { prettifyAmount, sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
 import { computationService } from "src/services/computation-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
+import { RecordFilters } from "src/models/inferred/record-filters";
+import { useRecordFiltersStore } from "src/stores/record-filters-store";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: "BudgetsPage",
   components: {},
   setup() {
     const $q = useQuasar();
+    const recordFiltersStore = useRecordFiltersStore();
+    const router = useRouter();
 
     // -----
 
@@ -230,7 +236,24 @@ export default defineComponent({
     }
 
     function viewRecordsClicked(budget: Budget) {
-      "pass";
+      let recordTypeList: string[] = [];
+      if (budget.includeExpenses) {
+        recordTypeList.push(RecordType.EXPENSE);
+      }
+      if (budget.includeAssetPurchases) {
+        recordTypeList.push(RecordType.ASSET_PURCHASE);
+      }
+
+      let recordFilter: RecordFilters = {
+        startEpoch: budget.startEpoch,
+        endEpoch: budget.endEpoch,
+        recordTypeList,
+        tagIdWhiteList: budget.tagIdWhiteList,
+        tagIdBlackList: budget.tagIdBlackList,
+        searchString: "",
+      };
+      recordFiltersStore.setRecordFilters(recordFilter);
+      router.push({ name: "records" });
     }
 
     return {

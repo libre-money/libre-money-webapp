@@ -8,22 +8,12 @@
       </div>
 
       <div class="q-pa-md">
-        <q-table
-          :loading="isLoading"
-          title="Loans & Debts"
-          :rows="rows"
-          :columns="columns"
-          row-key="_id"
-          flat
-          bordered
-          :rows-per-page-options="rowsPerPageOptions"
-          binary-state-sort
-          v-model:pagination="pagination"
-          @request="dataForTableRequested"
-          class="std-table-non-morphing"
-        >
+        <q-table :loading="isLoading" title="Loans & Debts" :rows="rows" :columns="columns" row-key="_id" flat bordered
+          :rows-per-page-options="rowsPerPageOptions" binary-state-sort v-model:pagination="pagination"
+          @request="dataForTableRequested" class="std-table-non-morphing">
           <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
+            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name"
+              placeholder="Search" class="search-field">
               <template v-slot:prepend>
                 <q-btn icon="search" flat round @click="dataForTableRequested" />
               </template>
@@ -32,7 +22,8 @@
 
           <template v-slot:body-cell-actions="rowWrapper">
             <q-td :props="rowWrapper">
-              <q-btn-dropdown size="sm" color="primary" label="View Details" split @click="viewDetailsClicked(rowWrapper.row)">
+              <q-btn-dropdown size="sm" color="primary" label="View Details" split
+                @click="viewDetailsClicked(rowWrapper.row)">
                 <q-list>
                   <q-item clickable v-close-popup @click="viewRecordsClicked(rowWrapper.row)">
                     <q-item-section>
@@ -82,14 +73,13 @@ import { useRecordFiltersStore } from "src/stores/record-filters-store";
 import LoansAndDebtsDetailsDialog from "src/components/LoansAndDebtsDetailsDialog.vue";
 import { usePaginationSizeStore } from "src/stores/pagination";
 
-const recordFiltersStore = useRecordFiltersStore();
-
 export default defineComponent({
   name: "WalletsPage",
   components: {},
   setup() {
     const $q = useQuasar();
     const router = useRouter();
+    const recordFiltersStore = useRecordFiltersStore();
 
     // -----
 
@@ -224,7 +214,8 @@ export default defineComponent({
         endEpoch: Date.now(),
         recordTypeList: [],
         partyId: summary.partyId,
-        tagList: [],
+        tagIdWhiteList: [],
+        tagIdBlackList: [],
         searchString: "",
       };
       recordFiltersStore.setRecordFilters(recordFilter);
