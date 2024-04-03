@@ -36,9 +36,18 @@
         </q-form>
       </q-card-section>
 
-      <q-card-actions class="row justify-end">
+      <q-card-actions class="row justify-start std-bottom-action-row">
         <q-btn color="blue-grey" label="Cancel" @click="cancelClicked" />
-        <q-btn color="primary" label="OK" @click="okClicked" />
+        <div class="spacer"></div>
+        <q-btn-dropdown size="md" color="primary" label="Save" split @click="okClicked" style="margin-left: 8px;">
+          <q-list>
+            <q-item clickable v-close-popup @click="saveAsTemplateClicked">
+              <q-item-section>
+                <q-item-label>Save as Template</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -56,7 +65,7 @@ import SelectIncomeSource from "./SelectIncomeSource.vue";
 import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
-import { dialogService } from "src/services/dialog-service";
+import { NotificationType, dialogService } from "src/services/dialog-service";
 import { asAmount } from "src/utils/misc-utils";
 import DateTimeInput from "./lib/DateTimeInput.vue";
 import { dataInferenceService } from "src/services/data-inference-service";
@@ -65,6 +74,11 @@ import { useSettingsStore } from "src/stores/settings";
 export default {
   props: {
     existingRecordId: {
+      type: String,
+      required: false,
+      default: null,
+    },
+    useTemplateId: {
       type: String,
       required: false,
       default: null,
@@ -108,36 +122,51 @@ export default {
 
     const transactionEpoch: Ref<number> = ref(Date.now());
 
+    async function prefillRecord(prefilledRecord: Record): Promise<boolean> {
+      if (!prefilledRecord || !prefilledRecord.income) {
+        await dialogService.alert("Error", "Invalid Record");
+        onDialogCancel();
+        return false;
+      }
+
+      recordIncomeSourceId.value = prefilledRecord.income.incomeSourceId;
+      recordAmount.value = asAmount(prefilledRecord.income.amount);
+
+      recordCurrencyId.value = prefilledRecord.income.currencyId;
+      recordPartyId.value = prefilledRecord.income.partyId;
+      recordWalletId.value = prefilledRecord.income.walletId!;
+      recordAmountPaid.value = prefilledRecord.income.amountPaid;
+      recordAmountUnpaid.value = prefilledRecord.income.amountUnpaid;
+      recordTagIdList.value = prefilledRecord.tagIdList;
+      recordNotes.value = prefilledRecord.notes;
+
+      if (prefilledRecord.income.amount === prefilledRecord.income.amountPaid) {
+        paymentType.value = "full";
+      } else if (prefilledRecord.income.amountPaid === 0) {
+        paymentType.value = "unpaid";
+      } else {
+        paymentType.value = "partial";
+      }
+
+      return true;
+    }
+
     if (props.existingRecordId) {
       isLoading.value = true;
       (async function () {
         isLoading.value = true;
-        let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
-        initialDoc = res;
-        if (!initialDoc.income) {
-          // TODO show error message
-          return;
-        }
-
-        recordIncomeSourceId.value = initialDoc.income.incomeSourceId;
-        recordAmount.value = asAmount(initialDoc.income.amount);
-
-        recordCurrencyId.value = initialDoc.income.currencyId;
-        recordPartyId.value = initialDoc.income.partyId;
-        recordWalletId.value = initialDoc.income.walletId!;
-        recordAmountPaid.value = initialDoc.income.amountPaid;
-        recordAmountUnpaid.value = initialDoc.income.amountUnpaid;
-        recordTagIdList.value = initialDoc.tagIdList;
-        recordNotes.value = initialDoc.notes;
-
-        if (initialDoc.income.amount === initialDoc.income.amountPaid) {
-          paymentType.value = "full";
-        } else if (initialDoc.income.amountPaid === 0) {
-          paymentType.value = "unpaid";
-        } else {
-          paymentType.value = "partial";
-        }
-
+        initialDoc = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
+        if (!await prefillRecord(initialDoc)) return;
+        transactionEpoch.value = initialDoc.transactionEpoch || Date.now();
+        isLoading.value = false;
+      })();
+    } else if (props.useTemplateId) {
+      isLoading.value = true;
+      (async function () {
+        isLoading.value = true;
+        let templateDoc = (await pouchdbService.getDocById(props.useTemplateId)) as Record;
+        if (!await prefillRecord(templateDoc)) return;
+        transactionEpoch.value = Date.now();
         isLoading.value = false;
       })();
     } else {
@@ -207,6 +236,31 @@ export default {
       onDialogOK();
     }
 
+    async function saveAsTemplateClicked() {
+      let templateName = await dialogService.prompt("Saving as template", "Provide a unique name for the template", "");
+      if (!templateName) return;
+      let partialRecord: Record = {
+        $collection: Collection.RECORD_TEMPLATE,
+        templateName,
+        notes: recordNotes.value!,
+        type: recordType,
+        tagIdList: recordTagIdList.value,
+        transactionEpoch: transactionEpoch.value,
+        income: {
+          incomeSourceId: recordIncomeSourceId.value!,
+          amount: asAmount(recordAmount.value),
+          currencyId: recordCurrencyId.value!,
+          partyId: recordPartyId.value,
+          walletId: recordWalletId.value!,
+          amountPaid: asAmount(recordAmountPaid.value),
+          amountUnpaid: asAmount(recordAmountUnpaid.value),
+        },
+      };
+      pouchdbService.upsertDoc(partialRecord);
+      dialogService.notify(NotificationType.SUCCESS, "Template saved.");
+      onDialogCancel();
+    }
+
     watch(recordCurrencyId, async (newCurrencyId: any) => {
       let currency = await dataInferenceService.getCurrency(newCurrencyId);
       recordCurrencySign.value = currency.sign;
@@ -232,6 +286,7 @@ export default {
       recordAmountUnpaid,
       recordTagIdList,
       recordNotes,
+      saveAsTemplateClicked,
     };
   },
 };
