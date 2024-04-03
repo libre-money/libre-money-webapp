@@ -3,8 +3,9 @@
     <q-card class="q-dialog-plugin">
       <q-card-section>
         <div class="std-dialog-title q-pa-md">
-          {{ existingRecordId ? "Editing an Asset Appreciation/Depreciation Record" : "Adding an Asset;
-  Appreciation / Depreciation Record" }}
+          {{ existingRecordId
+    ? "Editing an Asset Appreciation/Depreciation Record"
+    : "Adding an Asset Appreciation / Depreciation Record" }}
         </div>
         <q-form class="q-gutter-md q-pa-md" ref="recordForm">
           <select-asset v-model="recordAssetId"></select-asset>
