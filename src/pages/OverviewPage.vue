@@ -16,8 +16,10 @@
       <div class="q-pa-md q-gutter-sm">
         <div>
           Welcome to Cash Keeper!<br /><br />
-          If this is your first time here, please read the <strong>Currently Imaginary</strong> getting started guide.<br /><br />
-          If you already have some data on our servers, use the button to the top right to <strong>Sync</strong> your data to this device.<br /><br />
+          If this is your first time here, please read the <strong>Currently Imaginary</strong> getting started
+          guide.<br /><br />
+          If you already have some data on our servers, use the button to the top right to <strong>Sync</strong> your
+          data to this device.<br /><br />
           Enjoy!
         </div>
       </div>
@@ -40,31 +42,6 @@
               <td>{{ row.name }}</td>
               <td>{{ printUsedPercentage(row) }}</td>
               <td>{{ printAmount(row._usedAmount) }} / {{ printAmount(row.overflowLimit) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </q-card>
-
-    <q-card class="std-card" v-if="!isLoading && overview">
-      <div class="title-row q-pa-md q-gutter-sm">
-        <div class="title">Expenses (Current Month)</div>
-      </div>
-
-      <div class="q-pa-md">
-        <table class="overview-table">
-          <tbody>
-            <tr>
-              <th>Expense Avenue</th>
-              <th>Sum</th>
-            </tr>
-            <tr v-for="row in overview.expense.list" v-bind:key="row.expenseAvenueId">
-              <td>{{ row.expenseAvenue.name }}</td>
-              <td>{{ printAmount(row.sum) }}</td>
-            </tr>
-            <tr>
-              <th>Grand Total</th>
-              <th>{{ printAmount(overview.expense.grandSum) }}</th>
             </tr>
           </tbody>
         </table>
@@ -147,7 +124,8 @@ async function loadData() {
 
   let res = await pouchdbService.listByCollection(Collection.BUDGET);
   let newBudgetList = res.docs as Budget[];
-  newBudgetList = newBudgetList.filter((budget) => budget.currencyId === recordCurrencyId.value!);
+  newBudgetList = newBudgetList.filter((budget) => budget.currencyId === recordCurrencyId.value!)
+    .filter(budget => budget.startEpoch <= Date.now() && budget.endEpoch >= Date.now());
   await computationService.computeUsedAmountForBudgetListInPlace(newBudgetList);
   newBudgetList.sort((a, b) => a.name.localeCompare(b.name));
   budgetList.value = newBudgetList;
@@ -198,5 +176,9 @@ loadData();
 .page {
   display: flex;
   flex-direction: column;
+}
+
+.title-row {
+  padding-bottom: 0px;
 }
 </style>
