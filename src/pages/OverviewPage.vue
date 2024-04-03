@@ -41,7 +41,7 @@
             <tr v-for="row in budgetList" v-bind:key="row._id">
               <td>{{ row.name }}</td>
               <td>{{ printUsedPercentage(row) }}</td>
-              <td>{{ printAmount(row._usedAmount) }} / {{ printAmount(row.overflowLimit) }}</td>
+              <td>{{ printAmount(row._usedAmount || 0) }} / {{ printAmount(row.overflowLimit) }}</td>
             </tr>
           </tbody>
         </table>
@@ -149,7 +149,7 @@ function printUsedPercentage(budget: Budget) {
   if (budget.overflowLimit <= 0) {
     return "-";
   }
-  return `${Math.round((budget._usedAmount / budget.overflowLimit) * 10000) / 100}%`;
+  return `${Math.round(((budget._usedAmount || 0) / budget.overflowLimit) * 10000) / 100}%`;
 }
 
 // ----- Watchers
