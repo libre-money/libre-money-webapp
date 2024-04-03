@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import { Collection } from "src/constants/constants";
-import { Party } from "src/models/party";
-import { pouchdbService } from "src/services/pouchdb-service";
-import { Ref, computed, ref, watch } from "vue";
-import { date } from "quasar";
+import debounceAsync from "src/utils/debounce";
 
 const monthNameList = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -22,17 +18,31 @@ function toMonthName(month: number) {
   return monthNameList[month];
 }
 
+const emitSelection = () => {
+  emit("selection");
+};
+
+const emitSelectionDebounced = debounceAsync(emitSelection, 100, { leading: false });
+
 function prevMonth() {
   if (props.month! > 0) {
     emit("update:month", props.month! - 1);
-    emit("selection");
+    emitSelectionDebounced();
+  } else {
+    emit("update:month", 11);
+    emit("update:year", props.year! - 1);
+    emitSelectionDebounced();
   }
 }
 
 function nextMonth() {
   if (props.month! < monthNameList.length - 1) {
     emit("update:month", props.month! + 1);
-    emit("selection");
+    emitSelectionDebounced();
+  } else {
+    emit("update:month", 0);
+    emit("update:year", props.year! + 1);
+    emitSelectionDebounced();
   }
 }
 
@@ -52,7 +62,7 @@ function nextYear() {
 <template>
   <div>
     <q-btn flat round icon="chevron_left" @click="prevMonth"></q-btn>
-    <span>{{ toMonthName(props.month!) }}</span>
+    <span style="display: inline-block; min-width: 100px;">{{ toMonthName(props.month!) }}</span>
     <q-btn flat round icon="chevron_right" @click="nextMonth"></q-btn>
 
     <q-btn flat round icon="chevron_left" @click="prevYear"></q-btn>
