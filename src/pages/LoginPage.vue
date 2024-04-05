@@ -3,7 +3,7 @@
     <q-card class="login-card">
       <div class="app-name q-pa-xs"><img class="logo" src="icons/logo.png" alt="CK" />Cash Keeper</div>
       <div class="title q-pa-xs">Login</div>
-      <q-form ref="loginForm" @submit="onSubmit" @reset="onReset" class="q-gutter-md q-pa-md">
+      <q-form ref="loginForm" @submit="onSubmit" class="q-gutter-md q-pa-md">
         <q-input filled v-model="domain" label="Domain" hint="Your domain" lazy-rules :rules="validators.domain" />
 
         <q-input filled v-model="username" label="Username" hint="Your username" lazy-rules

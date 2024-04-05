@@ -1,16 +1,16 @@
 <template>
   <q-page class="items-center page">
-    <div class="q-pa-md row justify-end std-card" style="margin-right: 0; margin-bottom: -56px; width: 100%">
+    <div class="q-pa-md row justify-end std-card"
+      style="margin-right: 0; margin-bottom: -36px; width: 100%; align-items: center;">
       <select-currency v-model="recordCurrencyId"></select-currency>
+      <q-btn icon="refresh" flat round size="lg" @click="reloadClicked" style="margin-top: -32px;" />
     </div>
 
-    <q-card class="std-card">
-      <div class="q-pa-md" v-if="isLoading">
-        <div class="loading-notifier">
-          <q-spinner color="primary" size="32px"></q-spinner>
-        </div>
+    <div class="q-pa-md" v-if="isLoading">
+      <div class="loading-notifier">
+        <q-spinner color="primary" size="64px" style="margin-top: 100px;"></q-spinner>
       </div>
-    </q-card>
+    </div>
 
     <q-card class="std-card" v-if="!isLoading && !overview">
       <div class="q-pa-md q-gutter-sm">
@@ -81,7 +81,6 @@
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
 import SelectCurrency from "src/components/SelectCurrency.vue";
-import DateInput from "src/components/lib/DateInput.vue";
 import { Collection } from "src/constants/constants";
 import { Budget } from "src/models/budget";
 import { Overview } from "src/models/inferred/overview";
@@ -90,10 +89,10 @@ import { computationService } from "src/services/computation-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
-import { asAmount, prettifyAmount } from "src/utils/misc-utils";
+import { prettifyAmount } from "src/utils/misc-utils";
 
-import { Ref, ref, watch } from "vue";
 import debounceAsync from "src/utils/debounce";
+import { Ref, ref, watch } from "vue";
 
 const $q = useQuasar();
 const settingsStore = useSettingsStore();
@@ -115,7 +114,7 @@ async function loadOverview() {
   let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
   overview.value = newOverview;
 }
-const loadOverviewDebounced = debounceAsync(loadOverview, 100, { leading: false });
+const loadOverviewDebounced = debounceAsync(loadOverview, 1000, { leading: false });
 
 async function loadData() {
   isLoading.value = true;
@@ -135,7 +134,7 @@ async function loadData() {
 
 // ----- Event Handlers
 
-async function submitClicked() {
+async function reloadClicked() {
   loadData();
 }
 
@@ -162,7 +161,7 @@ watch(recordCurrencyId, (newValue, __) => {
 
 // ----- Execution
 
-loadData();
+
 </script>
 
 <style scoped lang="scss">
