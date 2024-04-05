@@ -108,6 +108,7 @@ export default {
     const transactionEpoch: Ref<number> = ref(Date.now());
 
     async function prefillRecord(prefilledRecord: Record): Promise<boolean> {
+      console.debug("Applying prefilled record: ", prefilledRecord);
       if (!prefilledRecord || !prefilledRecord.moneyTransfer) {
         await dialogService.alert("Error", "Invalid Record");
         onDialogCancel();
@@ -132,7 +133,6 @@ export default {
       isLoading.value = true;
       (async function () {
         isLoading.value = true;
-        console.log({ initialDoc });
         initialDoc = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
         if (!await prefillRecord(initialDoc)) return;
         transactionEpoch.value = initialDoc.transactionEpoch || Date.now();

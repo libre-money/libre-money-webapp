@@ -124,6 +124,7 @@ export default {
     const transactionEpoch: Ref<number> = ref(Date.now());
 
     async function prefillRecord(prefilledRecord: Record): Promise<boolean> {
+      console.debug("Applying prefilled record: ", prefilledRecord);
       if (!prefilledRecord || !prefilledRecord.assetPurchase) {
         await dialogService.alert("Error", "Invalid Record");
         onDialogCancel();
