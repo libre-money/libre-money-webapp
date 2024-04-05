@@ -8,7 +8,8 @@
           {{ $route.meta.title || "Cash Keeper" }}
         </q-toolbar-title>
 
-        <div v-if="$route.meta.title">Cash Keeper</div>
+        <div v-if="$route.meta.title && !isDevDatabase">Cash Keeper</div>
+        <div class="dev-mode-notification" v-if="isDevDatabase">DEV DB</div>
 
         <q-btn flat dense round icon="perm_identity">
           <q-menu>
@@ -196,8 +197,18 @@ export default defineComponent({
     const $q = useQuasar();
 
     const isLeftDrawerOpen = ref(false);
+    const isDevDatabase = ref(false);
 
     const userStore = useUserStore();
+
+    function checkIfInDevMode() {
+      isDevDatabase.value = false;
+      if (userStore.user && userStore.user.domain.indexOf("test") > -1) {
+        isDevDatabase.value = true;
+      }
+    }
+    userStore.$subscribe(checkIfInDevMode);
+    checkIfInDevMode();
 
     const appVersion = "0.2.1";
     const internalBuild = "DEV_BUILD";
@@ -240,6 +251,8 @@ export default defineComponent({
       logoutClicked,
       syncClicked,
       verionClicked,
+
+      isDevDatabase
     };
   },
 });
@@ -264,5 +277,12 @@ export default defineComponent({
   margin-bottom: 4px;
   width: 40px;
   height: 40px;
+}
+
+.dev-mode-notification {
+  background-color: yellow;
+  color: black;
+  padding: 0px 8px;
+  font-weight: bold;
 }
 </style>
