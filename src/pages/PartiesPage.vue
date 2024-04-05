@@ -6,23 +6,15 @@
         <q-btn color="primary" text-color="white" label="Add Party" @click="addPartyClicked" />
       </div>
 
+
       <div class="q-pa-md">
-        <q-table
-          :loading="isLoading"
-          title="Parties & Vendors"
-          :rows="rows"
-          :columns="columns"
-          row-key="_id"
-          flat
-          bordered
-          :rows-per-page-options="rowsPerPageOptions"
-          binary-state-sort
-          v-model:pagination="pagination"
-          @request="dataForTableRequested"
-          class="std-table-non-morphing"
-        >
+        <!-- @vue-expect-error -->
+        <q-table :loading="isLoading" title="Parties & Vendors" :rows="rows" :columns="columns" row-key="_id" flat
+          bordered :rows-per-page-options="rowsPerPageOptions" binary-state-sort v-model:pagination="pagination"
+          @request="dataForTableRequested" class="std-table-non-morphing">
           <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
+            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name"
+              placeholder="Search" class="search-field">
               <template v-slot:prepend>
                 <q-btn icon="search" flat round @click="dataForTableRequested" />
               </template>

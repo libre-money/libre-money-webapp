@@ -7,23 +7,14 @@
       </div>
 
       <div class="q-pa-md">
-        <q-table
-          :loading="isLoading"
-          title="Documents"
-          :rows="rows"
-          :columns="columns"
-          row-key="_id"
-          flat
-          bordered
-          :rows-per-page-options="rowsPerPageOptions"
-          binary-state-sort
-          v-model:pagination="pagination"
-          @request="dataForTableRequested"
-          class="std-table-non-morphing"
-          style="font-family: 'Courier New', Courier, monospace"
-        >
+        <!-- @vue-expect-error -->
+        <q-table :loading="isLoading" title="Documents" :rows="rows" :columns="columns" row-key="_id" flat bordered
+          :rows-per-page-options="rowsPerPageOptions" binary-state-sort v-model:pagination="pagination"
+          @request="dataForTableRequested" class="std-table-non-morphing"
+          style="font-family: 'Courier New', Courier, monospace">
           <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by content" placeholder="Search" class="search-field">
+            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by content"
+              placeholder="Search" class="search-field">
               <template v-slot:prepend>
                 <q-btn icon="search" flat round @click="dataForTableRequested" />
               </template>
@@ -148,7 +139,7 @@ export default defineComponent({
         let collection = "ERROR";
         try {
           collection = (row.doc as any).$collection || "NOT_FOUND";
-        } catch (ex) {}
+        } catch (ex) { }
         return {
           _id: row.id,
           collection,

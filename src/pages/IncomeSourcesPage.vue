@@ -7,21 +7,13 @@
       </div>
 
       <div class="q-pa-md">
-        <q-table
-          :loading="isLoading"
-          title="Income Sources"
-          :rows="rows"
-          :columns="columns"
-          row-key="_id"
-          flat
-          bordered
-          :rows-per-page-options="rowsPerPageOptions"
-          binary-state-sort
-          v-model:pagination="pagination"
-          @request="dataForTableRequested"
-        >
+        <!-- @vue-expect-error -->
+        <q-table :loading="isLoading" title="Income Sources" :rows="rows" :columns="columns" row-key="_id" flat bordered
+          :rows-per-page-options="rowsPerPageOptions" binary-state-sort v-model:pagination="pagination"
+          @request="dataForTableRequested">
           <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
+            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name"
+              placeholder="Search" class="search-field">
               <template v-slot:prepend>
                 <q-btn icon="search" flat round @click="dataForTableRequested" />
               </template>

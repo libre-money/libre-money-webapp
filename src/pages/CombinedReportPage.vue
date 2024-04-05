@@ -10,7 +10,8 @@
           <date-input v-model="endEpoch" label="End Date"></date-input>
         </div>
         <div class="action-row">
-          <q-btn-dropdown class="preset-selector" size="md" color="secondary" label="Use Preset: Current Month" split @click="presetClicked('current-month')">
+          <q-btn-dropdown class="preset-selector" size="md" color="secondary" label="Use Preset: Current Month" split
+            @click="presetClicked('current-month')">
             <q-list>
               <q-item clickable v-close-popup @click="presetClicked('last-month')">
                 <q-item-section>
@@ -450,6 +451,7 @@ watch(recordCurrencyId, (newValue, __) => {
 
   .action-row {
     margin-top: -12px;
+
     .preset-selector {
       margin-right: 8px;
     }

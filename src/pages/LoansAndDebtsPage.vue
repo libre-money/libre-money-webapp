@@ -8,6 +8,7 @@
       </div>
 
       <div class="q-pa-md">
+        <!-- @vue-expect-error -->
         <q-table :loading="isLoading" title="Loans & Debts" :rows="rows" :columns="columns" row-key="_id" flat bordered
           :rows-per-page-options="rowsPerPageOptions" binary-state-sort v-model:pagination="pagination"
           @request="dataForTableRequested" class="std-table-non-morphing">
