@@ -199,7 +199,7 @@ export default defineComponent({
 
     const userStore = useUserStore();
 
-    const appVersion = "0.1.4";
+    const appVersion = "0.2.1";
     const internalBuild = "DEV_BUILD";
     const buildDate = "NOT_APPLICABLE";
 
