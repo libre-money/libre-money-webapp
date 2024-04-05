@@ -72,7 +72,7 @@ export default defineComponent({
           If you continue with this login, your data from ${previousDomainName} will be copied over to ${domain.value} once you sync. Continue?`;
           const answerContinue = await dialogService.confirm("Please confirm", message);
           if (!answerContinue) {
-            const message = "Hint: to clear local data on this device use the \"Reset Local Data\" button";
+            const message = "Hint: to clear local data on this device use the \"Reset Local Data\" button after dismissing this message.";
             await dialogService.alert("Login aborted", message);
             return;
           }
