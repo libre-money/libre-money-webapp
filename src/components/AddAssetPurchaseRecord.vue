@@ -36,9 +36,18 @@
         </q-form>
       </q-card-section>
 
-      <q-card-actions class="row justify-end">
+      <q-card-actions class="row justify-start std-bottom-action-row">
         <q-btn color="blue-grey" label="Cancel" @click="cancelClicked" />
-        <q-btn color="primary" label="OK" @click="okClicked" />
+        <div class="spacer"></div>
+        <q-btn-dropdown size="md" color="primary" label="Save" split @click="okClicked" style="margin-left: 8px;">
+          <q-list>
+            <q-item clickable v-close-popup @click="saveAsTemplateClicked">
+              <q-item-section>
+                <q-item-label>Save as Template</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -56,7 +65,7 @@ import SelectAsset from "./SelectAsset.vue";
 import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
-import { dialogService } from "src/services/dialog-service";
+import { NotificationType, dialogService } from "src/services/dialog-service";
 import { asAmount } from "src/utils/misc-utils";
 import DateTimeInput from "./lib/DateTimeInput.vue";
 import { dataInferenceService } from "src/services/data-inference-service";
@@ -69,6 +78,11 @@ export default {
       default: null,
     },
     existingAssetId: {
+      type: String,
+      required: false,
+      default: null,
+    },
+    useTemplateId: {
       type: String,
       required: false,
       default: null,
@@ -109,38 +123,51 @@ export default {
 
     const transactionEpoch: Ref<number> = ref(Date.now());
 
+    async function prefillRecord(prefilledRecord: Record): Promise<boolean> {
+      if (!prefilledRecord || !prefilledRecord.assetPurchase) {
+        await dialogService.alert("Error", "Invalid Record");
+        onDialogCancel();
+        return false;
+      }
+
+      recordAssetId.value = prefilledRecord.assetPurchase.assetId;
+      recordAmount.value = asAmount(prefilledRecord.assetPurchase.amount);
+
+      recordCurrencyId.value = prefilledRecord.assetPurchase.currencyId;
+      recordPartyId.value = prefilledRecord.assetPurchase.partyId;
+      recordWalletId.value = prefilledRecord.assetPurchase.walletId;
+      recordAmountPaid.value = prefilledRecord.assetPurchase.amountPaid;
+      recordAmountUnpaid.value = prefilledRecord.assetPurchase.amountUnpaid;
+      recordTagIdList.value = prefilledRecord.tagIdList;
+      recordNotes.value = prefilledRecord.notes;
+
+      if (prefilledRecord.assetPurchase.amount === prefilledRecord.assetPurchase.amountPaid) {
+        paymentType.value = "full";
+      } else if (prefilledRecord.assetPurchase.amountPaid === 0) {
+        paymentType.value = "unpaid";
+      } else {
+        paymentType.value = "partial";
+      }
+
+      return true;
+    }
+
     if (props.existingRecordId) {
       isLoading.value = true;
       (async function () {
         isLoading.value = true;
-        let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
-        initialDoc = res;
-        if (!initialDoc.assetPurchase) {
-          // TODO show error message
-          return;
-        }
-
-        recordAssetId.value = initialDoc.assetPurchase.assetId;
-        recordAmount.value = asAmount(initialDoc.assetPurchase.amount);
-
-        recordCurrencyId.value = initialDoc.assetPurchase.currencyId;
-        recordPartyId.value = initialDoc.assetPurchase.partyId;
-        recordWalletId.value = initialDoc.assetPurchase.walletId;
-        recordAmountPaid.value = initialDoc.assetPurchase.amountPaid;
-        recordAmountUnpaid.value = initialDoc.assetPurchase.amountUnpaid;
-        recordTagIdList.value = initialDoc.tagIdList;
-        recordNotes.value = initialDoc.notes;
-
-        if (initialDoc.assetPurchase.amount === initialDoc.assetPurchase.amountPaid) {
-          paymentType.value = "full";
-        } else if (initialDoc.assetPurchase.amountPaid === 0) {
-          paymentType.value = "unpaid";
-        } else {
-          paymentType.value = "partial";
-        }
-
+        initialDoc = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
+        if (!await prefillRecord(initialDoc)) return;
         transactionEpoch.value = initialDoc.transactionEpoch || Date.now();
-
+        isLoading.value = false;
+      })();
+    } else if (props.useTemplateId) {
+      isLoading.value = true;
+      (async function () {
+        isLoading.value = true;
+        let templateDoc = (await pouchdbService.getDocById(props.useTemplateId)) as Record;
+        if (!await prefillRecord(templateDoc)) return;
+        transactionEpoch.value = Date.now();
         isLoading.value = false;
       })();
     } else {
@@ -212,6 +239,31 @@ export default {
       onDialogOK();
     }
 
+    async function saveAsTemplateClicked() {
+      let templateName = await dialogService.prompt("Saving as template", "Provide a unique name for the template", "");
+      if (!templateName) return;
+      let partialRecord: Record = {
+        $collection: Collection.RECORD_TEMPLATE,
+        templateName,
+        notes: recordNotes.value!,
+        type: recordType,
+        tagIdList: recordTagIdList.value,
+        transactionEpoch: transactionEpoch.value,
+        assetPurchase: {
+          assetId: recordAssetId.value!,
+          amount: asAmount(recordAmount.value),
+          currencyId: recordCurrencyId.value!,
+          partyId: recordPartyId.value,
+          walletId: recordWalletId.value!,
+          amountPaid: asAmount(recordAmountPaid.value),
+          amountUnpaid: asAmount(recordAmountUnpaid.value),
+        },
+      };
+      pouchdbService.upsertDoc(partialRecord);
+      dialogService.notify(NotificationType.SUCCESS, "Template saved.");
+      onDialogCancel();
+    }
+
     watch(recordAssetId, async (newAssetId: any) => {
       let asset = await dataInferenceService.getAsset(newAssetId);
       let currency = await dataInferenceService.getCurrency(asset.currencyId);
@@ -239,6 +291,7 @@ export default {
       recordTagIdList,
       recordNotes,
       recordCurrencySign,
+      saveAsTemplateClicked,
     };
   },
 };
