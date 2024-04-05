@@ -26,7 +26,8 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer class="std-column main-left-sidebar-drawer" v-model="leftDrawerOpen" show-if-above bordered v-if="userStore.isUserLoggedIn">
+    <q-drawer class="std-column main-left-sidebar-drawer" v-model="leftDrawerOpen" show-if-above bordered
+      v-if="userStore.isUserLoggedIn">
       <q-list>
         <q-item-label header> CORE </q-item-label>
         <EssentialLink v-for="link in operationList" :key="link.title" v-bind="link" />
@@ -88,6 +89,12 @@ const operationList = [
     caption: "Income, Expenses and more",
     icon: "format_list_bulleted",
     link: "#/records",
+  },
+  {
+    title: "Templates",
+    caption: "Quickly add records",
+    icon: "bookmarks",
+    link: "#/templates",
   },
   {
     title: "Wallets",
@@ -246,10 +253,12 @@ export default defineComponent({
   font-size: 12px;
   color: whitesmoke;
 }
+
 .app-version {
   display: flex;
   align-items: start;
 }
+
 .logo {
   margin-right: 8px;
   margin-bottom: 4px;

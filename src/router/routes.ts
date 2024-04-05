@@ -30,6 +30,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuthentication: true, title: "Records", rememberable: true },
       },
       {
+        path: "templates",
+        name: "templates",
+        component: () => import("pages/TemplatesPage.vue"),
+        meta: { requiresAuthentication: true, title: "Templates", rememberable: true },
+      },
+      {
         path: "wallets",
         name: "wallets",
         component: () => import("pages/WalletsPage.vue"),
