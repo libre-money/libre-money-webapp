@@ -217,7 +217,7 @@ import { dialogService } from "src/services/dialog-service";
 import { Collection, RecordType } from "src/constants/constants";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { dataInferenceService } from "src/services/data-inference-service";
-import { guessFontColorCode, prettifyAmount, prettifyDate } from "src/utils/misc-utils";
+import { deepClone, guessFontColorCode, prettifyAmount, prettifyDate } from "src/utils/misc-utils";
 import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
 import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
 import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
@@ -364,30 +364,51 @@ async function monthAndYearSelected() {
 }
 
 async function addExpenseClicked() {
-  $q.dialog({ component: AddExpenseRecord }).onOk((res) => {
+  $q.dialog({ component: AddExpenseRecord }).onOk(() => {
     paginationCurrentPage.value = 1;
     loadData();
   });
 }
 
 async function applyTemplateClicked() {
-  $q.dialog({ component: SelectTemplateDialog, componentProps: { templateType: "expense" } }).onOk((selectedTemplate: Record) => {
-    $q.dialog({ component: AddExpenseRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk((res) => {
-      paginationCurrentPage.value = 1;
-      loadData();
-    });
+  $q.dialog({ component: SelectTemplateDialog, componentProps: { templateType: "all" } }).onOk((selectedTemplate: Record) => {
+    selectedTemplate = deepClone(selectedTemplate);
+    console.debug({ selectedTemplate });
+
+    if (selectedTemplate.type === RecordType.EXPENSE) {
+      $q.dialog({ component: AddExpenseRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
+        paginationCurrentPage.value = 1;
+        loadData();
+      });
+    } else if (selectedTemplate.type === RecordType.INCOME) {
+      $q.dialog({ component: AddIncomeRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
+        paginationCurrentPage.value = 1;
+        loadData();
+      });
+    } else if (selectedTemplate.type === RecordType.MONEY_TRANSFER) {
+      $q.dialog({ component: AddMoneyTransferRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
+        paginationCurrentPage.value = 1;
+        loadData();
+      });
+    } else if (selectedTemplate.type === RecordType.ASSET_PURCHASE) {
+      $q.dialog({ component: AddAssetPurchaseRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
+        paginationCurrentPage.value = 1;
+        loadData();
+      });
+    }
+
   });
 }
 
 async function addIncomeClicked() {
-  $q.dialog({ component: AddIncomeRecord }).onOk((res) => {
+  $q.dialog({ component: AddIncomeRecord }).onOk(() => {
     paginationCurrentPage.value = 1;
     loadData();
   });
 }
 
 async function addMoneyTransferClicked() {
-  $q.dialog({ component: AddMoneyTransferRecord }).onOk((res) => {
+  $q.dialog({ component: AddMoneyTransferRecord }).onOk(() => {
     paginationCurrentPage.value = 1;
     loadData();
   });
@@ -415,13 +436,13 @@ async function editSingleAmountRecordClicked(record: InferredRecord) {
     component = AddAssetAppreciationDepreciationRecord;
   }
 
-  $q.dialog({ component, componentProps: { existingRecordId: record._id } }).onOk((res) => {
+  $q.dialog({ component, componentProps: { existingRecordId: record._id } }).onOk(() => {
     loadData();
   });
 }
 
 async function editMoneyTransferClicked(record: InferredRecord) {
-  $q.dialog({ component: AddMoneyTransferRecord, componentProps: { existingRecordId: record._id } }).onOk((res) => {
+  $q.dialog({ component: AddMoneyTransferRecord, componentProps: { existingRecordId: record._id } }).onOk(() => {
     loadData();
   });
 }
