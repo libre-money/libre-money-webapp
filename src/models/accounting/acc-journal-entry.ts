@@ -12,8 +12,9 @@ export type AccJournalEntry = {
   entryEpoch: number;
   creditList: AccDebitOrCredit[];
   debitList: AccDebitOrCredit[];
-  sumCredits: number;
-  sumDebits: number;
   description: string;
   notes: string;
+  isMultiCurrency: boolean;
+  isBalanced: boolean;
+  currencyIdList: string[];
 };

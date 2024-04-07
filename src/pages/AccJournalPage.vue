@@ -30,6 +30,9 @@
                 <div class="notes-text">
                   <div>{{ journalEntry.description }}</div>
                   <div v-if="journalEntry.notes">{{ journalEntry.notes }}</div>
+                  <div v-if="!journalEntry.isBalanced && !journalEntry.isMultiCurrency" class="warning">
+                    Journal is NOT balanced.
+                  </div>
                 </div>
                 <div class="column-spacer"></div>
                 <div class="column-spacer"></div>
@@ -176,6 +179,10 @@ loadData();
         border: 1px solid rgb(220, 220, 220);
         border-collapse: collapse;
         padding: 4px;
+      }
+
+      .warning {
+        color: #f4511e;
       }
     }
   }

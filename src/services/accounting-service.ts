@@ -508,8 +508,28 @@ class AccountingService {
         }
       }
 
-      const sumCredits = creditList.reduce((sum, credit) => sum + credit.amount, 0);
-      const sumDebits = debitList.reduce((sum, credit) => sum + credit.amount, 0);
+      // Balancing Check
+
+      const balanceByCurrencyMap: Record<string, number> = {};
+
+      debitList.forEach((debit) => {
+        if (!(debit.currencyId in balanceByCurrencyMap)) {
+          balanceByCurrencyMap[debit.currencyId] = 0;
+        }
+        balanceByCurrencyMap[debit.currencyId] += debit.amount;
+      });
+      creditList.forEach((credit) => {
+        if (!(credit.currencyId in balanceByCurrencyMap)) {
+          balanceByCurrencyMap[credit.currencyId] = 0;
+        }
+        balanceByCurrencyMap[credit.currencyId] -= credit.amount;
+      });
+
+      const currencyIdList = Object.keys(balanceByCurrencyMap);
+      const isMultiCurrency = Object.keys(balanceByCurrencyMap).length > 1;
+      const isBalanced = Object.keys(balanceByCurrencyMap).every((currencyId) => balanceByCurrencyMap[currencyId] === 0);
+
+      // Notes
 
       if (record.notes && record.notes.length > 0) {
         notes = `Notes: ${record.notes}. `;
@@ -520,10 +540,11 @@ class AccountingService {
         entryEpoch: record.transactionEpoch,
         creditList,
         debitList,
-        sumCredits,
-        sumDebits,
         description,
         notes,
+        isMultiCurrency,
+        isBalanced,
+        currencyIdList,
       };
       journalEntryList.push(journalEntry);
     }
