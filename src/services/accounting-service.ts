@@ -377,6 +377,136 @@ class AccountingService {
           )}. `;
         }
       }
+      // ================ LENDING
+      else if (record.type === RecordType.LENDING && record.lending) {
+        const { lending } = record;
+
+        debitList.push({
+          account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
+          currencyId: lending.currencyId,
+          amount: asAmount(lending.amount),
+        });
+        description += `Lent ${dataInferenceService.getPrintableAmount(lending.amount, lending.currencyId)} to "${lending.party.name}"
+         from "${lending.wallet.name}". `;
+
+        if (lending.wallet.type === "credit-card") {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+            currencyId: lending.currencyId,
+            amount: asAmount(lending.amount),
+          });
+        } else if (lending.wallet.type === "cash") {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+            currencyId: lending.currencyId,
+            amount: asAmount(lending.amount),
+          });
+        } else {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+            currencyId: lending.currencyId,
+            amount: asAmount(lending.amount),
+          });
+        }
+      }
+      // ================ BORROWING
+      else if (record.type === RecordType.BORROWING && record.borrowing) {
+        const { borrowing } = record;
+
+        creditList.push({
+          account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
+          currencyId: borrowing.currencyId,
+          amount: asAmount(borrowing.amount),
+        });
+        description += `Borrowed ${dataInferenceService.getPrintableAmount(borrowing.amount, borrowing.currencyId)} from "${borrowing.party.name}"
+         into "${borrowing.wallet.name}". `;
+
+        if (borrowing.wallet.type === "credit-card") {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+            currencyId: borrowing.currencyId,
+            amount: asAmount(borrowing.amount),
+          });
+        } else if (borrowing.wallet.type === "cash") {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+            currencyId: borrowing.currencyId,
+            amount: asAmount(borrowing.amount),
+          });
+        } else {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+            currencyId: borrowing.currencyId,
+            amount: asAmount(borrowing.amount),
+          });
+        }
+      }
+      // ================ REPAYMENT_RECEIVED
+      else if (record.type === RecordType.REPAYMENT_RECEIVED && record.repaymentReceived) {
+        const { repaymentReceived } = record;
+
+        creditList.push({
+          account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
+          currencyId: repaymentReceived.currencyId,
+          amount: asAmount(repaymentReceived.amount),
+        });
+        description += `Repayment received of ${dataInferenceService.getPrintableAmount(repaymentReceived.amount, repaymentReceived.currencyId)}
+              from "${repaymentReceived.party.name}"
+              into "${repaymentReceived.wallet.name}". `;
+
+        if (repaymentReceived.wallet.type === "credit-card") {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+            currencyId: repaymentReceived.currencyId,
+            amount: asAmount(repaymentReceived.amount),
+          });
+        } else if (repaymentReceived.wallet.type === "cash") {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+            currencyId: repaymentReceived.currencyId,
+            amount: asAmount(repaymentReceived.amount),
+          });
+        } else {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+            currencyId: repaymentReceived.currencyId,
+            amount: asAmount(repaymentReceived.amount),
+          });
+        }
+      }
+      // ================ REPAYMENT_GIVEN
+      else if (record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven) {
+        const { repaymentGiven } = record;
+
+        debitList.push({
+          account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
+          currencyId: repaymentGiven.currencyId,
+          amount: asAmount(repaymentGiven.amount),
+        });
+        description += `Repayment given of ${dataInferenceService.getPrintableAmount(repaymentGiven.amount, repaymentGiven.currencyId)} 
+              to "${repaymentGiven.party.name}"
+              from "${repaymentGiven.wallet.name}". `;
+
+        if (repaymentGiven.wallet.type === "credit-card") {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+            currencyId: repaymentGiven.currencyId,
+            amount: asAmount(repaymentGiven.amount),
+          });
+        } else if (repaymentGiven.wallet.type === "cash") {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+            currencyId: repaymentGiven.currencyId,
+            amount: asAmount(repaymentGiven.amount),
+          });
+        } else {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+            currencyId: repaymentGiven.currencyId,
+            amount: asAmount(repaymentGiven.amount),
+          });
+        }
+      }
 
       const sumCredits = creditList.reduce((sum, credit) => sum + credit.amount, 0);
       const sumDebits = debitList.reduce((sum, credit) => sum + credit.amount, 0);
