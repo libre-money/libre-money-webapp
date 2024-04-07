@@ -17,4 +17,5 @@ export type AccJournalEntry = {
   isMultiCurrency: boolean;
   isBalanced: boolean;
   currencyIdList: string[];
+  modality: string; // "standard", "opening"
 };

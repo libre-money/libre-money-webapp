@@ -1,15 +1,41 @@
 import { AccDefaultAccounts } from "src/constants/accounting-constants";
+import { Collection, RecordType } from "src/constants/constants";
 import { AccAccount } from "src/models/accounting/acc-account";
-import { dataInferenceService } from "./data-inference-service";
-import { pouchdbService } from "./pouchdb-service";
-import { Collection, RecordType, assetLiquidityList, walletTypeList } from "src/constants/constants";
-import { Record as SourceRecord } from "src/models/record";
 import { AccDebitOrCredit, AccJournalEntry } from "src/models/accounting/acc-journal-entry";
-import { asAmount } from "src/utils/misc-utils";
+import { Asset } from "src/models/asset";
 import { Currency } from "src/models/currency";
 import { InferredRecord } from "src/models/inferred/inferred-record";
+import { Record as SourceRecord } from "src/models/record";
+import { Wallet } from "src/models/wallet";
+import { asAmount } from "src/utils/misc-utils";
+import { dataInferenceService } from "./data-inference-service";
+import { pouchdbService } from "./pouchdb-service";
 
 class AccountingService {
+  private flattenCreditOrDebitListOfTheSameCurrency(creditOrDebitList: AccDebitOrCredit[]) {
+    if (creditOrDebitList.length === 0) {
+      return creditOrDebitList;
+    }
+
+    const accountVsBalanceMap: Map<AccAccount, number> = new Map();
+    for (const creditOrDebit of creditOrDebitList) {
+      if (!accountVsBalanceMap.has(creditOrDebit.account)) {
+        accountVsBalanceMap.set(creditOrDebit.account, 0);
+      }
+      accountVsBalanceMap.set(creditOrDebit.account, accountVsBalanceMap.get(creditOrDebit.account)! + creditOrDebit.amount);
+    }
+
+    const flattened: AccDebitOrCredit[] = [];
+    accountVsBalanceMap.forEach((balance, account) => {
+      flattened.push({
+        account,
+        amount: balance,
+        currencyId: creditOrDebitList[0].currencyId,
+      });
+    });
+    return flattened.filter((creditOrDebit) => creditOrDebit.amount > 0).sort((a, b) => a.amount - b.amount);
+  }
+
   private async populateAccountMapAndList() {
     const accountMap: Record<string, AccAccount> = {};
 
@@ -33,6 +59,152 @@ class AccountingService {
     const inferredRecordList = await Promise.all(rawRecordList.map((rawData) => dataInferenceService.inferRecord(rawData)));
     inferredRecordList.sort((a, b) => (a.transactionEpoch || 0) - (b.transactionEpoch || 0));
     return inferredRecordList;
+  }
+
+  private async createOpeningBalanceEntriesForTheBeginningOfTime(accountMap: Record<string, AccAccount>) {
+    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
+    const assetList = (await pouchdbService.listByCollection(Collection.ASSET)).docs as Asset[];
+    const walletList = (await pouchdbService.listByCollection(Collection.WALLET)).docs as Wallet[];
+
+    const liquidityLookup: Record<string, string> = {
+      high: AccDefaultAccounts.ASSET__NON_CURRENT_ASSET__HIGH_LIQUIDITY.code,
+      moderate: AccDefaultAccounts.ASSET__NON_CURRENT_ASSET__MEDIUM_LIQUIDITY.code,
+      low: AccDefaultAccounts.ASSET__NON_CURRENT_ASSET__LOW_LIQUIDITY.code,
+      unsure: AccDefaultAccounts.ASSET__NON_CURRENT_ASSET__UNKNOWN_LIQUIDITY.code,
+    };
+
+    let serialSeed = 0;
+
+    const journalEntryList: AccJournalEntry[] = [];
+    for (const currency of currencyList) {
+      let creditList: AccDebitOrCredit[] = [];
+      let debitList: AccDebitOrCredit[] = [];
+
+      // assets
+      let assetEquity = 0;
+      for (const asset of assetList) {
+        if (asset.currencyId !== currency._id) continue;
+
+        debitList.push({
+          account: accountMap[liquidityLookup[asset.liquidity]],
+          currencyId: asset.currencyId,
+          amount: asAmount(asset.initialBalance),
+        });
+
+        assetEquity += asAmount(asset.initialBalance);
+      }
+      creditList.push({
+        account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
+        currencyId: currency._id!,
+        amount: asAmount(assetEquity),
+      });
+
+      // wallets
+      for (const wallet of walletList) {
+        if (wallet.currencyId !== currency._id) continue;
+
+        if (wallet.type === "credit-card") {
+          if (wallet.initialBalance < 0) {
+            // Credit Card had negative balance, meaning it was a liability
+            creditList.push({
+              account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+              currencyId: wallet.currencyId,
+              amount: asAmount(wallet.initialBalance) * -1,
+            });
+            debitList.push({
+              account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
+              currencyId: currency._id!,
+              amount: asAmount(wallet.initialBalance) * -1,
+            });
+          } else {
+            // Credit Card had advance payment. We have to treat it like an asset OR a contra-liability
+            debitList.push({
+              account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+              currencyId: wallet.currencyId,
+              amount: asAmount(wallet.initialBalance),
+            });
+            creditList.push({
+              account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
+              currencyId: currency._id!,
+              amount: asAmount(wallet.initialBalance),
+            });
+          }
+        } else if (wallet.type === "cash") {
+          // Account for initial negative balance
+          if (wallet.initialBalance < 0) {
+            creditList.push({
+              account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+              currencyId: wallet.currencyId,
+              amount: asAmount(wallet.initialBalance) * -1,
+            });
+            debitList.push({
+              account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
+              currencyId: currency._id!,
+              amount: asAmount(wallet.initialBalance) * -1,
+            });
+          } else {
+            debitList.push({
+              account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+              currencyId: wallet.currencyId,
+              amount: asAmount(wallet.initialBalance),
+            });
+            creditList.push({
+              account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
+              currencyId: currency._id!,
+              amount: asAmount(wallet.initialBalance),
+            });
+          }
+        } else {
+          // Account for initial negative balance
+          if (wallet.initialBalance < 0) {
+            creditList.push({
+              account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+              currencyId: wallet.currencyId,
+              amount: asAmount(wallet.initialBalance) * -1,
+            });
+            debitList.push({
+              account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
+              currencyId: currency._id!,
+              amount: asAmount(wallet.initialBalance) * -1,
+            });
+          } else {
+            debitList.push({
+              account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+              currencyId: wallet.currencyId,
+              amount: asAmount(wallet.initialBalance),
+            });
+            creditList.push({
+              account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
+              currencyId: currency._id!,
+              amount: asAmount(wallet.initialBalance),
+            });
+          }
+        }
+      }
+
+      creditList = this.flattenCreditOrDebitListOfTheSameCurrency(creditList);
+      debitList = this.flattenCreditOrDebitListOfTheSameCurrency(debitList);
+
+      const { currencyIdList, isMultiCurrency, isBalanced } = await this.checkJournalEntryBalance(debitList, creditList);
+
+      const description = "Calculated Opening Balances from Assets and Liabilities";
+
+      const journalEntry: AccJournalEntry = {
+        modality: "opening",
+        serial: serialSeed++,
+        entryEpoch: 0,
+        creditList,
+        debitList,
+        description,
+        notes: "",
+        isMultiCurrency,
+        isBalanced,
+        currencyIdList,
+      };
+      journalEntryList.push(journalEntry);
+    }
+
+    return journalEntryList;
   }
 
   private async convertExpense(record: InferredRecord, accountMap: Record<string, AccAccount>) {
@@ -638,6 +810,7 @@ class AccountingService {
     }
 
     const journalEntry: AccJournalEntry = {
+      modality: "standard",
       serial,
       entryEpoch: record.transactionEpoch,
       creditList,
@@ -673,12 +846,15 @@ class AccountingService {
     // Populate all accounting heads
     const { accountMap, accountList } = await this.populateAccountMapAndList();
 
-    // Populate Opening Balances
+    // Journal Entry List
     const journalEntryList: AccJournalEntry[] = [];
+
+    // Populate Opening Balances
+    journalEntryList.push(...(await this.createOpeningBalanceEntriesForTheBeginningOfTime(accountMap)));
 
     // Populate Journal from Records
     const inferredRecordList = await this.prepareInferredRecordList();
-    let serialSeed = 0;
+    let serialSeed = journalEntryList.length;
     for (const record of inferredRecordList) {
       const journalEntry = await this.covertInferredRecordToJournalEntry(record, serialSeed++, accountMap);
       journalEntryList.push(journalEntry);

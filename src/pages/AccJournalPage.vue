@@ -14,15 +14,23 @@
         </div>
         <template v-for="journalEntry in journalEntryList" v-bind:key="journalEntry.serial">
           <div class="journal-entry row">
-            <div class="date">{{ prettifyDate(journalEntry.entryEpoch) }}</div>
+            <div class="date">
+              {{ prettifyDate(journalEntry.entryEpoch) }}
+            </div>
             <div class="particulars-container">
               <div class="debit-row row" v-for="debit in journalEntry.debitList" v-bind:key="debit.account">
-                <div class="debit-text">{{ debit.account.name }}</div>
+                <div class="debit-text">
+                  {{ debit.account.name }}
+                  <span v-if="journalEntry.modality === 'opening'">({{ debit.account.type }})</span>
+                </div>
                 <div class="debit-sum">{{ debit.amount }}&nbsp;{{ debit._currencySign }}</div>
                 <div class="column-spacer"></div>
               </div>
               <div class="credit-row row" v-for="credit in journalEntry.creditList" v-bind:key="credit.account">
-                <div class="credit-text">{{ credit.account.name }}</div>
+                <div class="credit-text">
+                  {{ credit.account.name }}
+                  <span v-if="journalEntry.modality === 'opening'">({{ credit.account.type }})</span>
+                </div>
                 <div class="column-spacer"></div>
                 <div class="credit-sum">{{ credit.amount }}&nbsp;{{ credit._currencySign }}</div>
               </div>
