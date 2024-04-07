@@ -72,7 +72,7 @@ async function loadData() {
 
   console.log({ _journalEntryList });
 
-  journalEntryList.value = _journalEntryList.slice(0, 100);
+  journalEntryList.value = _journalEntryList;
 
   isLoading.value = false;
 }

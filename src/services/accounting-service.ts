@@ -144,6 +144,82 @@ class AccountingService {
           description += "Unpaid. ";
         }
       }
+      // ================ MONEY TRANSFER
+      else if (record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer) {
+        const { moneyTransfer } = record;
+        console.log(record);
+
+        // Source
+        if (moneyTransfer.fromWallet.type === "credit-card") {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+            currencyId: moneyTransfer.fromCurrencyId,
+            amount: asAmount(moneyTransfer.fromAmount),
+          });
+        } else if (moneyTransfer.fromWallet.type === "cash") {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+            currencyId: moneyTransfer.fromCurrencyId,
+            amount: asAmount(moneyTransfer.fromAmount),
+          });
+        } else {
+          creditList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+            currencyId: moneyTransfer.fromCurrencyId,
+            amount: asAmount(moneyTransfer.fromAmount),
+          });
+        }
+
+        // Target
+        if (moneyTransfer.toWallet.type === "credit-card") {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+            currencyId: moneyTransfer.toCurrencyId,
+            amount: asAmount(moneyTransfer.toAmount),
+          });
+        } else if (moneyTransfer.toWallet.type === "cash") {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+            currencyId: moneyTransfer.toCurrencyId,
+            amount: asAmount(moneyTransfer.toAmount),
+          });
+        } else {
+          debitList.push({
+            account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+            currencyId: moneyTransfer.toCurrencyId,
+            amount: asAmount(moneyTransfer.toAmount),
+          });
+        }
+
+        if (moneyTransfer.fromAmount === moneyTransfer.toAmount && moneyTransfer.fromCurrencyId === moneyTransfer.toCurrencyId) {
+          description += `Transfered ${dataInferenceService.getPrintableAmount(moneyTransfer.fromAmount, moneyTransfer.fromCurrencyId)} from 
+          "${moneyTransfer.fromWallet.name}" to "${moneyTransfer.toWallet.name}". `;
+        } else {
+          description += `Transfered ${dataInferenceService.getPrintableAmount(moneyTransfer.fromAmount, moneyTransfer.fromCurrencyId)} from 
+          "${moneyTransfer.fromWallet.name}" into ${dataInferenceService.getPrintableAmount(moneyTransfer.toAmount, moneyTransfer.toCurrencyId)}
+           on "${moneyTransfer.toWallet.name}". `;
+        }
+
+        if (moneyTransfer.toCurrencyId === moneyTransfer.fromCurrencyId) {
+          if (asAmount(moneyTransfer.fromAmount) > asAmount(moneyTransfer.toAmount)) {
+            const diff = asAmount(moneyTransfer.fromAmount) - asAmount(moneyTransfer.toAmount);
+            debitList.push({
+              account: accountMap[AccDefaultAccounts.EXPENSE__MINOR_ADJUSTMENT.code],
+              currencyId: moneyTransfer.toCurrencyId,
+              amount: diff,
+            });
+            description += `Transfer fee: ${dataInferenceService.getPrintableAmount(diff, moneyTransfer.toCurrencyId)}. `;
+          } else if (asAmount(moneyTransfer.fromAmount) < asAmount(moneyTransfer.toAmount)) {
+            const diff = asAmount(moneyTransfer.toAmount) - asAmount(moneyTransfer.fromAmount);
+            debitList.push({
+              account: accountMap[AccDefaultAccounts.INCOME__MINOR_ADJUSTMENT.code],
+              currencyId: moneyTransfer.toCurrencyId,
+              amount: diff,
+            });
+            description += `Gained during transfer: ${dataInferenceService.getPrintableAmount(diff, moneyTransfer.toCurrencyId)}. `;
+          }
+        }
+      }
 
       const sumCredits = creditList.reduce((sum, credit) => sum + credit.amount, 0);
       const sumDebits = debitList.reduce((sum, credit) => sum + credit.amount, 0);
