@@ -1,5 +1,29 @@
 <template>
-  <q-page class="row items-start justify-evenly">
+  <q-page class="column items-center justify-start">
+    <!-- Filter - Start -->
+    <q-card class="std-card">
+      <div class="title-row q-pa-md q-gutter-sm">
+        <q-btn color="secondary" icon="filter_list" flat round @click="setFiltersClicked" />
+        <div class="title">
+          Journal
+          <div class="subtitle" v-if="filters">
+            <span v-if="filters.startEpoch === 0">
+              <span v-if="journalEntryList.length > 0">
+                {{ prettifyDate(journalEntryList[0].entryEpoch) }} to {{ prettifyDate(filters.endEpoch) }}
+              </span>
+              <span v-else>
+                Up to {{ prettifyDate(filters.endEpoch) }}
+              </span>
+            </span>
+            <span v-else>
+              {{ prettifyDate(filters.startEpoch) }} to {{ prettifyDate(filters.endEpoch) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </q-card>
+    <!-- Filter - End -->
 
     <!-- Journal - Start -->
     <q-card class="std-card" v-if="!isLoading && journalEntryList.length > 0">
@@ -39,7 +63,10 @@
                   <div>{{ journalEntry.description }}</div>
                   <div v-if="journalEntry.notes">{{ journalEntry.notes }}</div>
                   <div v-if="!journalEntry.isBalanced && !journalEntry.isMultiCurrency" class="warning">
-                    Journal is NOT balanced.
+                    Journal entry is NOT balanced.
+                  </div>
+                  <div v-if="!journalEntry.isBalanced && journalEntry.isMultiCurrency" class="multi-currency-note">
+                    Journal is multi-currency and thereby is not balanced.
                   </div>
                 </div>
                 <div class="column-spacer"></div>
@@ -61,34 +88,65 @@ import { useQuasar } from "quasar";
 import { AccJournalEntry } from "src/models/accounting/acc-journal-entry";
 import { Record } from "src/models/record";
 import { accountingService } from "src/services/accounting-service";
-import { Ref, ref } from "vue";
-import { prettifyDate, prettifyDateTime, sleep } from "src/utils/misc-utils";
+import { Ref, ref, watch } from "vue";
+import { deepClone, prettifyDate, prettifyDateTime, sleep } from "src/utils/misc-utils";
+import { Collection, dateRangePresetList, defaultPartyType, partyTypeList } from "src/constants/constants";
+import DateInput from "src/components/lib/DateInput.vue";
+import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
+import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
+import FilterAccJournalDialog from "src/components/FilterAccJournalDialog.vue";
+
+const getDefaultFilters = () => {
+  return {
+    startEpoch: 0,
+    endEpoch: Date.now()
+  };
+};
 
 const $q = useQuasar();
 
 // ----- Refs
 const isLoading = ref(false);
+
+let fullJournalEntryList: AccJournalEntry[] = ([]);
+let filteredJournalEntryList: AccJournalEntry[] = ([]);
 const journalEntryList: Ref<AccJournalEntry[]> = ref([]);
 
+const filters: Ref<AccJournalFilters> = ref(getDefaultFilters());
 
 // ----- Functions
 async function loadData() {
   isLoading.value = true;
 
-  const {
-    accountMap,
-    accountList,
-    journalEntryList: _journalEntryList,
-  } = await accountingService.initiateAccounting();
+  if (fullJournalEntryList.length === 0) {
+    const {
+      accountMap,
+      accountList,
+      journalEntryList,
+    } = await accountingService.initiateAccounting();
 
-  console.log({ _journalEntryList });
+    fullJournalEntryList = journalEntryList;
+    console.log({ fullJournalEntryList });
+  }
 
-  journalEntryList.value = _journalEntryList;
+  filteredJournalEntryList = await accountingService.applyJournalFilters(fullJournalEntryList, filters.value);
+
+  journalEntryList.value = filteredJournalEntryList;
 
   isLoading.value = false;
 }
 
+
 // ----- Event Handlers
+
+
+async function setFiltersClicked() {
+  $q.dialog({ component: FilterAccJournalDialog, componentProps: { inputFilters: deepClone(filters.value) } }).onOk((res: AccJournalFilters) => {
+    filters.value = res;
+    loadData();
+  });
+}
+
 
 
 // ----- Computed and Embedded
@@ -102,6 +160,10 @@ loadData();
 </script>
 
 <style scoped lang="scss">
+.subtitle {
+  font-size: 12px;
+}
+
 .journal-presentation {
   width: 100%;
 
@@ -111,6 +173,7 @@ loadData();
     background-color: #37474f;
     color: white;
     margin-bottom: 12px;
+    flex-wrap: nowrap;
 
     .date-head {
       width: 100px;
@@ -121,9 +184,11 @@ loadData();
 
     .particulars-container-head {
       flex: 1;
+      flex-wrap: nowrap;
 
       .particulars-head {
         flex: 1;
+        flex-wrap: nowrap;
         padding: 4px;
         border: 1px solid rgb(220, 220, 220);
         border-collapse: collapse;
@@ -149,6 +214,7 @@ loadData();
     width: 100%;
     align-items: stretch;
     margin-bottom: 12px;
+    flex-wrap: nowrap;
 
     .date {
       width: 100px;
@@ -164,6 +230,7 @@ loadData();
       .credit-row,
       .notes-row {
         flex: 1;
+        flex-wrap: nowrap;
       }
 
       .debit-text,
@@ -191,6 +258,10 @@ loadData();
 
       .warning {
         color: #f4511e;
+      }
+
+      .multi-currency-note {
+        color: #1976d2;
       }
     }
   }

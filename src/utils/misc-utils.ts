@@ -14,9 +14,14 @@ export function asAmount(amount: number | string | null | undefined) {
   return parseFloat(String(amount)) || 0;
 }
 
+export function asFinancialAmount(amount: number | string | null | undefined) {
+  return Math.round(parseFloat(String(amount)) * 1000) / 1000 || 0;
+}
+
 function hexToRgb(hex: any) {
   // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  // @ts-ignore
   hex = hex.replace(shorthandRegex, function (m, r, g, b) {
     return r + r + g + g + b + b;
   });
