@@ -104,6 +104,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import("pages/AccJournalPage.vue"),
         meta: { requiresAuthentication: true, title: "Journal", rememberable: true },
       },
+      {
+        path: "accounting/accounts",
+        name: "acc-accounts",
+        component: () => import("pages/AccAccountsPage.vue"),
+        meta: { requiresAuthentication: true, title: "Accounts", rememberable: true },
+      },
+      {
+        path: "accounting/ledger",
+        name: "acc-ledger",
+        component: () => import("pages/AccLedgerPage.vue"),
+        meta: { requiresAuthentication: true, title: "Ledger", rememberable: false },
+      },
       // --- Misc:
       {
         path: "memos",

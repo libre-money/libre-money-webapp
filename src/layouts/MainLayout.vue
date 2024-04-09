@@ -176,7 +176,7 @@ const accountingList = [
     title: "Chart of Accounts",
     caption: "",
     icon: "calculate",
-    link: "#/accounting/chart-of-accounts",
+    link: "#/accounting/accounts",
   },
   {
     title: "Journal",
