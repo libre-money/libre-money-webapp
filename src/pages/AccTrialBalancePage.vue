@@ -28,7 +28,7 @@
         v-bind:key="trialBalanceWithCurrency.currencyId">
 
         <div class="fin-presentation-container q-pa-md" v-for="aType in AccTypeList" v-bind:key="aType">
-          <div class="fin-presentation-title">{{ aType }}</div>
+          <div class="fin-presentation-title">{{ aType }}&nbsp;({{ trialBalanceWithCurrency._currency!.name }})</div>
           <div class="fin-presentation">
             <div class="fin-presentation-head-container row">
               <div class="fin-presentation-head-textual particulars-head">Account</div>
