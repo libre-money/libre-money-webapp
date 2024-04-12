@@ -6,7 +6,7 @@
         <q-btn color="secondary" icon="filter_list" flat round @click="setFiltersClicked" />
         <div class="title">
           {{ ledger.account.name }} Ledger
-          <div class="subtitle" v-if="filters">
+          <div class="sub-title" v-if="filters">
             <span v-if="filters.startEpoch === 0">
               <span v-if="ledger.ledgerEntryList.length > 0">
                 {{ prettifyDate(ledger.ledgerEntryList[0].entryEpoch) }} to {{ prettifyDate(filters.endEpoch) }}
@@ -28,27 +28,30 @@
     <!-- Ledger - Start -->
     <q-card class="std-card" v-if="!isLoading && ledger && ledger.ledgerEntryList.length > 0">
       <div class="q-pa-md ledger-presentation">
-        <div class="ledger-head row">
-          <div class="date-head">Date</div>
-          <div class="particulars-container-head row">
-            <div class="particulars-head">Particulars</div>
-            <div class="debit-head">Debit</div>
-            <div class="credit-head">Credit</div>
-            <div class="balance-head">Balance ({{ ledger.isBalanceDebit ? "Debit" : "Credit" }})</div>
+        <div class="fin-presentation-head-container row">
+          <div class="fin-presentation-head-numeric date-head">Date</div>
+          <div class="fin-presentation-head-textual particulars-head">Particulars</div>
+          <div class="fin-presentation-head-numeric debit-head">Debit</div>
+          <div class="fin-presentation-head-numeric credit-head">Credit</div>
+          <div class="fin-presentation-head-numeric balance-head">
+            Balance ({{ ledger.isBalanceDebit ? "Debit" : "Credit" }})
           </div>
         </div>
         <template v-for="ledgerEntry in ledger.ledgerEntryList" v-bind:key="ledgerEntry.serial">
-          <div class="ledger-entry row">
-            <div class="date">
+          <div class="fin-presentation-row ledger-entry row">
+            <div class="fin-presentation-item-numeric date">
               {{ prettifyDate(ledgerEntry.entryEpoch) }}
             </div>
-            <div class="particulars-text">
+            <div class="fin-presentation-item-textual particulars-text">
               {{ ledgerEntry.description }}
               <div v-if="ledgerEntry.notes">{{ ledgerEntry.notes }}</div>
             </div>
-            <div class="debit-sum">{{ ledgerEntry.debitAmount }}&nbsp;{{ ledgerEntry._currencySign }}</div>
-            <div class="credit-sum">{{ ledgerEntry.creditAmount }}&nbsp;{{ ledgerEntry._currencySign }}</div>
-            <div class="balance-sum">{{ ledgerEntry.balance }}&nbsp;{{ ledgerEntry._currencySign }}</div>
+            <div class="fin-presentation-item-numeric debit-sum">{{ ledgerEntry.debitAmount }}&nbsp;{{
+              ledgerEntry._currencySign }}</div>
+            <div class="fin-presentation-item-numeric credit-sum">{{ ledgerEntry.creditAmount }}&nbsp;{{
+              ledgerEntry._currencySign }}</div>
+            <div class="fin-presentation-item-numeric balance-sum">{{ ledgerEntry.balance }}&nbsp;{{
+              ledgerEntry._currencySign }}</div>
           </div>
         </template>
       </div>
@@ -58,16 +61,16 @@
     <!-- Summary - Start -->
     <q-card class="std-card" v-if="!isLoading && ledger && ledger.balanceList.length > 0">
       <div class="q-pa-md balance-presentation">
-        <div class="balance-head row">
-          <div class="currency-head">Currency</div>
-          <div class="balance-head">Total Balance</div>
+        <div class="fin-presentation-head-container balance-head row">
+          <div class="fin-presentation-head-textual currency-head">Currency</div>
+          <div class="fin-presentation-head-numeric balance-head">Total Balance</div>
         </div>
         <template v-for="balanceEntry in ledger.balanceList" v-bind:key="balanceEntry.currencyId">
-          <div class="balance-entry row">
-            <div class="currency">
+          <div class="fin-presentation-row balance-entry row">
+            <div class="fin-presentation-item-textual currency">
               {{ balanceEntry._currency!.name }}
             </div>
-            <div class="balance">
+            <div class="fin-presentation-item-numeric balance">
               {{ balanceEntry.balance }}&nbsp;{{ balanceEntry._currency?.sign }}
             </div>
           </div>
@@ -177,143 +180,12 @@ loadData();
 </script>
 
 <style scoped lang="scss">
-.subtitle {
-  font-size: 12px;
-}
+@import "./../css/finance.scss";
 
-.ledger-presentation {
-  width: 100%;
-
-  .ledger-head {
-    width: 100%;
-    align-items: stretch;
-    background-color: #37474f;
-    color: white;
-    flex-wrap: nowrap;
-
-    .date-head {
-      width: 100px;
-      padding: 4px;
-      border: 1px solid rgb(220, 220, 220);
-      border-collapse: collapse;
-    }
-
-    .particulars-container-head {
-      flex: 1;
-      flex-wrap: nowrap;
-
-      .particulars-head {
-        flex: 1;
-        flex-wrap: nowrap;
-        padding: 4px;
-        border: 1px solid rgb(220, 220, 220);
-        border-collapse: collapse;
-      }
-
-      .debit-head {
-        width: 100px;
-        padding: 4px;
-        border: 1px solid rgb(220, 220, 220);
-        border-collapse: collapse;
-      }
-
-      .credit-head {
-        width: 100px;
-        padding: 4px;
-        border: 1px solid rgb(220, 220, 220);
-        border-collapse: collapse;
-      }
-
-      .balance-head {
-        width: 100px;
-        padding: 4px;
-        border: 1px solid rgb(220, 220, 220);
-        border-collapse: collapse;
-      }
-    }
-  }
-
-  .ledger-entry {
-    width: 100%;
-    align-items: stretch;
-    flex-wrap: nowrap;
-
-    .date {
-      width: 100px;
-      border: 1px solid rgb(220, 220, 220);
-      border-collapse: collapse;
-      padding: 4px;
-    }
-
-    .particulars-text {
-      flex: 1;
-      flex-wrap: nowrap;
-      border: 1px solid rgb(220, 220, 220);
-      border-collapse: collapse;
-      padding: 4px;
-    }
-
-    .debit-sum,
-    .credit-sum,
-    .balance-sum {
-      width: 100px;
-      text-align: right;
-      border: 1px solid rgb(220, 220, 220);
-      border-collapse: collapse;
-      padding: 4px;
-    }
-
-    .warning {
-      color: #f4511e;
-    }
-
-    .multi-currency-note {
-      color: #1976d2;
-    }
-  }
-}
-
-.balance-presentation {
-  .balance-head {
-    width: 100%;
-    align-items: stretch;
-    background-color: #37474f;
-    color: white;
-    flex-wrap: nowrap;
-
-    .currency-head {
-      flex: 1;
-      padding: 4px;
-      border: 1px solid rgb(220, 220, 220);
-      border-collapse: collapse;
-    }
-
-    .balance-head {
-      width: 100px;
-      padding: 4px;
-      border: 1px solid rgb(220, 220, 220);
-      border-collapse: collapse;
-    }
-  }
-
-  .balance-entry {
-    width: 100%;
-    align-items: stretch;
-    flex-wrap: nowrap;
-
-    .currency {
-      flex: 1;
-      padding: 4px;
-      border: 1px solid rgb(220, 220, 220);
-      border-collapse: collapse;
-    }
-
-    .balance {
-      width: 100px;
-      padding: 4px;
-      border: 1px solid rgb(220, 220, 220);
-      border-collapse: collapse;
-    }
-  }
+.debit-total,
+.credit-total,
+.debit-sum,
+.credit-sum {
+  text-align: right;
 }
 </style>
