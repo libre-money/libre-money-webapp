@@ -1247,6 +1247,11 @@ class AccountingService {
 
     await this.closeTrialBalanceWithCurrency(currency, trialBalanceWithCurrency, accountMap);
 
+    Object.keys(trialBalanceWithCurrency.trialBalanceOfTypeMap).forEach((key) => {
+      const tbType = trialBalanceWithCurrency.trialBalanceOfTypeMap[key];
+      tbType.totalBalance = asFinancialAmount(tbType.totalBalance);
+    });
+
     return trialBalanceWithCurrency;
   }
 
