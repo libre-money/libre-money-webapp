@@ -242,7 +242,7 @@ class AccountingService {
     });
     description += `Spent ${dataInferenceService.getPrintableAmount(expense.amount, expense.currencyId)} as "${expense.expenseAvenue.name}". `;
 
-    if (expense.amountPaid > 0 && expense.wallet) {
+    if (expense.amountPaid > 0) {
       if (expense.wallet.type === "credit-card") {
         creditList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
@@ -298,7 +298,7 @@ class AccountingService {
     });
     description += `Earned ${dataInferenceService.getPrintableAmount(income.amount, income.currencyId)} as "${income.incomeSource.name}". `;
 
-    if (income.amountPaid > 0 && income.wallet) {
+    if (income.amountPaid > 0) {
       if (income.wallet.type === "credit-card") {
         debitList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
@@ -522,7 +522,7 @@ class AccountingService {
     });
     description += `Sold asset "${assetSale.asset.name}" for ${dataInferenceService.getPrintableAmount(assetSale.amount, assetSale.currencyId)}. `;
 
-    if (assetSale.amountPaid > 0 && assetSale.wallet) {
+    if (assetSale.amountPaid > 0) {
       if (assetSale.wallet.type === "credit-card") {
         debitList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
@@ -1164,7 +1164,7 @@ class AccountingService {
     console.log(retainedEarnings, gapInPermanentBalance);
 
     if (retainedEarnings !== gapInPermanentBalance) {
-      const message = `The Trial Balance has been generated. However, a mismatch was found regarding Retained Earnings.`;
+      const message = "The Trial Balance has been generated. However, a mismatch was found regarding Retained Earnings.";
       await dialogService.alert("Error", message);
       return;
     }
