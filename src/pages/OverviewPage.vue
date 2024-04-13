@@ -126,7 +126,7 @@ async function loadBudgets() {
 }
 
 async function loadData() {
-  if (!mutexService.acquireLock("OverviewPage/loadData", 3_000)) return;
+  if (!mutexService.acquireLock("OverviewPage/loadData", 2_000)) return;
 
   isLoading.value = true;
 
@@ -139,6 +139,7 @@ async function loadData() {
   await loadingIndicator.value?.waitMinimalDuration(400);
 
   isLoading.value = false;
+  mutexService.releaseLock("OverviewPage/loadData");
 }
 
 // ----- Event Handlers
