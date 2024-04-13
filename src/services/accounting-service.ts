@@ -1161,8 +1161,6 @@ class AccountingService {
         (trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].totalBalance + trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].totalBalance)
     );
 
-    console.log(retainedEarnings, gapInPermanentBalance);
-
     if (retainedEarnings !== gapInPermanentBalance) {
       const message = "The Trial Balance has been generated. However, a mismatch was found regarding Retained Earnings.";
       await dialogService.alert("Error", message);
