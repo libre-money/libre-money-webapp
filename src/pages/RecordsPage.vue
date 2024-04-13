@@ -79,13 +79,13 @@
                 <div class="amount"
                   :class="{ 'amount-out': isRecordOutFlow(record), 'amount-in': isRecordInFlow(record) }">
                   {{ dataInferenceService.getPrintableAmount(getNumber(record, "amount")!, getString(record,
-          "currencyId")!) }}
+                    "currencyId")!) }}
                 </div>
                 <div class="wallet" v-if="getWallet(record)">({{ getWallet(record)!.name }})</div>
                 <div class="unpaid-amount" v-if="getNumber(record, 'amountUnpaid')! > 0">
                   Unpaid:
                   {{ dataInferenceService.getPrintableAmount(getNumber(record, "amountUnpaid")!, getString(record,
-          "currencyId")!) }}
+                    "currencyId")!) }}
                 </div>
                 <div class="controls">
                   <q-btn class="control-button" round color="primary" icon="create" size="8px"
@@ -108,7 +108,7 @@
                 <div class="record-date">{{ prettifyDate(record.transactionEpoch) }}</div>
 
                 <div class="primary-line">Transfer {{ record.moneyTransfer.fromWallet.name }} to {{
-          record.moneyTransfer.toWallet.name }}</div>
+                  record.moneyTransfer.toWallet.name }}</div>
 
                 <div class="notes" v-if="record.notes">{{ record.notes }}</div>
 
@@ -128,14 +128,14 @@
                   <div class="amount-col amount-left-col">
                     <div class="amount amount-out">
                       Out {{ dataInferenceService.getPrintableAmount(record.moneyTransfer.fromAmount,
-          record.moneyTransfer.fromCurrencyId) }}
+                        record.moneyTransfer.fromCurrencyId) }}
                     </div>
                     <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
                   </div>
                   <div class="amount-col amount-right-col">
                     <div class="amount amount-in">
                       In {{ dataInferenceService.getPrintableAmount(record.moneyTransfer.toAmount,
-          record.moneyTransfer.toCurrencyId) }}
+                        record.moneyTransfer.toCurrencyId) }}
                     </div>
                     <div class="wallet">({{ record.moneyTransfer.toWallet.name }})</div>
                   </div>
@@ -241,6 +241,7 @@ import { QuickSummary } from "src/models/inferred/quick-summary";
 import { computationService } from "src/services/computation-service";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import PromisePool from "src/utils/promise-pool";
+import { PROMISE_POOL_CONCURRENCY_LIMT } from "src/constants/config-constants";
 const recordFiltersStore = useRecordFiltersStore();
 
 const $q = useQuasar();
@@ -362,17 +363,18 @@ async function loadData() {
   loadingIndicator.value?.startPhase({ phase: 5, weight: 50, label: "Preparing view" });
 
   let completedCount = 0;
-  let inferredDataRows = await PromisePool.mapList(dataRows, 10, (async (rawData: Record) => {
+  let inferredDataRows = await PromisePool.mapList(dataRows, PROMISE_POOL_CONCURRENCY_LIMT, (async (rawData: Record) => {
     const result = await dataInferenceService.inferRecord(rawData);
     completedCount += 1;
-    if (completedCount % 50 === 0) {
+    if (completedCount % Math.floor(dataRows.length / 10) === 0) {
+      console.log(completedCount / dataRows.length);
       loadingIndicator.value?.setProgress(completedCount / dataRows.length);
     }
     return result;
   }));
-  rows.value = inferredDataRows.slice(startIndex, startIndex + recordCountPerPage);
+  loadingIndicator.value?.setProgress(1);
 
-  loadingIndicator.value?.setProgress(100);
+  rows.value = inferredDataRows.slice(startIndex, startIndex + recordCountPerPage);
 
   isLoading.value = false;
 }

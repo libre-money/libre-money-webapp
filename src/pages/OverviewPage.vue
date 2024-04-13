@@ -138,8 +138,6 @@ async function loadData() {
 
   await loadingIndicator.value?.waitMinimalDuration(400);
 
-  loadingIndicator.value?.setProgress(100);
-
   isLoading.value = false;
 }
 

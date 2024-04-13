@@ -1,5 +1,10 @@
-function mapList<T, U>(list: Array<T>, concurrentLimit: number, processorFn: (a0: T) => Promise<U>, preserveOrder: boolean): Promise<Array<U>> {
+function mapList<T, U>(inputList: Array<T>, concurrentLimit: number, processorFn: (a0: T) => Promise<U>): Promise<Array<U>> {
   return new Promise(async (accept, reject) => {
+    if (inputList.length === 0) {
+      accept([]);
+      return;
+    }
+
     const outputList: Array<U> = [];
 
     let finalPromiseResolved = false;
@@ -9,20 +14,25 @@ function mapList<T, U>(list: Array<T>, concurrentLimit: number, processorFn: (a0
     let completedCount = 0;
 
     function process(input: T) {
+      if (finalPromiseResolved) return;
+
       const localCursor = cursor;
-      console.log("ENTRY", { cursor, localCursor, inProgressCount });
+      // console.debug("PromisePool -> Entry", { localCursor, inProgressCount });
+
       inProgressCount += 1;
       processorFn(input)
         .then((res) => {
-          outputList.push(res);
+          outputList[localCursor] = res;
+
           if (finalPromiseResolved) return;
           completedCount += 1;
           inProgressCount -= 1;
 
-          console.log("FIN", { localCursor, completedCount, inProgressCount });
+          // console.debug("PromisePool -> Single Completion", { localCursor, completedCount, inProgressCount });
 
-          if (completedCount === list.length) {
-            console.log("ALL DONE", outputList);
+          if (completedCount === inputList.length) {
+            // console.debug("PromisePool -> Final Completion", outputList);
+
             if (!finalPromiseResolved) {
               finalPromiseResolved = true;
               accept(outputList);
@@ -30,12 +40,14 @@ function mapList<T, U>(list: Array<T>, concurrentLimit: number, processorFn: (a0
             return;
           }
 
-          if (inProgressCount < concurrentLimit && cursor < list.length) {
-            process(list[cursor]);
+          if (inProgressCount < concurrentLimit && cursor < inputList.length) {
+            process(inputList[cursor]);
             cursor += 1;
           }
         })
         .catch((ex) => {
+          // console.debug("PromisePool -> Rejection", ex);
+
           if (!finalPromiseResolved) {
             finalPromiseResolved = true;
             reject(ex);
@@ -43,8 +55,8 @@ function mapList<T, U>(list: Array<T>, concurrentLimit: number, processorFn: (a0
         });
     }
 
-    for (let i = 0; i < Math.min(concurrentLimit, list.length); i++) {
-      process(list[i]);
+    for (let i = 0; i < Math.min(concurrentLimit, inputList.length); i++) {
+      process(inputList[i]);
       cursor += 1;
     }
 

@@ -1,0 +1,1 @@
+export const PROMISE_POOL_CONCURRENCY_LIMT = 10;
