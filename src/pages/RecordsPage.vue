@@ -39,9 +39,8 @@
             @selection="monthAndYearSelected()"></month-and-year-input>
         </div>
 
-        <div class="loading-notifier" v-if="isLoading">
-          <q-spinner color="primary" size="32px"></q-spinner>
-        </div>
+        <loading-indicator :is-loading="isLoading" :phases="5" ref="loadingIndicator"></loading-indicator>
+
         <template v-if="!isLoading">
           <div v-for="(record, index) in rows" class="record-row" v-bind:key="record._id">
             <!-- Unified Single Amount Record - start -->
@@ -209,7 +208,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Ref, ref, watch } from "vue";
+import { Ref, onMounted, ref, watch } from "vue";
 import { useQuasar } from "quasar";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Record } from "src/models/record";
@@ -217,7 +216,7 @@ import { dialogService } from "src/services/dialog-service";
 import { Collection, RecordType } from "src/constants/constants";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { dataInferenceService } from "src/services/data-inference-service";
-import { deepClone, guessFontColorCode, prettifyAmount, prettifyDate } from "src/utils/misc-utils";
+import { deepClone, guessFontColorCode, prettifyAmount, prettifyDate, sleep } from "src/utils/misc-utils";
 import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
 import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
 import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
@@ -240,6 +239,7 @@ import MonthAndYearInput from "src/components/lib/MonthAndYearInput.vue";
 import { useRecordPaginationSizeStore } from "src/stores/record-pagination";
 import { QuickSummary } from "src/models/inferred/quick-summary";
 import { computationService } from "src/services/computation-service";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 
 const recordFiltersStore = useRecordFiltersStore();
 
@@ -248,8 +248,11 @@ const $q = useQuasar();
 const recordPaginationStore = useRecordPaginationSizeStore();
 
 // ----- Refs
-const searchFilter: Ref<string | null> = ref(null);
 const isLoading = ref(false);
+const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
+
+const searchFilter: Ref<string | null> = ref(null);
+
 const rows: Ref<InferredRecord[]> = ref([]);
 
 const recordCountPerPage = recordPaginationStore.recordPaginationSize;
@@ -269,8 +272,10 @@ const quickSummaryList: Ref<QuickSummary[]> = ref([]);
 async function loadData() {
   isLoading.value = true;
 
+  loadingIndicator.value?.startPhase({ phase: 1, weight: 10, label: "Updating cache" });
   await dataInferenceService.updateCurrencyCache();
 
+  loadingIndicator.value?.startPhase({ phase: 2, weight: 30, label: "Filtering records" });
   let dataRows = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
 
   if (recordFilters.value) {
@@ -329,6 +334,7 @@ async function loadData() {
 
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
 
+    loadingIndicator.value?.startPhase({ phase: 3, weight: 10, label: "Generating summary" });
     quickSummaryList.value = await computationService.computeQuickSummary(startEpoch, endEpoch, dataRows);
   } else {
     let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
@@ -339,9 +345,11 @@ async function loadData() {
     let [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
 
+    loadingIndicator.value?.startPhase({ phase: 3, weight: 10, label: "Generating summary" });
     quickSummaryList.value = await computationService.computeQuickSummary(rangeStart.getTime(), rangeEnd.getTime(), dataRows);
   }
 
+  loadingIndicator.value?.startPhase({ phase: 4, weight: 10, label: "Sorting" });
   dataRows.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
 
   paginationMaxPage.value = Math.ceil(dataRows.length / recordCountPerPage);
@@ -351,8 +359,11 @@ async function loadData() {
 
   let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
 
+  loadingIndicator.value?.startPhase({ phase: 5, weight: 50, label: "Preparing view" });
   let inferredDataRows = await Promise.all(dataRows.map((rawData) => dataInferenceService.inferRecord(rawData)));
   rows.value = inferredDataRows.slice(startIndex, startIndex + recordCountPerPage);
+
+  loadingIndicator.value?.setProgress(100);
 
   isLoading.value = false;
 }
@@ -549,7 +560,10 @@ watch(paginationCurrentPage, (currentPage, previousPage) => {
 
 // ----- Execution
 
-loadData();
+onMounted(() => {
+  loadData();
+});
+
 </script>
 
 <style scoped lang="scss">

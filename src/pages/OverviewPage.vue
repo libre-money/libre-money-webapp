@@ -6,11 +6,7 @@
       <q-btn icon="refresh" flat round size="lg" @click="reloadClicked" style="margin-top: -32px;" />
     </div>
 
-    <div class="q-pa-md" v-if="isLoading">
-      <div class="loading-notifier">
-        <q-spinner color="primary" size="64px" style="margin-top: 100px;"></q-spinner>
-      </div>
-    </div>
+    <loading-indicator :is-loading="isLoading" :phases="2" ref="loadingIndicator"></loading-indicator>
 
     <q-card class="std-card" v-if="!isLoading && !overview">
       <div class="q-pa-md q-gutter-sm">
@@ -89,15 +85,18 @@ import { computationService } from "src/services/computation-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
-import { prettifyAmount } from "src/utils/misc-utils";
-
+import { prettifyAmount, sleep, suppress } from "src/utils/misc-utils";
 import debounceAsync from "src/utils/debounce";
-import { Ref, ref, watch } from "vue";
+import { Ref, onMounted, ref, watch } from "vue";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 
 const $q = useQuasar();
 const settingsStore = useSettingsStore();
 
 // ----- Refs
+
+const isLoading = ref(true);
+const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
 const recordCurrencyId: Ref<string | null> = ref(settingsStore.defaultCurrencyId);
 
@@ -106,9 +105,9 @@ const endEpoch: Ref<number> = ref(Date.now());
 const overview: Ref<Overview | null> = ref(null);
 const budgetList: Ref<Budget[]> = ref([]);
 
-const isLoading = ref(false);
-
 // ----- Functions
+
+const entryDebouncer = debounceAsync((async () => await sleep(100)), 1000, { leading: false });
 
 async function loadOverview() {
   let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
@@ -125,20 +124,20 @@ async function loadBudgets() {
   budgetList.value = newBudgetList;
 }
 
-const loadOverviewDebounced = debounceAsync(loadOverview, 1000, { leading: false });
-
 async function loadData() {
+  if (await suppress(entryDebouncer)) {
+    return;
+  }
+
   isLoading.value = true;
 
-  try {
-    await loadOverviewDebounced();
-  } catch (ex) {
-    if (ex && (ex as Error).message.indexOf("Debounced") > -1) {
-      return;
-    }
-    throw ex;
-  }
+  loadingIndicator.value?.startPhase({ phase: 1, weight: 40, label: "Loading budgets" });
   await loadBudgets();
+
+  loadingIndicator.value?.startPhase({ phase: 2, weight: 60, label: "Preparing overview" });
+  await loadOverview();
+
+  loadingIndicator.value?.setProgress(100);
 
   isLoading.value = false;
 }
@@ -172,7 +171,9 @@ watch(recordCurrencyId, (newValue, __) => {
 
 // ----- Execution
 
-loadData();
+onMounted(() => {
+  loadData();
+});
 
 </script>
 

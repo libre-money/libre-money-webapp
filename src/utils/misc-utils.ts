@@ -1,5 +1,15 @@
 import { date } from "quasar";
 
+// eslint-disable-next-line @typescript-eslint/ban-types
+export async function suppress(fn: Function | (() => Promise<any>)) {
+  try {
+    await fn();
+    return false;
+  } catch (ex) {
+    return true;
+  }
+}
+
 export async function sleep(duration: number) {
   return new Promise((accept) => {
     setTimeout(accept, duration);
