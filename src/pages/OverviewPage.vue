@@ -76,24 +76,25 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import SelectCurrency from "src/components/SelectCurrency.vue";
 import { Collection } from "src/constants/constants";
 import { Budget } from "src/models/budget";
 import { Overview } from "src/models/inferred/overview";
 import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
+import { mutexService } from "src/services/mutex-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
-import { prettifyAmount, sleep, suppress } from "src/utils/misc-utils";
-import debounceAsync from "src/utils/debounce";
+import { prettifyAmount } from "src/utils/misc-utils";
 import { Ref, onMounted, ref, watch } from "vue";
-import LoadingIndicator from "src/components/LoadingIndicator.vue";
 
 const $q = useQuasar();
 const settingsStore = useSettingsStore();
 
 // ----- Refs
+const isMounted = ref(false);
 
 const isLoading = ref(true);
 const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
@@ -106,8 +107,6 @@ const overview: Ref<Overview | null> = ref(null);
 const budgetList: Ref<Budget[]> = ref([]);
 
 // ----- Functions
-
-const entryDebouncer = debounceAsync((async () => await sleep(100)), 1000, { leading: false });
 
 async function loadOverview() {
   let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
@@ -125,9 +124,7 @@ async function loadBudgets() {
 }
 
 async function loadData() {
-  if (await suppress(entryDebouncer)) {
-    return;
-  }
+  if (!mutexService.acquireLock("OverviewPage/loadData", 3_000)) return;
 
   isLoading.value = true;
 
@@ -165,13 +162,16 @@ function printUsedPercentage(budget: Budget) {
 
 watch(recordCurrencyId, (newValue, __) => {
   if (newValue) {
-    loadData();
+    if (isMounted.value) {
+      loadData();
+    }
   }
 });
 
 // ----- Execution
 
 onMounted(() => {
+  isMounted.value = true;
   loadData();
 });
 
