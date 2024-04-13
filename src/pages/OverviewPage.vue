@@ -6,7 +6,9 @@
       <q-btn icon="refresh" flat round size="lg" @click="reloadClicked" style="margin-top: -32px;" />
     </div>
 
-    <loading-indicator :is-loading="isLoading" :phases="2" ref="loadingIndicator"></loading-indicator>
+    <q-card class="std-card q-pa-md" :hidden="!isLoading">
+      <loading-indicator :is-loading="isLoading" :phases="2" ref="loadingIndicator"></loading-indicator>
+    </q-card>
 
     <q-card class="std-card" v-if="!isLoading && !overview">
       <div class="q-pa-md q-gutter-sm">
@@ -133,6 +135,8 @@ async function loadData() {
 
   loadingIndicator.value?.startPhase({ phase: 2, weight: 60, label: "Preparing overview" });
   await loadOverview();
+
+  await loadingIndicator.value?.waitMinimalDuration(400);
 
   loadingIndicator.value?.setProgress(100);
 

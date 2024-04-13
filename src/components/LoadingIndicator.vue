@@ -1,5 +1,6 @@
 <script setup lang="ts">
 
+import { sleep } from "src/utils/misc-utils";
 import { Ref, computed, ref } from "vue";
 
 const props = defineProps({
@@ -18,6 +19,8 @@ const props = defineProps({
   },
 });
 
+let startEpoch = 0;
+
 const totalPercentage: Ref<number> = ref(0);
 
 let currentWeight = 0;
@@ -29,6 +32,8 @@ const currentLabel: Ref<string> = ref("");
 
 const startPhase = (params: { phase: number, label: string, weight: number; }) => {
   if (params.phase === 1) {
+    totalPercentage.value = 0;
+    startEpoch = Date.now();
     pastWeights = 0;
   }
   pastWeights += currentWeight;
@@ -44,9 +49,17 @@ const setProgress = (progressFraction: number) => {
   totalPercentage.value = pastWeights + currentPhasePercentageConsideringWeight;
 };
 
+const waitMinimalDuration = async (minimumDelayMillis: number) => {
+  const diff = minimumDelayMillis - (Date.now() - startEpoch);
+  if (diff > 0) {
+    await sleep(diff);
+  }
+};
+
 defineExpose({
   startPhase,
-  setProgress
+  setProgress,
+  waitMinimalDuration
 });
 
 </script>
