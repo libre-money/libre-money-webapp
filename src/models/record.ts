@@ -108,4 +108,5 @@ export type Record = {
     _toCurrencySign?: string;
   };
   modifiedByUsername?: string;
+  modifiedEpoch?: number;
 };

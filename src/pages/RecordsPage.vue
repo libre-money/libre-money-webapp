@@ -79,13 +79,13 @@
                 <div class="amount"
                   :class="{ 'amount-out': isRecordOutFlow(record), 'amount-in': isRecordInFlow(record) }">
                   {{ dataInferenceService.getPrintableAmount(getNumber(record, "amount")!, getString(record,
-                    "currencyId")!) }}
+          "currencyId")!) }}
                 </div>
                 <div class="wallet" v-if="getWallet(record)">({{ getWallet(record)!.name }})</div>
                 <div class="unpaid-amount" v-if="getNumber(record, 'amountUnpaid')! > 0">
                   Unpaid:
                   {{ dataInferenceService.getPrintableAmount(getNumber(record, "amountUnpaid")!, getString(record,
-                    "currencyId")!) }}
+          "currencyId")!) }}
                 </div>
                 <div class="controls">
                   <q-btn class="control-button" round color="primary" icon="create" size="8px"
@@ -108,7 +108,7 @@
                 <div class="record-date">{{ prettifyDate(record.transactionEpoch) }}</div>
 
                 <div class="primary-line">Transfer {{ record.moneyTransfer.fromWallet.name }} to {{
-                  record.moneyTransfer.toWallet.name }}</div>
+          record.moneyTransfer.toWallet.name }}</div>
 
                 <div class="notes" v-if="record.notes">{{ record.notes }}</div>
 
@@ -128,14 +128,14 @@
                   <div class="amount-col amount-left-col">
                     <div class="amount amount-out">
                       Out {{ dataInferenceService.getPrintableAmount(record.moneyTransfer.fromAmount,
-                        record.moneyTransfer.fromCurrencyId) }}
+          record.moneyTransfer.fromCurrencyId) }}
                     </div>
                     <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
                   </div>
                   <div class="amount-col amount-right-col">
                     <div class="amount amount-in">
                       In {{ dataInferenceService.getPrintableAmount(record.moneyTransfer.toAmount,
-                        record.moneyTransfer.toCurrencyId) }}
+          record.moneyTransfer.toCurrencyId) }}
                     </div>
                     <div class="wallet">({{ record.moneyTransfer.toWallet.name }})</div>
                   </div>
@@ -280,7 +280,7 @@ async function loadData() {
   let dataRows = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
 
   if (recordFilters.value) {
-    let { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, walletId, searchString } = recordFilters.value;
+    let { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, walletId, searchString, deepSearchString } = recordFilters.value;
 
     let [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
 
@@ -330,7 +330,11 @@ async function loadData() {
     }
 
     if (searchString && searchString.length > 0) {
-      dataRows = dataRows.filter((record) => record.notes && String(record.notes).indexOf(searchString) > -1);
+      dataRows = dataRows.filter((record) => record.notes && String(record.notes).toLocaleLowerCase().indexOf(searchString.toLocaleLowerCase()) > -1);
+    }
+
+    if (deepSearchString && deepSearchString.length > 0) {
+      dataRows = dataRows.filter((record) => JSON.stringify(record).toLocaleLowerCase().indexOf(deepSearchString.toLocaleLowerCase()) > -1);
     }
 
     dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
@@ -351,7 +355,11 @@ async function loadData() {
   }
 
   loadingIndicator.value?.startPhase({ phase: 4, weight: 10, label: "Sorting" });
-  dataRows.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
+  if (!recordFilters.value || recordFilters.value.sortBy === "transactionEpochDesc") {
+    dataRows.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
+  } else {
+    dataRows.sort((a, b) => (b.modifiedEpoch || 0) - (a.modifiedEpoch || 0));
+  }
 
   paginationMaxPage.value = Math.ceil(dataRows.length / recordCountPerPage);
   if (paginationCurrentPage.value > paginationMaxPage.value) {

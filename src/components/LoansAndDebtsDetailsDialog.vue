@@ -59,19 +59,12 @@
 </template>
 
 <script lang="ts">
-import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
-import { validators } from "src/utils/validators";
-import { Collection, defaultPartyType, partyTypeList } from "src/constants/constants";
-import { Party } from "src/models/party";
-import { pouchdbService } from "src/services/pouchdb-service";
-import { RecordFilters } from "src/models/inferred/record-filters";
-import DateInput from "src/components/lib/DateInput.vue";
-import SelectRecordType from "./SelectRecordType.vue";
-import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
-import SelectParty from "./SelectParty.vue";
+import { useDialogPluginComponent } from "quasar";
+import { partyTypeList } from "src/constants/constants";
 import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
-import { asAmount, prettifyAmount } from "src/utils/misc-utils";
+import { prettifyAmount } from "src/utils/misc-utils";
+import { validators } from "src/utils/validators";
+import { Ref, ref } from "vue";
 
 export default {
   props: {

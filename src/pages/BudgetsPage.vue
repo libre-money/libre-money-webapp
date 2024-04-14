@@ -51,20 +51,20 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, ref, watch } from "vue";
-import { Collection, RecordType, rowsPerPageOptions } from "./../constants/constants";
 import { useQuasar } from "quasar";
-import AddBudget from "./../components/AddBudget.vue";
-import { pouchdbService } from "src/services/pouchdb-service";
 import { Budget } from "src/models/budget";
-import { dialogService } from "src/services/dialog-service";
-import { prettifyAmount, sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
-import { computationService } from "src/services/computation-service";
-import { usePaginationSizeStore } from "src/stores/pagination";
 import { RecordFilters } from "src/models/inferred/record-filters";
+import { computationService } from "src/services/computation-service";
+import { dialogService } from "src/services/dialog-service";
+import { pouchdbService } from "src/services/pouchdb-service";
+import { usePaginationSizeStore } from "src/stores/pagination";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
+import { prettifyAmount } from "src/utils/misc-utils";
+import { Ref, defineComponent, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import AddBudget from "./../components/AddBudget.vue";
+import { Collection, RecordType, rowsPerPageOptions } from "./../constants/constants";
 
 export default defineComponent({
   name: "BudgetsPage",
@@ -252,6 +252,8 @@ export default defineComponent({
         tagIdWhiteList: budget.tagIdWhiteList,
         tagIdBlackList: budget.tagIdBlackList,
         searchString: "",
+        deepSearchString: "",
+        sortBy: "transactionEpochDesc"
       };
       recordFiltersStore.setRecordFilters(recordFilter);
       router.push({ name: "records" });

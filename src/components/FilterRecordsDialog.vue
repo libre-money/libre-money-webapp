@@ -2,7 +2,7 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
     <q-card class="q-dialog-plugin">
       <q-card-section v-if="recordFilters">
-        <div class="std-dialog-title q-pa-md">Record Filters</div>
+        <div class="std-dialog-title" style="padding-bottom: 8px;">Filters</div>
         <q-select filled v-model="selectedPreset" :options="dateRangePresetList" label="Preset" emit-value
           map-options />
         <div class="row no-wrap" style="margin-top: 8px">
@@ -12,54 +12,54 @@
             style="margin-left: 4px"></date-input>
         </div>
         <br />
-        <select-record-type v-model="recordFilters.recordTypeList" />
         <div style="margin-top: -12px">
+          <select-record-type v-model="recordFilters.recordTypeList" />
+        </div>
+        <div style="margin-top: -20px">
           <select-party v-model="recordFilters.partyId" :mandatory="false"></select-party>
         </div>
-        <div style="margin-top: -12px">
-          <select-tag v-model="recordFilters.tagIdWhiteList" label="Only include records with these tags"></select-tag>
+        <div style="margin-top: -20px">
+          <select-tag v-model="recordFilters.tagIdWhiteList" label="Include only if contains tags"></select-tag>
         </div>
-        <div style="margin-top: -12px">
-          <select-tag v-model="recordFilters.tagIdBlackList" label="Exclude records with these tags"></select-tag>
+        <div style="margin-top: -20px">
+          <select-tag v-model="recordFilters.tagIdBlackList" label="Exclude if contains tags"></select-tag>
         </div>
-        <div style="margin-top: -12px">
+        <div style="margin-top: -20px">
           <select-wallet v-model="recordFilters.walletId"></select-wallet>
         </div>
-        <div style="margin-top: -12px">
+        <div style="margin-top: -20px">
           <q-input filled v-model="recordFilters.searchString" label="Search in notes" />
+        </div>
+        <div style="margin-top: 12px">
+          <q-input filled v-model="recordFilters.deepSearchString" label="Deep search (advanced)" />
+        </div>
+        <div style="margin-top: 12px; margin-bottom: 12px">
+          <q-select filled v-model="recordFilters.sortBy" :options="sortByTypeList" label="Sort by" emit-value
+            map-options />
         </div>
       </q-card-section>
 
-      <q-card-actions class="row justify-end">
+      <q-card-actions class="row justify-start std-bottom-action-row-alt">
         <q-btn color="blue-grey" label="Cancel" @click="cancelClicked" />
-        <q-btn color="primary" label="OK" @click="okClicked" />
+        <div class="spacer"></div>
+        <q-btn color="primary" label="Apply Filters" @click="okClicked" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script lang="ts">
-import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref, watch } from "vue";
-import { validators } from "src/utils/validators";
-import { Collection, dateRangePresetList, defaultPartyType, partyTypeList } from "src/constants/constants";
-import { Party } from "src/models/party";
-import { pouchdbService } from "src/services/pouchdb-service";
-import { RecordFilters } from "src/models/inferred/record-filters";
+import { useDialogPluginComponent } from "quasar";
 import DateInput from "src/components/lib/DateInput.vue";
-import SelectRecordType from "./SelectRecordType.vue";
-import {
-  setDateToTheFirstDateOfMonth,
-  setDateToTheFirstDateOfPreviousMonth,
-  setDateToTheFirstDateOfPreviousYear,
-  setDateToTheFirstDateOfYear,
-  setDateToTheLastDateOfPreviousMonth,
-  setDateToTheLastDateOfPreviousYear,
-} from "src/utils/date-utils";
+import { dateRangePresetList, partyTypeList, sortByTypeList } from "src/constants/constants";
+import { RecordFilters } from "src/models/inferred/record-filters";
+import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
+import { validators } from "src/utils/validators";
+import { Ref, ref, watch } from "vue";
 import SelectParty from "./SelectParty.vue";
+import SelectRecordType from "./SelectRecordType.vue";
 import SelectTag from "./SelectTag.vue";
 import SelectWallet from "./SelectWallet.vue";
-import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
 
 export default {
   props: {
@@ -96,6 +96,8 @@ export default {
         partyId: null,
         walletId: null,
         searchString: "",
+        deepSearchString: "",
+        sortBy: "transactionEpochDesc"
       };
     }
     isLoading.value = false;
@@ -139,6 +141,7 @@ export default {
       selectedPreset,
       startEpochChanged,
       endEpochChanged,
+      sortByTypeList
     };
   },
 };

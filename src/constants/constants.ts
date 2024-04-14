@@ -7,6 +7,11 @@ export const partyTypeList = [
 
 export const defaultPartyType = "party";
 
+export const sortByTypeList = [
+  { value: "transactionEpochDesc", label: "Transaction Time (Latest on Top)" },
+  { value: "lastModifiedEpochDesc", label: "Modification Time (Latest on Top)" },
+];
+
 export const walletTypeList = [
   { value: "cash", label: "Cash" },
   { value: "credit-card", label: "Credit Card" },
