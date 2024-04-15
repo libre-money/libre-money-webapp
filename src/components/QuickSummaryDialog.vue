@@ -2,8 +2,8 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
     <q-card class="q-dialog-plugin">
       <q-card-section v-if="quickSummaryList.length">
-        <div class="std-dialog-title q-pa-md">Summary</div>
-        <div class="q-pa-md">
+        <div class="std-dialog-title" style="margin-bottom: 12px">Summary</div>
+        <div class="quick-summary-container">
           <div v-for="quickSummary in quickSummaryList" v-bind:key="quickSummary.currency._id!"
             style="padding-bottom: 12px">
             <table class="overview-table quick-summary-table">
@@ -41,7 +41,7 @@
         </div>
       </q-card-section>
 
-      <q-card-actions class="row justify-end">
+      <q-card-actions class="row justify-end" style="margin-right: 8px; margin-bottom: 8px">
         <q-btn color="primary" label="Close" @click="okClicked" />
       </q-card-actions>
     </q-card>

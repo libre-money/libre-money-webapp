@@ -4,8 +4,8 @@
       <q-card-section>
         <div class="std-dialog-title" style="margin-bottom: 12px">Balances</div>
 
-        <div class="">
-          <table class=" overview-table" v-if="overview">
+        <div class="quick-balance-table-container">
+          <table class="overview-table" v-if="overview">
             <tbody>
               <tr>
                 <th>Wallet</th>
