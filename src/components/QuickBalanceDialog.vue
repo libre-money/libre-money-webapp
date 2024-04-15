@@ -4,6 +4,8 @@
       <q-card-section>
         <div class="std-dialog-title" style="margin-bottom: 12px">Balances</div>
 
+        <loading-indicator :is-loading="isLoading" :phases="4" ref="loadingIndicator"></loading-indicator>
+
         <div class="quick-balance-table-container">
           <table class="overview-table" v-if="overview">
             <tbody>
@@ -59,7 +61,7 @@ export default {
 
   },
 
-  components: {},
+  components: { LoadingIndicator },
 
   emits: [...useDialogPluginComponent.emits],
 
