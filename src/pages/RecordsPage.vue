@@ -315,7 +315,6 @@ async function applyFilters(recordList: Record[]) {
 }
 
 async function loadData(origin = "unspecified") {
-  console.log("loadData()", { origin });
   isLoading.value = true;
 
   if (!(cachedInferredRecordList.length > 0 && origin === "pagination")) {
