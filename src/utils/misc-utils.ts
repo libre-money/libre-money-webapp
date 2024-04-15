@@ -77,6 +77,10 @@ export function prettifyDateTime(timestamp: number) {
   return date.formatDate(timestamp, "YYYY MMM DD hh:mm:ss a");
 }
 
+export function getCurrentYear() {
+  return new Date().getFullYear();
+}
+
 export function isNullOrUndefined(value: any) {
   return value == null;
 }

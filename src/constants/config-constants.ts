@@ -1,1 +1,4 @@
 export const PROMISE_POOL_CONCURRENCY_LIMT = 10;
+export const APP_VERSION = "0.2.1";
+export const APP_BUILD_VERSION = "DEV_BUILD";
+export const APP_BUILD_DATE = "NOT_APPLICABLE";

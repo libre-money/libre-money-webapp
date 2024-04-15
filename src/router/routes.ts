@@ -153,6 +153,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import("pages/DebugPage.vue"),
         meta: { requiresAuthentication: true, title: "Debug", rememberable: true },
       },
+      {
+        path: "about",
+        name: "about",
+        component: () => import("pages/AboutPage.vue"),
+        meta: { requiresAuthentication: true, title: "About", rememberable: true },
+      },
     ],
   },
 
