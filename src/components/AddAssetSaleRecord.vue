@@ -152,6 +152,13 @@ export default {
     }
 
     async function performManualValidation() {
+      if (paymentType.value === "full" || paymentType.value === "partial") {
+        if (!recordWalletId.value) {
+          await dialogService.alert("Error", "For fully or partially paid asset sales, Wallet is required.");
+          return false;
+        }
+      }
+
       if (paymentType.value === "partial" || paymentType.value === "unpaid") {
         if (!recordPartyId.value) {
           await dialogService.alert("Error", "For partially paid and unpaid asset sales, Party is required.");

@@ -6,11 +6,9 @@
       <q-btn icon="refresh" flat round size="lg" @click="reloadClicked" style="margin-top: -32px;" />
     </div>
 
-    <div class="q-pa-md" v-if="isLoading">
-      <div class="loading-notifier">
-        <q-spinner color="primary" size="64px" style="margin-top: 100px;"></q-spinner>
-      </div>
-    </div>
+    <q-card class="std-card q-pa-md" :hidden="!isLoading">
+      <loading-indicator :is-loading="isLoading" :phases="2" ref="loadingIndicator"></loading-indicator>
+    </q-card>
 
     <q-card class="std-card" v-if="!isLoading && !overview">
       <div class="q-pa-md q-gutter-sm">
@@ -62,7 +60,19 @@
             </tr>
             <tr v-for="row in overview.wallets.list" v-bind:key="row.walletId">
               <td>{{ row.wallet.name }}</td>
-              <td>{{ printAmount(row.balance) }}</td>
+              <td>{{ printAmount(row.balance) }}
+                <span class="wallet-limit" v-if="row.minimumBalanceState !== 'not-set'">
+                  <span class="wallet-limit-warning" v-if="row.minimumBalanceState === 'warning'">
+                    (Approaching limit {{ printAmount(row.wallet.minimumBalance!) }})
+                  </span>
+                  <span class="wallet-limit-exceeded" v-else-if="row.minimumBalanceState === 'exceeded'">
+                    (Exceeded limit {{ printAmount(row.wallet.minimumBalance!) }})
+                  </span>
+                  <span class="wallet-limit-normal" v-else-if="row.minimumBalanceState === 'normal'">
+                    (Limit {{ printAmount(row.wallet.minimumBalance!) }})
+                  </span>
+                </span>
+              </td>
             </tr>
             <tr>
               <th>Grand Total</th>
@@ -80,24 +90,28 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import SelectCurrency from "src/components/SelectCurrency.vue";
 import { Collection } from "src/constants/constants";
 import { Budget } from "src/models/budget";
 import { Overview } from "src/models/inferred/overview";
 import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
+import { mutexService } from "src/services/mutex-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
 import { prettifyAmount } from "src/utils/misc-utils";
-
-import debounceAsync from "src/utils/debounce";
-import { Ref, ref, watch } from "vue";
+import { Ref, onMounted, ref, watch } from "vue";
 
 const $q = useQuasar();
 const settingsStore = useSettingsStore();
 
 // ----- Refs
+const isMounted = ref(false);
+
+const isLoading = ref(true);
+const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
 const recordCurrencyId: Ref<string | null> = ref(settingsStore.defaultCurrencyId);
 
@@ -105,8 +119,6 @@ const startEpoch: Ref<number> = ref(setDateToTheFirstDateOfMonth(Date.now()));
 const endEpoch: Ref<number> = ref(Date.now());
 const overview: Ref<Overview | null> = ref(null);
 const budgetList: Ref<Budget[]> = ref([]);
-
-const isLoading = ref(false);
 
 // ----- Functions
 
@@ -125,22 +137,21 @@ async function loadBudgets() {
   budgetList.value = newBudgetList;
 }
 
-const loadOverviewDebounced = debounceAsync(loadOverview, 1000, { leading: false });
-
 async function loadData() {
+  if (!mutexService.acquireLock("OverviewPage/loadData", 2_000)) return;
+
   isLoading.value = true;
 
-  try {
-    await loadOverviewDebounced();
-  } catch (ex) {
-    if (ex && (ex as Error).message.indexOf("Debounced") > -1) {
-      return;
-    }
-    throw ex;
-  }
+  loadingIndicator.value?.startPhase({ phase: 1, weight: 40, label: "Loading budgets" });
   await loadBudgets();
 
+  loadingIndicator.value?.startPhase({ phase: 2, weight: 60, label: "Preparing overview" });
+  await loadOverview();
+
+  await loadingIndicator.value?.waitMinimalDuration(400);
+
   isLoading.value = false;
+  mutexService.releaseLock("OverviewPage/loadData");
 }
 
 // ----- Event Handlers
@@ -166,13 +177,18 @@ function printUsedPercentage(budget: Budget) {
 
 watch(recordCurrencyId, (newValue, __) => {
   if (newValue) {
-    loadData();
+    if (isMounted.value) {
+      loadData();
+    }
   }
 });
 
 // ----- Execution
 
-loadData();
+onMounted(() => {
+  isMounted.value = true;
+  loadData();
+});
 
 </script>
 
@@ -191,5 +207,24 @@ loadData();
 
 .title-row {
   padding-bottom: 0px;
+}
+
+.wallet-limit-normal {
+  color: #546e7a;
+}
+
+.wallet-limit-warning {
+  color: #546e7a;
+  border-bottom: 4px solid #ffd740;
+}
+
+.wallet-limit-exceeded {
+  color: #bf360c;
+}
+
+@media (max-width: $breakpoint-xs-max) {
+  .wallet-limit {
+    display: block;
+  }
 }
 </style>

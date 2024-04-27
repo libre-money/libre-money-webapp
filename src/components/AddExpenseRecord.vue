@@ -24,9 +24,29 @@
           <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'"
             :limitByCurrencyId="recordCurrencyId">
           </select-wallet>
+          <div class="wallet-balance-container"
+            v-if="(paymentType == 'full' || paymentType == 'partial') && selectedWallet">
+            <div>Balance in wallet: {{ printAmount(selectedWallet._balance!) }} </div>
+            <div style="margin-top: 8px">Balance afterwards will be: {{
+    printAmount(selectedWallet.potentialBalance) }}
+            </div>
+            <div class="wallet-limit" style="margin-top: 8px" v-if="selectedWallet._minimumBalanceState !== 'not-set'">
+              <span class="wallet-limit-warning" v-if="selectedWallet._minimumBalanceState === 'warning'">
+                Approaching limit {{ printAmount(selectedWallet.minimumBalance!) }}
+              </span>
+              <span class="wallet-limit-exceeded" v-else-if="selectedWallet._minimumBalanceState === 'exceeded'">
+                Exceeded limit {{ printAmount(selectedWallet.minimumBalance!) }}
+              </span>
+              <span class="wallet-limit-normal" v-else-if="selectedWallet._minimumBalanceState === 'normal'">
+                Limit {{ printAmount(selectedWallet.minimumBalance!) }}
+              </span>
+            </div>
+          </div>
+
           <q-input type="number" filled v-model="recordAmountPaid" label="Amount Paid" lazy-rules
             :rules="validators.balance" v-if="paymentType == 'partial'" />
-          <div v-if="paymentType == 'partial'">Amount remaining: {{ recordAmountUnpaid }}</div>
+          <q-input type="number" readonly outlined v-model="recordAmountUnpaid" label="Amount Due"
+            v-if="paymentType == 'partial'" style="margin-top: 8px; margin-bottom: 24px;" />
 
           <select-party v-model="recordPartyId"
             :mandatory="paymentType == 'unpaid' || paymentType == 'partial'"></select-party>
@@ -66,10 +86,12 @@ import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
 import { NotificationType, dialogService } from "src/services/dialog-service";
-import { asAmount, deepClone } from "src/utils/misc-utils";
+import { asAmount, deepClone, isNullOrUndefined, prettifyAmount } from "src/utils/misc-utils";
 import DateTimeInput from "./lib/DateTimeInput.vue";
 import { dataInferenceService } from "src/services/data-inference-service";
 import { useSettingsStore } from "src/stores/settings";
+import { Wallet, WalletWithPotentialBalance } from "src/models/wallet";
+import { computationService } from "src/services/computation-service";
 
 export default {
   props: {
@@ -120,6 +142,8 @@ export default {
     const recordAmountUnpaid: Ref<number> = ref(0);
     const recordTagIdList: Ref<string[]> = ref([]);
     const recordNotes: Ref<string | null> = ref(null);
+
+    const selectedWallet: Ref<WalletWithPotentialBalance | null> = ref(null);
 
     const transactionEpoch: Ref<number> = ref(Date.now());
 
@@ -185,6 +209,13 @@ export default {
     }
 
     async function performManualValidation() {
+      if (paymentType.value === "full" || paymentType.value === "partial") {
+        if (!recordWalletId.value) {
+          await dialogService.alert("Error", "For fully or partially paid expenses, Wallet is required.");
+          return false;
+        }
+      }
+
       if (paymentType.value === "partial" || paymentType.value === "unpaid") {
         if (!recordPartyId.value) {
           await dialogService.alert("Error", "For partially paid and unpaid expenses, Party is required.");
@@ -203,7 +234,7 @@ export default {
 
       recordAmountPaid.value = Math.min(recordAmountPaid.value, recordAmount.value);
 
-      recordAmountUnpaid.value = recordAmount.value - recordAmountPaid.value;
+      recordAmountUnpaid.value = asAmount(recordAmount.value) - asAmount(recordAmountPaid.value);
 
       return true;
     }
@@ -261,9 +292,50 @@ export default {
       onDialogCancel();
     }
 
+    function printAmount(amount: number) {
+      return `${recordCurrencySign.value} ${prettifyAmount(amount)}`;
+    }
+
+    watch(recordWalletId, async (newWalletId: any) => {
+      if (newWalletId) {
+        let wallet = await dataInferenceService.getWallet(newWalletId) as WalletWithPotentialBalance;
+        await computationService.computeBalancesForWallets([wallet]);
+        wallet.potentialBalance = 0;
+        selectedWallet.value = wallet;
+      } else {
+        selectedWallet.value = null;
+      }
+    });
+
     watch(recordCurrencyId, async (newCurrencyId: any) => {
       let currency = await dataInferenceService.getCurrency(newCurrencyId);
       recordCurrencySign.value = currency.sign;
+    });
+
+    watch([recordAmount, recordAmountPaid, selectedWallet, paymentType], async () => {
+      if (paymentType.value === "full") {
+        recordAmountPaid.value = recordAmount.value;
+      }
+      recordAmountUnpaid.value = asAmount(recordAmount.value) - asAmount(recordAmountPaid.value);
+
+      if (selectedWallet.value) {
+        selectedWallet.value.potentialBalance = asAmount(selectedWallet.value._balance) - asAmount(recordAmountPaid.value);
+        if (initialDoc && initialDoc.expense?.walletId === selectedWallet.value._id) {
+          selectedWallet.value.potentialBalance += asAmount(initialDoc.expense?.amountPaid || 0);
+        }
+
+        selectedWallet.value._minimumBalanceState = "not-set";
+        if (!isNullOrUndefined(selectedWallet.value.minimumBalance)) {
+          selectedWallet.value._minimumBalanceState = "normal";
+        }
+        if (asAmount(selectedWallet.value.minimumBalance) * 0.8 > selectedWallet.value.potentialBalance) {
+          selectedWallet.value._minimumBalanceState = "warning";
+        }
+        if (asAmount(selectedWallet.value.minimumBalance) > selectedWallet.value.potentialBalance) {
+          selectedWallet.value._minimumBalanceState = "exceeded";
+        }
+      }
+
     });
 
     return {
@@ -287,8 +359,30 @@ export default {
       recordTagIdList,
       recordNotes,
       recordCurrencySign,
+      selectedWallet,
+      printAmount
     };
   },
 };
 </script>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.wallet-balance-container {
+  color: #546e7a;
+  margin-top: -16px;
+  margin-bottom: 12px;
+  text-align: right;
+
+  .wallet-limit-normal {
+    color: #546e7a;
+  }
+
+  .wallet-limit-warning {
+    color: #546e7a;
+    border-bottom: 4px solid #ffd740;
+  }
+
+  .wallet-limit-exceeded {
+    color: #bf360c;
+  }
+}
+</style>

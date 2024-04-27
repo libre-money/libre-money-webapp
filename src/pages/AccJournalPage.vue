@@ -21,9 +21,12 @@
           </div>
         </div>
       </div>
-
     </q-card>
     <!-- Filter - End -->
+
+    <q-card class="std-card q-pa-md" :hidden="!isLoading">
+      <loading-indicator :is-loading="isLoading" :phases="3" ref="loadingIndicator"></loading-indicator>
+    </q-card>
 
     <!-- Journal - Start -->
     <q-card class="std-card" v-if="!isLoading && journalEntryList.length > 0">
@@ -90,13 +93,14 @@ import { useQuasar } from "quasar";
 import { AccJournalEntry } from "src/models/accounting/acc-journal-entry";
 import { Record } from "src/models/record";
 import { accountingService } from "src/services/accounting-service";
-import { Ref, ref, watch } from "vue";
+import { Ref, onMounted, ref, watch } from "vue";
 import { deepClone, prettifyDate, prettifyDateTime, sleep } from "src/utils/misc-utils";
 import { Collection, dateRangePresetList, defaultPartyType, partyTypeList } from "src/constants/constants";
 import DateInput from "src/components/lib/DateInput.vue";
 import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
 import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
 import FilterAccJournalDialog from "src/components/FilterAccJournalDialog.vue";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 
 const getDefaultFilters = () => {
   return {
@@ -109,6 +113,7 @@ const $q = useQuasar();
 
 // ----- Refs
 const isLoading = ref(false);
+const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
 let fullJournalEntryList: AccJournalEntry[] = ([]);
 let filteredJournalEntryList: AccJournalEntry[] = ([]);
@@ -117,20 +122,27 @@ const journalEntryList: Ref<AccJournalEntry[]> = ref([]);
 const filters: Ref<AccJournalFilters> = ref(getDefaultFilters());
 
 // ----- Functions
+
 async function loadData() {
   isLoading.value = true;
 
+  loadingIndicator.value?.startPhase({ phase: 1, weight: 60, label: "Preparing accounting data" });
+  const progressNotifierFn = (progressFraction: number) => {
+    loadingIndicator.value?.setProgress(progressFraction);
+  };
   if (fullJournalEntryList.length === 0) {
     const {
       accountMap,
       accountList,
       journalEntryList,
-    } = await accountingService.initiateAccounting();
+    } = await accountingService.initiateAccounting(progressNotifierFn);
 
     fullJournalEntryList = journalEntryList;
     console.debug({ fullJournalEntryList });
   }
+  await loadingIndicator.value?.waitMinimalDuration(400);
 
+  loadingIndicator.value?.startPhase({ phase: 2, weight: 20, label: "Applying filters" });
   filteredJournalEntryList = await accountingService.applyJournalFilters(fullJournalEntryList, filters.value);
 
   journalEntryList.value = filteredJournalEntryList;
@@ -138,9 +150,7 @@ async function loadData() {
   isLoading.value = false;
 }
 
-
 // ----- Event Handlers
-
 
 async function setFiltersClicked() {
   $q.dialog({ component: FilterAccJournalDialog, componentProps: { inputFilters: deepClone(filters.value) } }).onOk((res: AccJournalFilters) => {
@@ -149,16 +159,16 @@ async function setFiltersClicked() {
   });
 }
 
-
-
 // ----- Computed and Embedded
 
 // ----- Watchers
 
-
 // ----- Execution
 
-loadData();
+onMounted(() => {
+  loadData();
+});
+
 </script>
 
 <style scoped lang="scss">

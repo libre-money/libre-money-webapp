@@ -18,6 +18,12 @@ export const validators = {
       return isNumeric(String(val)) || "A valid number is required";
     },
   ],
+  balanceOptional: [
+    (val: string) => {
+      if (!val) return true;
+      return isNumeric(String(val)) || "A valid number is required";
+    },
+  ],
   nonZeroInteger: [
     (val: string) => {
       if (!isNumeric(String(val))) {

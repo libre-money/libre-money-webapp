@@ -3,7 +3,10 @@
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <q-btn color="secondary" icon="filter_list" flat round @click="setFiltersClicked" />
-        <q-btn color="warning" label="Clear Filters" @click="clearFiltersClicked" v-if="recordFilters" />
+        <q-btn color="blue-6" icon="bar_chart" flat round @click="showQuickSummaryClicked" />
+        <q-btn color="green-6" icon="wallet" flat round @click="showQuickBalanceClicked" />
+
+
         <div class="title">
           <div class="month-and-year-input-wrapper" v-if="!recordFilters && $q.screen.gt.xs">
             <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear"
@@ -33,15 +36,18 @@
       </div>
 
       <div class="q-pa-md" style="padding-top: 0px; margin-top: -8px; margin-bottom: 8px">
-        <div class="sub-heading" v-if="recordFilters">Filtered Records</div>
+        <div class="filters-activated-area" v-if="recordFilters">
+          <div style="flex: 1">These results are filtered.</div>
+          <q-btn size="sm" color="secondary" outline rounded label="Clear" @click="clearFiltersClicked" />
+        </div>
+
         <div class="month-and-year-input-wrapper" v-if="!recordFilters && $q.screen.lt.sm">
           <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear"
             @selection="monthAndYearSelected()"></month-and-year-input>
         </div>
 
-        <div class="loading-notifier" v-if="isLoading">
-          <q-spinner color="primary" size="32px"></q-spinner>
-        </div>
+        <loading-indicator :is-loading="isLoading" :phases="4" ref="loadingIndicator"></loading-indicator>
+
         <template v-if="!isLoading">
           <div v-for="(record, index) in rows" class="record-row" v-bind:key="record._id">
             <!-- Unified Single Amount Record - start -->
@@ -168,48 +174,14 @@
 
     <!-- Quick Summary - Start -->
     <q-card class="std-card" v-if="!isLoading && quickSummaryList.length > 0">
-      <div class="q-pa-md">
-        <div class="quick-summary-title">Summary</div>
-        <div v-for="quickSummary in quickSummaryList" v-bind:key="quickSummary.currency._id!"
-          style="padding-bottom: 12px">
-          <table class="overview-table quick-summary-table">
-            <tbody>
-              <tr>
-                <th colspan="4">{{ quickSummary.currency.name }}</th>
-              </tr>
-              <tr>
-                <td>Total Income</td>
-                <td class="amount-in">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalIncome) }}
-                </td>
-                <td>Total In-flow</td>
-                <td class="amount-in">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalInFlow) }}
-                </td>
-              </tr>
-              <tr>
-                <td>Total Expense</td>
-                <td class="amount-out">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalExpense) }}
-                </td>
-                <td>Total Out-flow</td>
-                <td class="amount-out">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalOutFlow) }}
-                </td>
-              </tr>
-              <tr>
-                <td></td>
-                <td></td>
-                <td>Cash Flow Balance</td>
-                <td>{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalFlowBalance) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+
     </q-card>
     <!-- Quick Summary - End -->
   </q-page>
 </template>
 
 <script lang="ts" setup>
-import { Ref, ref, watch } from "vue";
+import { Ref, onMounted, ref, watch } from "vue";
 import { useQuasar } from "quasar";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Record } from "src/models/record";
@@ -217,7 +189,7 @@ import { dialogService } from "src/services/dialog-service";
 import { Collection, RecordType } from "src/constants/constants";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { dataInferenceService } from "src/services/data-inference-service";
-import { deepClone, guessFontColorCode, prettifyAmount, prettifyDate } from "src/utils/misc-utils";
+import { deepClone, guessFontColorCode, prettifyAmount, prettifyDate, sleep } from "src/utils/misc-utils";
 import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
 import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
 import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
@@ -240,7 +212,11 @@ import MonthAndYearInput from "src/components/lib/MonthAndYearInput.vue";
 import { useRecordPaginationSizeStore } from "src/stores/record-pagination";
 import { QuickSummary } from "src/models/inferred/quick-summary";
 import { computationService } from "src/services/computation-service";
-
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
+import PromisePool from "src/utils/promise-pool";
+import { PROMISE_POOL_CONCURRENCY_LIMT } from "src/constants/config-constants";
+import QuickSummaryDialog from "src/components/QuickSummaryDialog.vue";
+import QuickBalanceDialog from "src/components/QuickBalanceDialog.vue";
 const recordFiltersStore = useRecordFiltersStore();
 
 const $q = useQuasar();
@@ -248,8 +224,11 @@ const $q = useQuasar();
 const recordPaginationStore = useRecordPaginationSizeStore();
 
 // ----- Refs
-const searchFilter: Ref<string | null> = ref(null);
 const isLoading = ref(false);
+const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
+
+const searchFilter: Ref<string | null> = ref(null);
+
 const rows: Ref<InferredRecord[]> = ref([]);
 
 const recordCountPerPage = recordPaginationStore.recordPaginationSize;
@@ -264,95 +243,134 @@ const filterYear: Ref<number> = ref(new Date().getFullYear());
 
 const quickSummaryList: Ref<QuickSummary[]> = ref([]);
 
+let cachedInferredRecordList: InferredRecord[] = [];
+
 // ----- Functions
 
-async function loadData() {
+async function applyFilters(recordList: Record[]) {
+  if (!recordFilters.value) {
+    return recordList;
+  }
+
+  let { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, walletId, searchString, deepSearchString } = recordFilters.value;
+
+  let [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
+
+  if (recordTypeList.length) {
+    recordList = recordList.filter((record) => recordTypeList.indexOf(record.type) > -1);
+  }
+
+  if (tagIdWhiteList.length) {
+    recordList = recordList.filter((record) => {
+      return record.tagIdList.some((tagId) => tagIdWhiteList.includes(tagId));
+    });
+  }
+
+  if (tagIdBlackList.length > 0) {
+    recordList = recordList.filter((record) => {
+      return !record.tagIdList.some((tagId) => tagIdBlackList.includes(tagId));
+    });
+  }
+
+  if (partyId) {
+    recordList = recordList.filter(
+      (record) =>
+        record.income?.partyId === partyId ||
+        record.expense?.partyId === partyId ||
+        record.assetPurchase?.partyId === partyId ||
+        record.assetSale?.partyId === partyId ||
+        record.lending?.partyId === partyId ||
+        record.borrowing?.partyId === partyId ||
+        record.repaymentGiven?.partyId === partyId ||
+        record.repaymentReceived?.partyId === partyId
+    );
+  }
+  if (walletId) {
+    recordList = recordList.filter(
+      (record) =>
+        record.income?.walletId === walletId ||
+        record.expense?.walletId === walletId ||
+        record.assetPurchase?.walletId === walletId ||
+        record.assetSale?.walletId === walletId ||
+        record.lending?.walletId === walletId ||
+        record.borrowing?.walletId === walletId ||
+        record.repaymentGiven?.walletId === walletId ||
+        record.repaymentReceived?.walletId === walletId ||
+        record.moneyTransfer?.fromWalletId === walletId ||
+        record.moneyTransfer?.toWalletId === walletId
+    );
+  }
+
+  if (searchString && searchString.length > 0) {
+    recordList = recordList.filter((record) => record.notes && String(record.notes).toLocaleLowerCase().indexOf(searchString.toLocaleLowerCase()) > -1);
+  }
+
+  if (deepSearchString && deepSearchString.length > 0) {
+    recordList = recordList.filter((record) => JSON.stringify(record).toLocaleLowerCase().indexOf(deepSearchString.toLocaleLowerCase()) > -1);
+  }
+
+  recordList = recordList.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+
+  return recordList;
+}
+
+async function loadData(origin = "unspecified") {
   isLoading.value = true;
 
-  await dataInferenceService.updateCurrencyCache();
+  if (cachedInferredRecordList.length === 0 || origin !== "pagination") {
+    loadingIndicator.value?.startPhase({ phase: 1, weight: 10, label: "Updating cache" });
+    await dataInferenceService.updateCurrencyCache();
 
-  let dataRows = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
+    loadingIndicator.value?.startPhase({ phase: 2, weight: 20, label: "Filtering records" });
+    let recordList = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];
 
-  if (recordFilters.value) {
-    let { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, walletId, searchString } = recordFilters.value;
-
-    let [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
-
-    if (recordTypeList.length) {
-      dataRows = dataRows.filter((record) => recordTypeList.indexOf(record.type) > -1);
+    if (recordFilters.value) {
+      recordList = await applyFilters(recordList);
+    } else {
+      let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
+      let rangeEnd = new Date(filterYear.value, filterMonth.value, 1);
+      rangeEnd.setMonth(rangeEnd.getMonth() + 1);
+      rangeEnd.setDate(rangeEnd.getDate() - 1);
+      let [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
+      recordList = recordList.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
     }
 
-    if (tagIdWhiteList.length) {
-      dataRows = dataRows.filter((record) => {
-        return record.tagIdList.some((tagId) => tagIdWhiteList.includes(tagId));
-      });
+    loadingIndicator.value?.startPhase({ phase: 3, weight: 10, label: "Sorting" });
+    if (!recordFilters.value || recordFilters.value.sortBy === "transactionEpochDesc") {
+      recordList.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
+    } else {
+      recordList.sort((a, b) => (b.modifiedEpoch || 0) - (a.modifiedEpoch || 0));
     }
 
-    if (tagIdBlackList.length > 0) {
-      dataRows = dataRows.filter((record) => {
-        return !record.tagIdList.some((tagId) => tagIdBlackList.includes(tagId));
-      });
+    paginationMaxPage.value = Math.ceil(recordList.length / recordCountPerPage);
+    if (paginationCurrentPage.value > paginationMaxPage.value) {
+      paginationCurrentPage.value = paginationMaxPage.value;
     }
 
-    if (partyId) {
-      dataRows = dataRows.filter(
-        (record) =>
-          record.income?.partyId === partyId ||
-          record.expense?.partyId === partyId ||
-          record.assetPurchase?.partyId === partyId ||
-          record.assetSale?.partyId === partyId ||
-          record.lending?.partyId === partyId ||
-          record.borrowing?.partyId === partyId ||
-          record.repaymentGiven?.partyId === partyId ||
-          record.repaymentReceived?.partyId === partyId
-      );
-    }
-    if (walletId) {
-      dataRows = dataRows.filter(
-        (record) =>
-          record.income?.walletId === walletId ||
-          record.expense?.walletId === walletId ||
-          record.assetPurchase?.walletId === walletId ||
-          record.assetSale?.walletId === walletId ||
-          record.lending?.walletId === walletId ||
-          record.borrowing?.walletId === walletId ||
-          record.repaymentGiven?.walletId === walletId ||
-          record.repaymentReceived?.walletId === walletId ||
-          record.moneyTransfer?.fromWalletId === walletId ||
-          record.moneyTransfer?.toWalletId === walletId
-      );
-    }
+    loadingIndicator.value?.startPhase({ phase: 4, weight: 60, label: "Preparing view" });
 
-    if (searchString && searchString.length > 0) {
-      dataRows = dataRows.filter((record) => record.notes && String(record.notes).indexOf(searchString) > -1);
-    }
+    let completedCount = 0;
+    let inferredRecordList = await PromisePool.mapList(recordList, PROMISE_POOL_CONCURRENCY_LIMT, (async (rawData: Record) => {
+      const result = await dataInferenceService.inferRecord(rawData);
+      completedCount += 1;
+      if (completedCount % Math.floor(recordList.length / 10) === 0) {
+        loadingIndicator.value?.setProgress(completedCount / recordList.length);
+      }
+      return result;
+    }));
+    loadingIndicator.value?.setProgress(1);
 
-    dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+    let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
 
-    quickSummaryList.value = await computationService.computeQuickSummary(startEpoch, endEpoch, dataRows);
+    rows.value = inferredRecordList.slice(startIndex, startIndex + recordCountPerPage);
+
+    cachedInferredRecordList = inferredRecordList;
   } else {
-    let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
-    let rangeEnd = new Date(filterYear.value, filterMonth.value, 1);
-    rangeEnd.setMonth(rangeEnd.getMonth() + 1);
-    rangeEnd.setDate(rangeEnd.getDate() - 1);
-
-    let [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
-    dataRows = dataRows.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
-
-    quickSummaryList.value = await computationService.computeQuickSummary(rangeStart.getTime(), rangeEnd.getTime(), dataRows);
+    let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
+    rows.value = cachedInferredRecordList.slice(startIndex, startIndex + recordCountPerPage);
   }
 
-  dataRows.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
 
-  paginationMaxPage.value = Math.ceil(dataRows.length / recordCountPerPage);
-  if (paginationCurrentPage.value > paginationMaxPage.value) {
-    paginationCurrentPage.value = paginationMaxPage.value;
-  }
-
-  let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
-
-  let inferredDataRows = await Promise.all(dataRows.map((rawData) => dataInferenceService.inferRecord(rawData)));
-  rows.value = inferredDataRows.slice(startIndex, startIndex + recordCountPerPage);
 
   isLoading.value = false;
 }
@@ -459,6 +477,30 @@ async function deleteClicked(record: InferredRecord) {
   loadData();
 }
 
+async function showQuickBalanceClicked() {
+  $q.dialog({ component: QuickBalanceDialog, componentProps: {} }).onOk((res: RecordFilters) => {
+    "pass";
+  });
+}
+
+async function showQuickSummaryClicked() {
+  let startEpoch, endEpoch = 0;
+  if (recordFilters.value) {
+    [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
+  } else {
+    let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
+    let rangeEnd = new Date(filterYear.value, filterMonth.value, 1);
+    rangeEnd.setMonth(rangeEnd.getMonth() + 1);
+    rangeEnd.setDate(rangeEnd.getDate() - 1);
+    [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
+  }
+
+  const quickSummaryList = await computationService.computeQuickSummary(startEpoch, endEpoch, cachedInferredRecordList);
+  $q.dialog({ component: QuickSummaryDialog, componentProps: { quickSummaryList } }).onOk((res: RecordFilters) => {
+    "pass";
+  });
+}
+
 async function setFiltersClicked() {
   $q.dialog({ component: FilterRecordsDialog, componentProps: { inputFilters: recordFilters.value } }).onOk((res: RecordFilters) => {
     recordFilters.value = res;
@@ -544,20 +586,28 @@ watch(searchFilter, (_, __) => {
 });
 
 watch(paginationCurrentPage, (currentPage, previousPage) => {
-  loadData();
+  console.debug("paginationCurrentPage", paginationCurrentPage);
+  loadData("pagination");
 });
 
 // ----- Execution
 
-loadData();
+onMounted(() => {
+  loadData();
+});
+
 </script>
 
 <style scoped lang="scss">
-@import url(./../css/table.scss);
-
-.sub-heading {
-  font-size: 20px;
+.filters-activated-area {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
   margin-bottom: 12px;
+  color: #3d3d3d;
+  background-color: #f3f3f3;
+  padding: 8px;
+  border-radius: 4px;
 }
 
 .record-row {
@@ -688,3 +738,4 @@ loadData();
   text-transform: capitalize;
 }
 </style>
+src/utils/promise-pool.js

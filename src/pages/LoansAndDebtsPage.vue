@@ -52,27 +52,22 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, ref, watch } from "vue";
-import { Collection, walletTypeList, rowsPerPageOptions, RecordType } from "./../constants/constants";
 import { useQuasar } from "quasar";
-import { pouchdbService } from "src/services/pouchdb-service";
-import { Wallet } from "src/models/wallet";
-import { dialogService } from "src/services/dialog-service";
-import { prettifyAmount, sleep } from "src/utils/misc-utils";
-import { Currency } from "src/models/currency";
-import { Party } from "src/models/party";
-import { Record } from "src/models/record";
-import AddLendingRecord from "src/components/AddLendingRecord.vue";
 import AddBorrowingRecord from "src/components/AddBorrowingRecord.vue";
-import AddRepaymentReceivedRecord from "src/components/AddRepaymentReceivedRecord.vue";
+import AddLendingRecord from "src/components/AddLendingRecord.vue";
 import AddRepaymentGivenRecord from "src/components/AddRepaymentGivenRecord.vue";
-import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
-import { computationService } from "src/services/computation-service";
-import { useRouter } from "vue-router";
-import { RecordFilters } from "src/models/inferred/record-filters";
-import { useRecordFiltersStore } from "src/stores/record-filters-store";
+import AddRepaymentReceivedRecord from "src/components/AddRepaymentReceivedRecord.vue";
 import LoansAndDebtsDetailsDialog from "src/components/LoansAndDebtsDetailsDialog.vue";
+import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
+import { RecordFilters } from "src/models/inferred/record-filters";
+import { Record } from "src/models/record";
+import { computationService } from "src/services/computation-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
+import { useRecordFiltersStore } from "src/stores/record-filters-store";
+import { prettifyAmount } from "src/utils/misc-utils";
+import { Ref, defineComponent, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import { rowsPerPageOptions } from "./../constants/constants";
 
 export default defineComponent({
   name: "WalletsPage",
@@ -218,6 +213,8 @@ export default defineComponent({
         tagIdWhiteList: [],
         tagIdBlackList: [],
         searchString: "",
+        deepSearchString: "",
+        sortBy: "transactionEpochDesc"
       };
       recordFiltersStore.setRecordFilters(recordFilter);
       router.push({ name: "records" });

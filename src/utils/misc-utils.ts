@@ -1,5 +1,15 @@
 import { date } from "quasar";
 
+// eslint-disable-next-line @typescript-eslint/ban-types
+export async function suppress(fn: Function | (() => Promise<any>)) {
+  try {
+    await fn();
+    return false;
+  } catch (ex) {
+    return true;
+  }
+}
+
 export async function sleep(duration: number) {
   return new Promise((accept) => {
     setTimeout(accept, duration);
@@ -65,4 +75,12 @@ export function prettifyDate(timestamp: number) {
 
 export function prettifyDateTime(timestamp: number) {
   return date.formatDate(timestamp, "YYYY MMM DD hh:mm:ss a");
+}
+
+export function getCurrentYear() {
+  return new Date().getFullYear();
+}
+
+export function isNullOrUndefined(value: any) {
+  return value == null;
 }

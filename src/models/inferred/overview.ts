@@ -35,6 +35,7 @@ export type Overview = {
       walletId: string;
       balance: number;
       wallet: Wallet;
+      minimumBalanceState: string;
     }[];
     sumOfBalances: number;
   };

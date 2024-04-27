@@ -1,7 +1,7 @@
 <template>
-  <q-page class="items-center justify-evenly page">
+  <q-page class="items-center page">
     <q-card class="std-card">
-      <div class="filter-section q-pa-md q-gutter-sm" v-if="!isLoading">
+      <div class="filter-section q-pa-md q-gutter-sm">
         <div class="main-row">
           <select-currency v-model="recordCurrencyId"></select-currency>
           <div style="width: 8px; height: 1px"></div>
@@ -29,12 +29,10 @@
           <q-btn color="primary" label="Submit" @click="submitClicked" />
         </div>
       </div>
+    </q-card>
 
-      <div class="q-pa-md" v-if="isLoading">
-        <div class="loading-notifier">
-          <q-spinner color="primary" size="32px"></q-spinner>
-        </div>
-      </div>
+    <q-card class="std-card q-pa-md" :hidden="!isLoading">
+      <loading-indicator :is-loading="isLoading" :phases="2" ref="loadingIndicator"></loading-indicator>
     </q-card>
 
     <q-card class="std-card" v-if="!isLoading && overview">
@@ -339,9 +337,10 @@ import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
 import { asAmount, prettifyAmount, prettifyCount } from "src/utils/misc-utils";
 import { dataInferenceService } from "src/services/data-inference-service";
-
-import { Ref, ref, watch } from "vue";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
+import { Ref, onMounted, ref, watch } from "vue";
 import { useSettingsStore } from "src/stores/settings";
+import { mutexService } from "src/services/mutex-service";
 
 const $q = useQuasar();
 const settingsStore = useSettingsStore();
@@ -354,6 +353,8 @@ function computeStartEpoch(now: number) {
 
 // ----- Refs
 
+const isMounted = ref(false);
+
 const recordCurrencyId: Ref<string | null> = ref(settingsStore.defaultCurrencyId);
 
 const startEpoch: Ref<number> = ref(computeStartEpoch(Date.now()));
@@ -361,16 +362,21 @@ const endEpoch: Ref<number> = ref(Date.now());
 const overview: Ref<Overview | null> = ref(null);
 
 const isLoading = ref(false);
+const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
 // ----- Functions
 
 async function loadData() {
+  if (!mutexService.acquireLock("CombinedReportPage/loadData", 1_000)) return;
+
   isLoading.value = true;
 
   let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
   overview.value = newOverview;
 
   isLoading.value = false;
+
+  mutexService.releaseLock("CombinedReportPage/loadData");
 }
 
 // ----- Event Handlers
@@ -417,13 +423,18 @@ function printCount(count: number) {
 
 watch(recordCurrencyId, (newValue, __) => {
   if (newValue) {
-    loadData();
+    if (isMounted.value) {
+      loadData();
+    }
   }
 });
 
 // ----- Execution
 
-// loadData();
+onMounted(() => {
+  isMounted.value = true;
+  // loadData();
+});
 </script>
 
 <style scoped lang="scss">

@@ -62,7 +62,7 @@
           <img class="logo" src="icons/android-chrome-192x192.png" alt="CK" />
           <div @click="verionClicked" style="cursor: pointer">
             <div style="font-size: 16px">Cash Keeper</div>
-            <div style="font-size: 10px; color: rgb(187, 186, 186)">Version: {{ appVersion }} (Alpha)</div>
+            <div style="font-size: 10px; color: rgb(187, 186, 186)">Version: {{ APP_VERSION }} (Alpha)</div>
           </div>
         </div>
       </div>
@@ -83,6 +83,7 @@ import { dialogService } from "src/services/dialog-service";
 import { sleep } from "src/utils/misc-utils";
 import { useQuasar } from "quasar";
 import SyncDialog from "src/components/SyncDialog.vue";
+import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
 
 const operationList = [
   {
@@ -223,6 +224,12 @@ const miscList = [
     icon: "bug_report",
     link: "#/debug",
   },
+  {
+    title: "About",
+    caption: "",
+    icon: "contact_support",
+    link: "#/about",
+  },
 ];
 
 export default defineComponent({
@@ -255,10 +262,6 @@ export default defineComponent({
     userStore.$subscribe(checkIfInDevMode);
     checkIfInDevMode();
 
-    const appVersion = "0.2.1";
-    const internalBuild = "DEV_BUILD";
-    const buildDate = "NOT_APPLICABLE";
-
     async function logoutClicked() {
       let [successful, failureReason] = await loginService.logout();
       if (!successful) {
@@ -274,8 +277,8 @@ export default defineComponent({
     }
 
     async function verionClicked() {
-      const title = `Version ${appVersion}`;
-      const body = `Internal Build: ${internalBuild}, Release Date: ${buildDate}`;
+      const title = `Version ${APP_VERSION}`;
+      const body = `Internal Build: ${APP_BUILD_VERSION}, Release Date: ${APP_BUILD_DATE}`;
       await dialogService.alert(title, body);
     }
 
@@ -289,9 +292,8 @@ export default defineComponent({
       toggleLeftDrawer() {
         isLeftDrawerOpen.value = !isLeftDrawerOpen.value;
       },
-      appVersion,
-      internalBuild,
-      buildDate,
+      APP_VERSION,
+
       miscList,
       userStore,
       logoutClicked,

@@ -9,5 +9,8 @@
   "editor.wordWrapColumn": 120,
   "editor.tabSize": 2,
   "javascript.format.semicolons": "insert",
-  "typescript.format.semicolons": "insert"
+  "typescript.format.semicolons": "insert",
+  "search.exclude": {
+    "**/public/": true
+  }
 }

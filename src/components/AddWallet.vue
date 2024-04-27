@@ -12,6 +12,8 @@
             left-label v-if="existingWalletId" />
           <q-input type="number" filled v-model="walletInitialBalance" label="Initial Balance" lazy-rules
             :rules="validators.balance" v-if="!existingWalletId || shouldShowAdvancedOptions" />
+          <q-input type="number" filled v-model="walletMinimumBalance" label="Minimum Balance" lazy-rules
+            :rules="validators.balanceOptional" v-if="!existingWalletId || shouldShowAdvancedOptions" />
         </q-form>
       </q-card-section>
 
@@ -61,6 +63,7 @@ export default {
     const walletType: Ref<string | null> = ref(walletTypeList.find((walletType) => walletType.value === defaultWalletType)!.value);
     const walletInitialBalance: Ref<number | null> = ref(null);
     const walletCurrencyId: Ref<string | null> = ref(null);
+    const walletMinimumBalance: Ref<number | undefined> = ref(undefined);
 
     const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
@@ -73,6 +76,7 @@ export default {
         walletType.value = res.type;
         walletInitialBalance.value = res.initialBalance;
         walletCurrencyId.value = res.currencyId;
+        walletMinimumBalance.value = res.minimumBalance || undefined;
         isLoading.value = false;
       })();
     }
@@ -87,6 +91,7 @@ export default {
         type: walletType.value!,
         initialBalance: walletInitialBalance.value!,
         currencyId: walletCurrencyId.value!,
+        minimumBalance: walletMinimumBalance.value
       };
 
       if (initialDoc) {
@@ -111,6 +116,7 @@ export default {
       walletCurrencyId,
       validators,
       walletForm,
+      walletMinimumBalance,
       shouldShowAdvancedOptions
     };
   },

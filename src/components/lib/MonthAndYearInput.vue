@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import debounceAsync from "src/utils/debounce";
+import { delayedMutexService } from "src/services/delayed-mutex-service";
+
+const DEBOUNCE_THRESHOLD_MILLIS = 200;
 
 const monthNameList = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -18,31 +20,33 @@ function toMonthName(month: number) {
   return monthNameList[month];
 }
 
-const emitSelection = () => {
-  emit("selection");
-};
-
-const emitSelectionDebounced = debounceAsync(emitSelection, 100, { leading: false });
-
 function prevMonth() {
   if (props.month! > 0) {
     emit("update:month", props.month! - 1);
-    emitSelectionDebounced();
+    delayedMutexService.acquireLock("MonthAndYearInput/monthSelection", DEBOUNCE_THRESHOLD_MILLIS).then((lockAcquired) => {
+      if (lockAcquired) emit("selection");
+    });
   } else {
     emit("update:month", 11);
     emit("update:year", props.year! - 1);
-    emitSelectionDebounced();
+    delayedMutexService.acquireLock("MonthAndYearInput/monthSelection", DEBOUNCE_THRESHOLD_MILLIS).then((lockAcquired) => {
+      if (lockAcquired) emit("selection");
+    });
   }
 }
 
 function nextMonth() {
   if (props.month! < monthNameList.length - 1) {
     emit("update:month", props.month! + 1);
-    emitSelectionDebounced();
+    delayedMutexService.acquireLock("MonthAndYearInput/monthSelection", DEBOUNCE_THRESHOLD_MILLIS).then((lockAcquired) => {
+      if (lockAcquired) emit("selection");
+    });
   } else {
     emit("update:month", 0);
     emit("update:year", props.year! + 1);
-    emitSelectionDebounced();
+    delayedMutexService.acquireLock("MonthAndYearInput/monthSelection", DEBOUNCE_THRESHOLD_MILLIS).then((lockAcquired) => {
+      if (lockAcquired) emit("selection");
+    });
   }
 }
 

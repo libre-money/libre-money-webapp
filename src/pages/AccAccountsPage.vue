@@ -115,7 +115,10 @@ export default defineComponent({
       const skip = (page - 1) * rowsPerPage;
       const limit = rowsPerPage;
 
-      const { accountList } = await accountingService.initiateAccounting();
+      const progressNotifierFn = (progressFraction: number) => {
+        "pass";
+      };
+      const { accountList } = await accountingService.initiateAccounting(progressNotifierFn);
 
       let docList = accountList;
       if (searchFilter.value) {

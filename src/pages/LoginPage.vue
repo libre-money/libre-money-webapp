@@ -31,6 +31,7 @@ import { configService } from "src/services/config-service";
 import { NotificationType, dialogService } from "src/services/dialog-service";
 import { localDataService } from "src/services/local-data-service";
 import { loginService } from "src/services/login-service";
+import { mutexService } from "src/services/mutex-service";
 import { validators } from "src/utils/validators";
 import { Ref, defineComponent, ref } from "vue";
 import { RouteLocationRaw, useRoute, useRouter } from "vue-router";
@@ -64,6 +65,8 @@ export default defineComponent({
       shouldRememberPassword,
 
       async onSubmit() {
+        if (!mutexService.acquireLock("LoginPage/Login", 1000)) return;
+
         const isValid = await loginForm.value!.validate();
         if (!isValid) return;
 

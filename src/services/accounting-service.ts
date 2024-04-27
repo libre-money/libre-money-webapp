@@ -15,6 +15,8 @@ import { AccLedgerEntry } from "src/models/accounting/acc-ledger-entry";
 import { AccLedger } from "src/models/accounting/acc-ledger";
 import { AccTrialBalance, AccTrialBalanceWithCurrency } from "src/models/accounting/acc-trial-balance";
 import { dialogService } from "./dialog-service";
+import { PROMISE_POOL_CONCURRENCY_LIMT } from "src/constants/config-constants";
+import PromisePool from "src/utils/promise-pool";
 
 type TrialBalanceInterimContainer = {
   accountVsDebitBalanceMap: Record<string, number>;
@@ -74,10 +76,22 @@ class AccountingService {
     return { accountMap, accountList };
   }
 
-  private async prepareInferredRecordList() {
+  private async prepareInferredRecordList(progressNotifierFn: (a0: number) => void) {
     const rawRecordList = (await pouchdbService.listByCollection(Collection.RECORD)).docs as SourceRecord[];
     await dataInferenceService.updateCurrencyCache();
-    const inferredRecordList = await Promise.all(rawRecordList.map((rawData) => dataInferenceService.inferRecord(rawData)));
+
+    let completedCount = 0;
+    const inferredRecordList = await PromisePool.mapList(rawRecordList, PROMISE_POOL_CONCURRENCY_LIMT, async (rawData: SourceRecord) => {
+      const result = await dataInferenceService.inferRecord(rawData);
+      completedCount += 1;
+      if (completedCount % Math.floor(rawRecordList.length / 10) === 0) {
+        progressNotifierFn(completedCount / rawRecordList.length);
+      }
+      return result;
+    });
+    progressNotifierFn(1);
+
+    // const inferredRecordList = await Promise.all(rawRecordList.map((rawData) => dataInferenceService.inferRecord(rawData)));
     inferredRecordList.sort((a, b) => (a.transactionEpoch || 0) - (b.transactionEpoch || 0));
     return inferredRecordList;
   }
@@ -242,7 +256,7 @@ class AccountingService {
     });
     description += `Spent ${dataInferenceService.getPrintableAmount(expense.amount, expense.currencyId)} as "${expense.expenseAvenue.name}". `;
 
-    if (expense.amountPaid > 0 && expense.wallet) {
+    if (expense.amountPaid > 0) {
       if (expense.wallet.type === "credit-card") {
         creditList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
@@ -298,7 +312,7 @@ class AccountingService {
     });
     description += `Earned ${dataInferenceService.getPrintableAmount(income.amount, income.currencyId)} as "${income.incomeSource.name}". `;
 
-    if (income.amountPaid > 0 && income.wallet) {
+    if (income.amountPaid > 0) {
       if (income.wallet.type === "credit-card") {
         debitList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
@@ -522,7 +536,7 @@ class AccountingService {
     });
     description += `Sold asset "${assetSale.asset.name}" for ${dataInferenceService.getPrintableAmount(assetSale.amount, assetSale.currencyId)}. `;
 
-    if (assetSale.amountPaid > 0 && assetSale.wallet) {
+    if (assetSale.amountPaid > 0) {
       if (assetSale.wallet.type === "credit-card") {
         debitList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
@@ -892,7 +906,7 @@ class AccountingService {
     }
   }
 
-  async initiateAccounting(): Promise<AccAccountingReturnable> {
+  async initiateAccounting(progressNotifierFn: (a0: number) => void): Promise<AccAccountingReturnable> {
     if (accountingReturnCache) {
       return accountingReturnCache;
     }
@@ -907,7 +921,7 @@ class AccountingService {
     journalEntryList.push(...(await this.createOpeningBalanceEntriesForTheBeginningOfTime(accountMap)));
 
     // Populate Journal from Records
-    const inferredRecordList = await this.prepareInferredRecordList();
+    const inferredRecordList = await this.prepareInferredRecordList(progressNotifierFn);
     let serialSeed = journalEntryList.length;
     for (const record of inferredRecordList) {
       const journalEntry = await this.covertInferredRecordToJournalEntry(record, serialSeed++, accountMap);
@@ -1161,10 +1175,8 @@ class AccountingService {
         (trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].totalBalance + trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].totalBalance)
     );
 
-    console.log(retainedEarnings, gapInPermanentBalance);
-
     if (retainedEarnings !== gapInPermanentBalance) {
-      const message = `The Trial Balance has been generated. However, a mismatch was found regarding Retained Earnings.`;
+      const message = "The Trial Balance has been generated. However, a mismatch was found regarding Retained Earnings.";
       await dialogService.alert("Error", message);
       return;
     }

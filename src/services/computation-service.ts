@@ -2,7 +2,7 @@ import { Collection, RecordType, assetLiquidityList } from "src/constants/consta
 import { ExpenseAvenue } from "src/models/expense-avenue";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { Record } from "src/models/record";
-import { asAmount, deepClone } from "src/utils/misc-utils";
+import { asAmount, deepClone, isNullOrUndefined } from "src/utils/misc-utils";
 import { pouchdbService } from "./pouchdb-service";
 import { Party } from "src/models/party";
 import { Tag } from "src/models/tag";
@@ -383,6 +383,7 @@ class ComputationService {
           walletId: wallet._id,
           wallet: wallet,
           balance: asAmount(wallet.initialBalance),
+          minimumBalanceState: isNullOrUndefined(wallet.minimumBalance) ? "not-set" : "normal",
         };
 
         map[key].balance += recordList
@@ -435,8 +436,18 @@ class ComputationService {
       }
 
       Object.keys(map).forEach((key) => {
-        overview.wallets.list.push(map[key]);
-        overview.wallets.sumOfBalances += map[key].balance;
+        const wallet = map[key];
+
+        if (asAmount(wallet.wallet.minimumBalance) * 0.8 > asAmount(wallet.balance)) {
+          wallet.minimumBalanceState = "warning";
+        }
+
+        if (asAmount(wallet.wallet.minimumBalance) > asAmount(wallet.balance)) {
+          wallet.minimumBalanceState = "exceeded";
+        }
+
+        overview.wallets.list.push(wallet);
+        overview.wallets.sumOfBalances += wallet.balance;
       });
 
       overview.wallets.list.sort((a, b) => b.balance - a.balance);
