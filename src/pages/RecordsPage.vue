@@ -167,7 +167,9 @@
 
             <template v-if="index > 0 && prettifyDate(rows[index - 1].transactionEpoch) !== prettifyDate(record.transactionEpoch)">
               <div class="divider-line-different-day">
-                <div class="divider-line-date">{{ prettifyDate(record.transactionEpoch) }}</div>
+                <div class="divider-line-date">
+                  <div class="divider-line-inner">{{ prettifyDate(record.transactionEpoch) }}</div>
+                </div>
               </div>
             </template>
             <template v-else>
@@ -686,13 +688,21 @@ onMounted(() => {
   margin-top: -8px;
 }
 
+.divider-line-inner {
+  background-color: #fff;
+  padding: 0px 8px;
+  display: inline-block;
+}
+
 .divider-line-different-day {
   border-top: 1px dashed #eaeaea;
-  margin: 12px 0px;
+  margin-top: 24px;
+  margin-bottom: 8px;
 }
 
 .divider-line-same-day {
   border-top: 1px dashed #eaeaea;
-  margin: 12px 0px;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }
 </style>
