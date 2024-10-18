@@ -8,5 +8,9 @@ export type RecordFilters = {
   walletId?: string | null;
   searchString: string;
   deepSearchString: string;
-  sortBy: string; // transactionEpochDesc | lastModifiedEpochDesc
+  sortBy: "transactionEpochDesc" | "lastModifiedEpochDesc";
+  type: "standard" | "budget" | "loansAndDebts";
+  _budgetName?: string;
+  _partyName?: string;
+  _preset?: string;
 };

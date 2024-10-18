@@ -75,7 +75,8 @@ export default {
 
     const recordFilters: Ref<RecordFilters | null> = ref(null);
 
-    const selectedPreset: Ref<string | null> = ref("current-year");
+    const defaultPreset = props.inputFilters?._preset || "current-year";
+    const selectedPreset: Ref<string> = ref(defaultPreset);
 
     const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
@@ -94,11 +95,14 @@ export default {
         searchString: "",
         deepSearchString: "",
         sortBy: "transactionEpochDesc",
+        type: "standard",
       };
     }
     isLoading.value = false;
 
     async function okClicked() {
+      recordFilters.value!.type = "standard";
+      recordFilters.value!._preset = selectedPreset.value;
       onDialogOK(recordFilters.value);
     }
 

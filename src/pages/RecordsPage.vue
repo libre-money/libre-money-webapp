@@ -41,7 +41,11 @@
 
       <div class="q-pa-md" style="padding-top: 0px; margin-top: -8px; margin-bottom: 8px">
         <div class="filters-activated-area" v-if="recordFilters">
-          <div style="flex: 1">These results are filtered.</div>
+          <div style="flex: 1">
+            <span v-if="recordFilters.type === 'standard'">These results are filtered.</span>
+            <span v-else-if="recordFilters.type === 'budget'">Viewing records under budget: {{ recordFilters._budgetName }}.</span>
+            <span v-else-if="recordFilters.type === 'loansAndDebts'">Viewing dealings with party: {{ recordFilters._partyName }}.</span>
+          </div>
           <q-btn size="sm" color="secondary" outline rounded label="Clear" @click="clearFiltersClicked" />
         </div>
 
