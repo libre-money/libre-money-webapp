@@ -240,77 +240,14 @@ const quickSummaryList: Ref<QuickSummary[]> = ref([]);
 let cachedInferredRecordList: InferredRecord[] = [];
 
 // ----- Functions
-
 async function applyFilters(recordList: Record[]) {
-  if (!recordFilters.value) {
-    return recordList;
-  }
-
-  let { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, walletId, searchString, deepSearchString } = recordFilters.value;
-
-  let [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
-
-  if (recordTypeList.length) {
-    recordList = recordList.filter((record) => recordTypeList.indexOf(record.type) > -1);
-  }
-
-  if (tagIdWhiteList.length) {
-    recordList = recordList.filter((record) => {
-      return record.tagIdList.some((tagId) => tagIdWhiteList.includes(tagId));
-    });
-  }
-
-  if (tagIdBlackList.length > 0) {
-    recordList = recordList.filter((record) => {
-      return !record.tagIdList.some((tagId) => tagIdBlackList.includes(tagId));
-    });
-  }
-
-  if (partyId) {
-    recordList = recordList.filter(
-      (record) =>
-        record.income?.partyId === partyId ||
-        record.expense?.partyId === partyId ||
-        record.assetPurchase?.partyId === partyId ||
-        record.assetSale?.partyId === partyId ||
-        record.lending?.partyId === partyId ||
-        record.borrowing?.partyId === partyId ||
-        record.repaymentGiven?.partyId === partyId ||
-        record.repaymentReceived?.partyId === partyId
-    );
-  }
-  if (walletId) {
-    recordList = recordList.filter(
-      (record) =>
-        record.income?.walletId === walletId ||
-        record.expense?.walletId === walletId ||
-        record.assetPurchase?.walletId === walletId ||
-        record.assetSale?.walletId === walletId ||
-        record.lending?.walletId === walletId ||
-        record.borrowing?.walletId === walletId ||
-        record.repaymentGiven?.walletId === walletId ||
-        record.repaymentReceived?.walletId === walletId ||
-        record.moneyTransfer?.fromWalletId === walletId ||
-        record.moneyTransfer?.toWalletId === walletId
-    );
-  }
-
-  if (searchString && searchString.length > 0) {
-    recordList = recordList.filter((record) => record.notes && String(record.notes).toLocaleLowerCase().indexOf(searchString.toLocaleLowerCase()) > -1);
-  }
-
-  if (deepSearchString && deepSearchString.length > 0) {
-    recordList = recordList.filter((record) => JSON.stringify(record).toLocaleLowerCase().indexOf(deepSearchString.toLocaleLowerCase()) > -1);
-  }
-
-  recordList = recordList.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
-
-  return recordList;
+  return recordService.applyRecordFilters(recordList, recordFilters.value);
 }
 
 async function loadData(origin = "unspecified") {
   isLoading.value = true;
 
+  // Need to update cache if the cache is empty or the request is not from pagination interaction
   if (cachedInferredRecordList.length === 0 || origin !== "pagination") {
     loadingIndicator.value?.startPhase({ phase: 1, weight: 10, label: "Updating cache" });
     await recordService.updateCurrencyCache();
@@ -360,15 +297,11 @@ async function loadData(origin = "unspecified") {
 
     loadingIndicator.value?.setProgress(1);
 
-    let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
-
-    rows.value = inferredRecordList.slice(startIndex, startIndex + recordCountPerPage);
-
     cachedInferredRecordList = inferredRecordList;
-  } else {
-    let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
-    rows.value = cachedInferredRecordList.slice(startIndex, startIndex + recordCountPerPage);
   }
+
+  let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
+  rows.value = cachedInferredRecordList.slice(startIndex, startIndex + recordCountPerPage);
 
   isLoading.value = false;
 }

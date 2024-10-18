@@ -11,6 +11,8 @@ import { Wallet } from "src/models/wallet";
 import { Asset } from "src/models/asset";
 import { IncomeSource } from "src/models/income-source";
 import { Party } from "src/models/party";
+import { RecordFilters } from "src/models/inferred/record-filters";
+import { normalizeEpochRange } from "src/utils/date-utils";
 
 let currencyCacheList: Currency[] = [];
 
@@ -297,6 +299,73 @@ class RecordService {
     }
 
     return inferredRecordList;
+  }
+
+  async applyRecordFilters(recordList: Record[], recordFilters: RecordFilters | null): Promise<Record[]> {
+    if (!recordFilters) {
+      return recordList;
+    }
+
+    const { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, walletId, searchString, deepSearchString } = recordFilters;
+
+    const [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.startEpoch, recordFilters.endEpoch);
+
+    if (recordTypeList.length) {
+      recordList = recordList.filter((record) => recordTypeList.indexOf(record.type) > -1);
+    }
+
+    if (tagIdWhiteList.length) {
+      recordList = recordList.filter((record) => {
+        return record.tagIdList.some((tagId) => tagIdWhiteList.includes(tagId));
+      });
+    }
+
+    if (tagIdBlackList.length > 0) {
+      recordList = recordList.filter((record) => {
+        return !record.tagIdList.some((tagId) => tagIdBlackList.includes(tagId));
+      });
+    }
+
+    if (partyId) {
+      recordList = recordList.filter(
+        (record) =>
+          record.income?.partyId === partyId ||
+          record.expense?.partyId === partyId ||
+          record.assetPurchase?.partyId === partyId ||
+          record.assetSale?.partyId === partyId ||
+          record.lending?.partyId === partyId ||
+          record.borrowing?.partyId === partyId ||
+          record.repaymentGiven?.partyId === partyId ||
+          record.repaymentReceived?.partyId === partyId
+      );
+    }
+    if (walletId) {
+      recordList = recordList.filter(
+        (record) =>
+          record.income?.walletId === walletId ||
+          record.expense?.walletId === walletId ||
+          record.assetPurchase?.walletId === walletId ||
+          record.assetSale?.walletId === walletId ||
+          record.lending?.walletId === walletId ||
+          record.borrowing?.walletId === walletId ||
+          record.repaymentGiven?.walletId === walletId ||
+          record.repaymentReceived?.walletId === walletId ||
+          record.moneyTransfer?.fromWalletId === walletId ||
+          record.moneyTransfer?.toWalletId === walletId
+      );
+    }
+
+    if (searchString && searchString.length > 0) {
+      recordList = recordList.filter((record) => record.notes && String(record.notes).toLocaleLowerCase().indexOf(searchString.toLocaleLowerCase()) > -1);
+    }
+
+    if (deepSearchString && deepSearchString.length > 0) {
+      recordList = recordList.filter((record) => JSON.stringify(record).toLocaleLowerCase().indexOf(deepSearchString.toLocaleLowerCase()) > -1);
+    }
+
+    recordList = recordList.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+
+    return recordList;
   }
 }
 

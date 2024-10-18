@@ -15,7 +15,8 @@
               </tr>
               <tr v-for="row in overview.wallets.list" v-bind:key="row.walletId">
                 <td>{{ row.wallet.name }}</td>
-                <td>{{ prettifyAmount(row.balance) }}
+                <td>
+                  {{ prettifyAmount(row.balance) }}
                   <span class="wallet-limit" v-if="row.minimumBalanceState !== 'not-set'">
                     <span class="wallet-limit-warning" v-if="row.minimumBalanceState === 'warning'">
                       (Approaching limit {{ prettifyAmount(row.wallet.minimumBalance!) }})
@@ -36,7 +37,6 @@
             </tbody>
           </table>
         </div>
-
       </q-card-section>
 
       <q-card-actions class="row justify-end" style="margin-right: 8px; margin-bottom: 8px">
@@ -55,11 +55,10 @@ import { computationService } from "src/services/computation-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
 import { Overview } from "src/models/inferred/overview";
+import { lockService } from "src/services/lock-service";
 
 export default {
-  props: {
-
-  },
+  props: {},
 
   components: { LoadingIndicator },
 
@@ -82,6 +81,8 @@ export default {
     async function loadOverview() {
       isLoading.value = true;
 
+      await lockService.awaitTillTruthy(400, () => recordCurrencyId.value);
+
       let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
       overview.value = newOverview;
 
@@ -103,14 +104,13 @@ export default {
       cancelClicked: onDialogCancel,
       isLoading,
       prettifyAmount,
-      overview
+      overview,
     };
   },
 };
 </script>
 <style scoped lang="scss">
 @import url(./../css/table.scss);
-
 
 .wallet-limit-normal {
   color: #546e7a;
