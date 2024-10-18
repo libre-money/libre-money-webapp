@@ -158,6 +158,15 @@
             <!-- Money Transfer -->
 
             <div class="misc-row" v-else :data-index="index">{{ record }}</div>
+
+            <template v-if="index > 0 && prettifyDate(rows[index - 1].transactionEpoch) !== prettifyDate(record.transactionEpoch)">
+              <div class="divider-line-different-day">
+                <div class="divider-line-date">{{ prettifyDate(record.transactionEpoch) }}</div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="divider-line-same-day"></div>
+            </template>
           </div>
         </template>
 
@@ -540,10 +549,6 @@ onMounted(() => {
 }
 
 .record-row {
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px dashed #eaeaea;
-
   .record-date {
     font-size: 10px;
     display: inline-block;
@@ -666,5 +671,21 @@ onMounted(() => {
   font-size: 8px;
   text-transform: capitalize;
 }
+
+.divider-line-date {
+  font-size: 10px;
+  color: #666666;
+  text-align: center;
+  margin-top: -8px;
+}
+
+.divider-line-different-day {
+  border-top: 1px dashed #eaeaea;
+  margin: 12px 0px;
+}
+
+.divider-line-same-day {
+  border-top: 1px dashed #eaeaea;
+  margin: 12px 0px;
+}
 </style>
-src/utils/promise-pool.js
