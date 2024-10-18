@@ -87,7 +87,7 @@ export default {
         await lockService.awaitTillTruthy(1000, () => recordCurrencyId.value);
       } catch (error) {
         console.error("Error while waiting for record currency id", error);
-        if (error instanceof CodedError && error.code === "TIMED_OUT" && recordCurrencyId.value) {
+        if (error instanceof CodedError && error.code === "TIMED_OUT" && !recordCurrencyId.value) {
           await dialogService.alert("Error", "Please set a default currency in settings.");
         }
         isLoading.value = false;
