@@ -1,3 +1,4 @@
+import { CodedError } from "src/utils/error-utils";
 import { sleep } from "src/utils/misc-utils";
 
 const lockMap: Record<string, number> = {};
@@ -46,7 +47,7 @@ class LockService {
         return result;
       }
       if (Date.now() > endTime) {
-        throw new Error("Timeout");
+        throw new CodedError("TIMED_OUT", "Timed out while waiting for a condition to be true");
       }
       await sleep(20);
     }

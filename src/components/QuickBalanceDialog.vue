@@ -56,6 +56,8 @@ import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
 import { Overview } from "src/models/inferred/overview";
 import { lockService } from "src/services/lock-service";
+import { dialogService } from "src/services/dialog-service";
+import { CodedError } from "src/utils/error-utils";
 
 export default {
   props: {},
@@ -81,7 +83,17 @@ export default {
     async function loadOverview() {
       isLoading.value = true;
 
-      await lockService.awaitTillTruthy(400, () => recordCurrencyId.value);
+      try {
+        await lockService.awaitTillTruthy(1000, () => recordCurrencyId.value);
+      } catch (error) {
+        console.error("Error while waiting for record currency id", error);
+        if (error instanceof CodedError && error.code === "TIMED_OUT" && recordCurrencyId.value) {
+          await dialogService.alert("Error", "Please set a default currency in settings.");
+        }
+        isLoading.value = false;
+        onDialogCancel();
+        return;
+      }
 
       let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
       overview.value = newOverview;
