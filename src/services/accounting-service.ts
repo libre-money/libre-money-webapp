@@ -15,7 +15,7 @@ import { AccLedgerEntry } from "src/models/accounting/acc-ledger-entry";
 import { AccLedger } from "src/models/accounting/acc-ledger";
 import { AccTrialBalance, AccTrialBalanceWithCurrency } from "src/models/accounting/acc-trial-balance";
 import { dialogService } from "./dialog-service";
-import { PROMISE_POOL_CONCURRENCY_LIMT } from "src/constants/config-constants";
+import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD } from "src/constants/config-constants";
 import PromisePool from "src/utils/promise-pool";
 import { recordService } from "./record-service";
 
@@ -81,18 +81,22 @@ class AccountingService {
     const rawRecordList = (await pouchdbService.listByCollection(Collection.RECORD)).docs as SourceRecord[];
     await recordService.updateCurrencyCache();
 
-    let completedCount = 0;
-    const inferredRecordList = await PromisePool.mapList(rawRecordList, PROMISE_POOL_CONCURRENCY_LIMT, async (rawData: SourceRecord) => {
-      const result = await recordService.inferRecord(rawData);
-      completedCount += 1;
-      if (completedCount % Math.floor(rawRecordList.length / 10) === 0) {
-        progressNotifierFn(completedCount / rawRecordList.length);
-      }
-      return result;
-    });
-    progressNotifierFn(1);
+    let inferredRecordList: InferredRecord[];
+    if (rawRecordList.length < RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD) {
+      let completedCount = 0;
+      inferredRecordList = await PromisePool.mapList(rawRecordList, PROMISE_POOL_CONCURRENCY_LIMT, async (rawData: SourceRecord) => {
+        const result = await recordService.inferRecord(rawData);
+        completedCount += 1;
+        if (completedCount % Math.floor(rawRecordList.length / 10) === 0) {
+          progressNotifierFn(completedCount / rawRecordList.length);
+        }
+        return result;
+      });
+      progressNotifierFn(1);
+    } else {
+      inferredRecordList = await recordService.inferInBatch(rawRecordList);
+    }
 
-    // const inferredRecordList = await Promise.all(rawRecordList.map((rawData) => recordService.inferRecord(rawData)));
     inferredRecordList.sort((a, b) => (a.transactionEpoch || 0) - (b.transactionEpoch || 0));
     return inferredRecordList;
   }

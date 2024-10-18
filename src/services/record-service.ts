@@ -1,10 +1,16 @@
-import { Collection, RecordType } from "src/constants/constants";
+import { assetLiquidityList, assetTypeList, Collection, RecordType } from "src/constants/constants";
 import { Currency } from "src/models/currency";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { Record } from "src/models/record";
 import { deepClone, prettifyAmount } from "src/utils/misc-utils";
 import { entityService } from "./entity-service";
 import { pouchdbService } from "./pouchdb-service";
+import { ExpenseAvenue } from "src/models/expense-avenue";
+import { Tag } from "src/models/tag";
+import { Wallet } from "src/models/wallet";
+import { Asset } from "src/models/asset";
+import { IncomeSource } from "src/models/income-source";
+import { Party } from "src/models/party";
 
 let currencyCacheList: Currency[] = [];
 
@@ -182,6 +188,115 @@ class RecordService {
     }
 
     return true;
+  }
+
+  public async inferInBatch(recordList: Record[]): Promise<InferredRecord[]> {
+    const expenseAvenueList = (await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE)).docs as ExpenseAvenue[];
+    const incomeSourceList = (await pouchdbService.listByCollection(Collection.INCOME_SOURCE)).docs as IncomeSource[];
+    const partyList = (await pouchdbService.listByCollection(Collection.PARTY)).docs as Party[];
+    const walletList = (await pouchdbService.listByCollection(Collection.WALLET)).docs as Wallet[];
+    const assetList = (await pouchdbService.listByCollection(Collection.ASSET)).docs as Asset[];
+    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
+    const tagList = (await pouchdbService.listByCollection(Collection.TAG)).docs as Tag[];
+
+    const map = new Map<string, ExpenseAvenue | IncomeSource | Party | Wallet | Asset | Currency | Tag>();
+    expenseAvenueList.forEach((expenseAvenue) => map.set(expenseAvenue.$collection + "-" + expenseAvenue._id!, expenseAvenue));
+    incomeSourceList.forEach((incomeSource) => map.set(incomeSource.$collection + "-" + incomeSource._id!, incomeSource));
+    partyList.forEach((party) => map.set(party.$collection + "-" + party._id!, party));
+    walletList.forEach((wallet) => map.set(wallet.$collection + "-" + wallet._id!, wallet));
+    assetList.forEach((asset) => map.set(asset.$collection + "-" + asset._id!, asset));
+    currencyList.forEach((currency) => map.set(currency.$collection + "-" + currency._id!, currency));
+    tagList.forEach((tag) => map.set(tag.$collection + "-" + tag._id!, tag));
+
+    const inferredRecordList = deepClone(recordList) as InferredRecord[];
+
+    for (const inferredRecord of inferredRecordList) {
+      if (inferredRecord.type === RecordType.EXPENSE && inferredRecord.expense) {
+        inferredRecord.expense.expenseAvenue = map.get(Collection.EXPENSE_AVENUE + "-" + inferredRecord.expense.expenseAvenueId) as ExpenseAvenue;
+        if (inferredRecord.expense.expenseAvenue) {
+          if (inferredRecord.expense.partyId) {
+            inferredRecord.expense.party = map.get(Collection.PARTY + "-" + inferredRecord.expense.partyId) as Party;
+          }
+          if (inferredRecord.expense.walletId) {
+            inferredRecord.expense.wallet = map.get(Collection.WALLET + "-" + inferredRecord.expense.walletId) as Wallet;
+          }
+        }
+      } else if (inferredRecord.type === RecordType.INCOME && inferredRecord.income) {
+        inferredRecord.income.incomeSource = map.get(Collection.INCOME_SOURCE + "-" + inferredRecord.income.incomeSourceId) as IncomeSource;
+        if (inferredRecord.income.partyId) {
+          inferredRecord.income.party = map.get(Collection.PARTY + "-" + inferredRecord.income.partyId) as Party;
+        }
+        if (inferredRecord.income.walletId) {
+          inferredRecord.income.wallet = map.get(Collection.WALLET + "-" + inferredRecord.income.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.MONEY_TRANSFER && inferredRecord.moneyTransfer) {
+        if (inferredRecord.moneyTransfer.fromWalletId) {
+          inferredRecord.moneyTransfer.fromWallet = map.get(Collection.WALLET + "-" + inferredRecord.moneyTransfer.fromWalletId) as Wallet;
+        }
+        if (inferredRecord.moneyTransfer.toWalletId) {
+          inferredRecord.moneyTransfer.toWallet = map.get(Collection.WALLET + "-" + inferredRecord.moneyTransfer.toWalletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.LENDING && inferredRecord.lending) {
+        if (inferredRecord.lending.partyId) {
+          inferredRecord.lending.party = map.get(Collection.PARTY + "-" + inferredRecord.lending.partyId) as Party;
+        }
+        if (inferredRecord.lending.walletId) {
+          inferredRecord.lending.wallet = map.get(Collection.WALLET + "-" + inferredRecord.lending.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.BORROWING && inferredRecord.borrowing) {
+        if (inferredRecord.borrowing.partyId) {
+          inferredRecord.borrowing.party = map.get(Collection.PARTY + "-" + inferredRecord.borrowing.partyId) as Party;
+        }
+        if (inferredRecord.borrowing.walletId) {
+          inferredRecord.borrowing.wallet = map.get(Collection.WALLET + "-" + inferredRecord.borrowing.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.REPAYMENT_GIVEN && inferredRecord.repaymentGiven) {
+        if (inferredRecord.repaymentGiven.partyId) {
+          inferredRecord.repaymentGiven.party = map.get(Collection.PARTY + "-" + inferredRecord.repaymentGiven.partyId) as Party;
+        }
+        if (inferredRecord.repaymentGiven.walletId) {
+          inferredRecord.repaymentGiven.wallet = map.get(Collection.WALLET + "-" + inferredRecord.repaymentGiven.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.REPAYMENT_RECEIVED && inferredRecord.repaymentReceived) {
+        if (inferredRecord.repaymentReceived.partyId) {
+          inferredRecord.repaymentReceived.party = map.get(Collection.PARTY + "-" + inferredRecord.repaymentReceived.partyId) as Party;
+        }
+        if (inferredRecord.repaymentReceived.walletId) {
+          inferredRecord.repaymentReceived.wallet = map.get(Collection.WALLET + "-" + inferredRecord.repaymentReceived.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.ASSET_PURCHASE && inferredRecord.assetPurchase) {
+        if (inferredRecord.assetPurchase.assetId) {
+          inferredRecord.assetPurchase.asset = map.get(Collection.ASSET + "-" + inferredRecord.assetPurchase.assetId) as Asset;
+        }
+        if (inferredRecord.assetPurchase.partyId) {
+          inferredRecord.assetPurchase.party = map.get(Collection.PARTY + "-" + inferredRecord.assetPurchase.partyId) as Party;
+        }
+        if (inferredRecord.assetPurchase.walletId) {
+          inferredRecord.assetPurchase.wallet = map.get(Collection.WALLET + "-" + inferredRecord.assetPurchase.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.ASSET_SALE && inferredRecord.assetSale) {
+        if (inferredRecord.assetSale.assetId) {
+          inferredRecord.assetSale.asset = map.get(Collection.ASSET + "-" + inferredRecord.assetSale.assetId) as Asset;
+        }
+        if (inferredRecord.assetSale.partyId) {
+          inferredRecord.assetSale.party = map.get(Collection.PARTY + "-" + inferredRecord.assetSale.partyId) as Party;
+        }
+        if (inferredRecord.assetSale.walletId) {
+          inferredRecord.assetSale.wallet = map.get(Collection.WALLET + "-" + inferredRecord.assetSale.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.ASSET_APPRECIATION_DEPRECIATION && inferredRecord.assetAppreciationDepreciation) {
+        if (inferredRecord.assetAppreciationDepreciation.assetId) {
+          inferredRecord.assetAppreciationDepreciation.asset = map.get(Collection.ASSET + "-" + inferredRecord.assetAppreciationDepreciation.assetId) as Asset;
+        }
+      }
+
+      inferredRecord.typePrettified = inferredRecord.type.replace(/\-/g, " ");
+      inferredRecord.tagList = inferredRecord.tagIdList
+        .map(tagId => map.get(Collection.TAG + "-" + tagId) as Tag)
+        .filter(Boolean);
+    }
+
+    return inferredRecordList;
   }
 }
 

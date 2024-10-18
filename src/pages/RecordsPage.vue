@@ -207,7 +207,7 @@ import { QuickSummary } from "src/models/inferred/quick-summary";
 import { computationService } from "src/services/computation-service";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import PromisePool from "src/utils/promise-pool";
-import { PROMISE_POOL_CONCURRENCY_LIMT } from "src/constants/config-constants";
+import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD } from "src/constants/config-constants";
 import QuickSummaryDialog from "src/components/QuickSummaryDialog.vue";
 import QuickBalanceDialog from "src/components/QuickBalanceDialog.vue";
 import { recordService } from "src/services/record-service";
@@ -343,15 +343,21 @@ async function loadData(origin = "unspecified") {
 
     loadingIndicator.value?.startPhase({ phase: 4, weight: 60, label: "Preparing view" });
 
-    let completedCount = 0;
-    let inferredRecordList = await PromisePool.mapList(recordList, PROMISE_POOL_CONCURRENCY_LIMT, async (rawData: Record) => {
-      const result = await recordService.inferRecord(rawData);
-      completedCount += 1;
-      if (completedCount % Math.floor(recordList.length / 10) === 0) {
-        loadingIndicator.value?.setProgress(completedCount / recordList.length);
-      }
-      return result;
-    });
+    let inferredRecordList: InferredRecord[];
+    if (recordList.length < RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD) {
+      let completedCount = 0;
+      inferredRecordList = await PromisePool.mapList(recordList, PROMISE_POOL_CONCURRENCY_LIMT, async (rawData: Record) => {
+        const result = await recordService.inferRecord(rawData);
+        completedCount += 1;
+        if (completedCount % Math.floor(recordList.length / 10) === 0) {
+          loadingIndicator.value?.setProgress(completedCount / recordList.length);
+        }
+        return result;
+      });
+    } else {
+      inferredRecordList = await recordService.inferInBatch(recordList);
+    }
+
     loadingIndicator.value?.setProgress(1);
 
     let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
