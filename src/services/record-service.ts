@@ -182,7 +182,7 @@ class RecordService {
     return true;
   }
 
-  public async inferInBatch(recordList: Record[]): Promise<InferredRecord[]> {
+  public async buildEntityMap() {
     const expenseAvenueList = (await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE)).docs as ExpenseAvenue[];
     const incomeSourceList = (await pouchdbService.listByCollection(Collection.INCOME_SOURCE)).docs as IncomeSource[];
     const partyList = (await pouchdbService.listByCollection(Collection.PARTY)).docs as Party[];
@@ -200,7 +200,13 @@ class RecordService {
     currencyList.forEach((currency) => map.set(currency.$collection + "-" + currency._id!, currency));
     tagList.forEach((tag) => map.set(tag.$collection + "-" + tag._id!, tag));
 
+    return map;
+  }
+
+  public async inferInBatch(recordList: Record[], entityMap?: Map<string, ExpenseAvenue | IncomeSource | Party | Wallet | Asset | Currency | Tag>): Promise<InferredRecord[]> {
     const inferredRecordList = deepClone(recordList) as InferredRecord[];
+
+    const map = entityMap || await this.buildEntityMap();
 
     for (const inferredRecord of inferredRecordList) {
       if (inferredRecord.type === RecordType.EXPENSE && inferredRecord.expense) {
