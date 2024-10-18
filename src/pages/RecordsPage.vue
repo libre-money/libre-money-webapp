@@ -86,12 +86,12 @@
 
               <div class="amounts-section">
                 <div class="amount" :class="{ 'amount-out': isRecordOutFlow(record), 'amount-in': isRecordInFlow(record) }">
-                  {{ recordService.getPrintableAmount(getNumber(record, "amount")!, getString(record, "currencyId")!) }}
+                  {{ formatService.getPrintableAmount(getNumber(record, "amount")!, getString(record, "currencyId")!) }}
                 </div>
                 <div class="wallet" v-if="getWallet(record)">({{ getWallet(record)!.name }})</div>
                 <div class="unpaid-amount" v-if="getNumber(record, 'amountUnpaid')! > 0">
                   Unpaid:
-                  {{ recordService.getPrintableAmount(getNumber(record, "amountUnpaid")!, getString(record, "currencyId")!) }}
+                  {{ formatService.getPrintableAmount(getNumber(record, "amountUnpaid")!, getString(record, "currencyId")!) }}
                 </div>
                 <div class="controls">
                   <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editSingleAmountRecordClicked(record)" />
@@ -133,13 +133,13 @@
                 <div class="row amounts-section-row">
                   <div class="amount-col amount-left-col">
                     <div class="amount amount-out">
-                      Out {{ recordService.getPrintableAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}
+                      Out {{ formatService.getPrintableAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}
                     </div>
                     <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
                   </div>
                   <div class="amount-col amount-right-col">
                     <div class="amount amount-in">
-                      In {{ recordService.getPrintableAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}
+                      In {{ formatService.getPrintableAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}
                     </div>
                     <div class="wallet">({{ record.moneyTransfer.toWallet.name }})</div>
                   </div>
@@ -174,48 +174,48 @@
 </template>
 
 <script lang="ts" setup>
-import { Ref, onMounted, ref, watch } from "vue";
 import { useQuasar } from "quasar";
-import { pouchdbService } from "src/services/pouchdb-service";
-import { Record } from "src/models/record";
-import { dialogService } from "src/services/dialog-service";
-import { Collection, RecordType } from "src/constants/constants";
-import { InferredRecord } from "src/models/inferred/inferred-record";
-import { entityService } from "src/services/entity-service";
-import { deepClone, guessFontColorCode, prettifyAmount, prettifyDate, sleep } from "src/utils/misc-utils";
-import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
-import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
-import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
-import AddRepaymentReceivedRecord from "src/components/AddRepaymentReceivedRecord.vue";
-import AddRepaymentGivenRecord from "src/components/AddRepaymentGivenRecord.vue";
-import AddLendingRecord from "src/components/AddLendingRecord.vue";
-import AddBorrowingRecord from "src/components/AddBorrowingRecord.vue";
+import AddAssetAppreciationDepreciationRecord from "src/components/AddAssetAppreciationDepreciationRecord.vue";
 import AddAssetPurchaseRecord from "src/components/AddAssetPurchaseRecord.vue";
 import AddAssetSaleRecord from "src/components/AddAssetSaleRecord.vue";
-import AddAssetAppreciationDepreciationRecord from "src/components/AddAssetAppreciationDepreciationRecord.vue";
-import { Party } from "src/models/party";
-import { Wallet } from "src/models/wallet";
-import { Asset } from "src/models/asset";
-import { RecordFilters } from "src/models/inferred/record-filters";
+import AddBorrowingRecord from "src/components/AddBorrowingRecord.vue";
+import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
+import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
+import AddLendingRecord from "src/components/AddLendingRecord.vue";
+import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
+import AddRepaymentGivenRecord from "src/components/AddRepaymentGivenRecord.vue";
+import AddRepaymentReceivedRecord from "src/components/AddRepaymentReceivedRecord.vue";
 import FilterRecordsDialog from "src/components/FilterRecordsDialog.vue";
-import { normalizeEpochRange } from "src/utils/date-utils";
-import SelectTemplateDialog from "src/components/SelectTemplateDialog.vue";
-import { useRecordFiltersStore } from "src/stores/record-filters-store";
 import MonthAndYearInput from "src/components/lib/MonthAndYearInput.vue";
-import { useRecordPaginationSizeStore } from "src/stores/record-pagination";
-import { QuickSummary } from "src/models/inferred/quick-summary";
-import { computationService } from "src/services/computation-service";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
-import PromisePool from "src/utils/promise-pool";
-import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD } from "src/constants/config-constants";
-import QuickSummaryDialog from "src/components/QuickSummaryDialog.vue";
 import QuickBalanceDialog from "src/components/QuickBalanceDialog.vue";
+import QuickSummaryDialog from "src/components/QuickSummaryDialog.vue";
+import SelectTemplateDialog from "src/components/SelectTemplateDialog.vue";
+import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD } from "src/constants/config-constants";
+import { Collection, RecordType } from "src/constants/constants";
+import { Asset } from "src/models/asset";
+import { InferredRecord } from "src/models/inferred/inferred-record";
+import { QuickSummary } from "src/models/inferred/quick-summary";
+import { RecordFilters } from "src/models/inferred/record-filters";
+import { Party } from "src/models/party";
+import { Record } from "src/models/record";
+import { Wallet } from "src/models/wallet";
+import { computationService } from "src/services/computation-service";
+import { dialogService } from "src/services/dialog-service";
+import { formatService } from "src/services/format-service";
+import { pouchdbService } from "src/services/pouchdb-service";
 import { recordService } from "src/services/record-service";
-const recordFiltersStore = useRecordFiltersStore();
+import { useRecordFiltersStore } from "src/stores/record-filters-store";
+import { useRecordPaginationSizeStore } from "src/stores/record-pagination";
+import { normalizeEpochRange } from "src/utils/date-utils";
+import { deepClone, guessFontColorCode, prettifyDate } from "src/utils/misc-utils";
+import PromisePool from "src/utils/promise-pool";
+import { Ref, onMounted, ref, watch } from "vue";
 
 const $q = useQuasar();
 
 const recordPaginationStore = useRecordPaginationSizeStore();
+const recordFiltersStore = useRecordFiltersStore();
 
 // ----- Refs
 const isLoading = ref(false);
@@ -250,7 +250,6 @@ async function loadData(origin = "unspecified") {
   // Need to update cache if the cache is empty or the request is not from pagination interaction
   if (cachedInferredRecordList.length === 0 || origin !== "pagination") {
     loadingIndicator.value?.startPhase({ phase: 1, weight: 10, label: "Updating cache" });
-    await recordService.updateCurrencyCache();
 
     loadingIndicator.value?.startPhase({ phase: 2, weight: 20, label: "Filtering records" });
     let recordList = (await pouchdbService.listByCollection(Collection.RECORD)).docs as Record[];

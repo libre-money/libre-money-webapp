@@ -32,7 +32,7 @@ function stripKnownTemporaryFields(doc: any) {
   });
 }
 
-const upserListenerList: (() => void)[] = [];
+const changeListenerList: ((action: "upsert" | "remove" | "sync", doc: PouchDB.Core.PostDocument<any> | undefined) => void)[] = [];
 
 const INTENTIONAL_DELAY_MS = 1;
 const INTENTIONAL_DELAY_THRESHOLD = 500;
@@ -53,8 +53,14 @@ export const pouchdbService = {
     return pouchdb;
   },
 
-  registerUpsertListener(listenerFn: () => void) {
-    upserListenerList.push(listenerFn);
+  registerChangeListener(listenerFn: (doc: PouchDB.Core.PostDocument<any> | undefined) => void) {
+    changeListenerList.push(listenerFn);
+  },
+
+  notifyChangeListeners(action: "upsert" | "remove" | "sync", doc: PouchDB.Core.PostDocument<any> | undefined) {
+    changeListenerList.forEach((listener) => {
+      listener(action, doc);
+    });
   },
 
   async upsertDoc(doc: PouchDB.Core.PostDocument<any>) {
@@ -65,16 +71,14 @@ export const pouchdbService = {
     doc.modifiedEpoch = Date.now();
     stripKnownTemporaryFields(doc);
     if (doc._id) {
-      pouchdb.put(doc);
-      upserListenerList.forEach((listener) => {
-        listener();
-      });
+      await pouchdb.put(doc);
+
+      this.notifyChangeListeners("upsert", doc);
       return;
     } else {
-      pouchdb.post(doc);
-      upserListenerList.forEach((listener) => {
-        listener();
-      });
+      await pouchdb.post(doc);
+
+      this.notifyChangeListeners("upsert", doc);
       return;
     }
   },
@@ -113,7 +117,11 @@ export const pouchdbService = {
       return { ok: false };
     }
 
-    return await pouchdb.remove(doc._id, doc._rev);
+    const res = await pouchdb.remove(doc._id, doc._rev);
+
+    this.notifyChangeListeners("remove", doc);
+
+    return res;
   },
 
   async sync() {
@@ -127,19 +135,23 @@ export const pouchdbService = {
 
       pouchdb
         .sync(remoteDB)
-        .on("complete", function () {
+        .on("complete", () => {
           console.debug("Sync ended");
           accept(errorCount);
+
+          this.notifyChangeListeners("sync", undefined);
         })
-        .on("denied", function (err) {
+        .on("denied", (err) => {
           console.error(err);
           errorCount += 1;
         })
-        .on("error", function (err) {
+        .on("error", (err) => {
           console.error(err);
           console.debug(err);
           console.debug("Sync error");
           reject(err);
+
+          this.notifyChangeListeners("sync", undefined);
         });
     });
   },

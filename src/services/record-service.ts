@@ -1,30 +1,20 @@
-import { assetLiquidityList, assetTypeList, Collection, RecordType } from "src/constants/constants";
+import { Collection, RecordType } from "src/constants/constants";
+import { Asset } from "src/models/asset";
 import { Currency } from "src/models/currency";
-import { InferredRecord } from "src/models/inferred/inferred-record";
-import { Record } from "src/models/record";
-import { deepClone, prettifyAmount } from "src/utils/misc-utils";
-import { entityService } from "./entity-service";
-import { pouchdbService } from "./pouchdb-service";
 import { ExpenseAvenue } from "src/models/expense-avenue";
+import { IncomeSource } from "src/models/income-source";
+import { InferredRecord } from "src/models/inferred/inferred-record";
+import { RecordFilters } from "src/models/inferred/record-filters";
+import { Party } from "src/models/party";
+import { Record } from "src/models/record";
 import { Tag } from "src/models/tag";
 import { Wallet } from "src/models/wallet";
-import { Asset } from "src/models/asset";
-import { IncomeSource } from "src/models/income-source";
-import { Party } from "src/models/party";
-import { RecordFilters } from "src/models/inferred/record-filters";
 import { normalizeEpochRange } from "src/utils/date-utils";
-
-let currencyCacheList: Currency[] = [];
+import { deepClone } from "src/utils/misc-utils";
+import { entityService } from "./entity-service";
+import { pouchdbService } from "./pouchdb-service";
 
 class RecordService {
-  async updateCurrencyCache() {
-    currencyCacheList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-  }
-
-  getPrintableAmount(amount: number, currencyId: string) {
-    const currency = currencyCacheList.find((_currency) => _currency._id === currencyId);
-    return `${prettifyAmount(amount)} ${currency!.sign}`;
-  }
 
   async inferRecord(record: Record): Promise<InferredRecord> {
     const inferredRecord = deepClone(record) as InferredRecord;

@@ -28,8 +28,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer class="std-column main-left-sidebar-drawer" v-model="leftDrawerOpen" show-if-above bordered
-      v-if="userStore.isUserLoggedIn">
+    <q-drawer class="std-column main-left-sidebar-drawer" v-model="leftDrawerOpen" show-if-above bordered v-if="userStore.isUserLoggedIn">
       <q-list>
         <q-item-label header> CORE </q-item-label>
         <EssentialLink v-for="link in operationList" :key="link.title" v-bind="link" />
@@ -84,6 +83,7 @@ import { sleep } from "src/utils/misc-utils";
 import { useQuasar } from "quasar";
 import SyncDialog from "src/components/SyncDialog.vue";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
+import { formatService } from "src/services/format-service";
 
 const operationList = [
   {
@@ -282,6 +282,8 @@ export default defineComponent({
       await dialogService.alert(title, body);
     }
 
+    formatService.init();
+
     return {
       operationList,
       entityList,
@@ -301,7 +303,7 @@ export default defineComponent({
       verionClicked,
 
       isDevDatabase,
-      isDevMachine
+      isDevMachine,
     };
   },
 });

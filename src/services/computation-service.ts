@@ -1,29 +1,20 @@
 import { Collection, RecordType, assetLiquidityList } from "src/constants/constants";
-import { ExpenseAvenue } from "src/models/expense-avenue";
-import { InferredRecord } from "src/models/inferred/inferred-record";
-import { Record } from "src/models/record";
-import { asAmount, deepClone, isNullOrUndefined } from "src/utils/misc-utils";
-import { pouchdbService } from "./pouchdb-service";
-import { Party } from "src/models/party";
-import { Tag } from "src/models/tag";
-import { Currency } from "src/models/currency";
-import { Wallet } from "src/models/wallet";
-import { IncomeSource } from "src/models/income-source";
 import { Asset } from "src/models/asset";
+import { Budget } from "src/models/budget";
+import { Currency } from "src/models/currency";
+import { ExpenseAvenue } from "src/models/expense-avenue";
+import { IncomeSource } from "src/models/income-source";
 import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
 import { Overview } from "src/models/inferred/overview";
-import { entityService } from "./entity-service";
-import { normalizeEpochRange } from "src/utils/date-utils";
-import { Budget } from "src/models/budget";
 import { QuickSummary } from "src/models/inferred/quick-summary";
-import { recordService } from "./record-service";
-
-let currencyCacheList: Currency[] = [];
+import { Party } from "src/models/party";
+import { Record } from "src/models/record";
+import { Wallet } from "src/models/wallet";
+import { normalizeEpochRange } from "src/utils/date-utils";
+import { asAmount, isNullOrUndefined } from "src/utils/misc-utils";
+import { pouchdbService } from "./pouchdb-service";
 
 class ComputationService {
-  async updateCurrencyCache() {
-    currencyCacheList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-  }
 
   async computeBalancesForAssets(assetList: Asset[]): Promise<void> {
     const res2 = await pouchdbService.listByCollection(Collection.RECORD);
@@ -199,8 +190,6 @@ class ComputationService {
   }
 
   async computeOverview(startEpoch: number, endEpoch: number, currencyId: string): Promise<Overview | null> {
-    await recordService.updateCurrencyCache();
-
     [startEpoch, endEpoch] = normalizeEpochRange(startEpoch, endEpoch);
 
     // ============== Preparation
