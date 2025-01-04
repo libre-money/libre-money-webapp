@@ -144,7 +144,7 @@ export default defineComponent({
 
     const paginationSizeStore = usePaginationSizeStore();
     const pagination = ref({
-      sortBy: "name",
+      sortBy: "status",
       descending: false,
       page: 1,
       rowsPerPage: paginationSizeStore.paginationSize,
