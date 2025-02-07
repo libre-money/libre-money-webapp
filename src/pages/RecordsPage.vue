@@ -4,23 +4,45 @@
     <q-card class="std-card featured-rolling-budgets-card" style="margin-bottom: 4px" v-show="featuredRollingBudgetList.length > 0">
       <div class="featured-rolling-budget-list q-pa-md q-gutter-sm">
         <div class="featured-rolling-budget" v-for="rollingBudget in featuredRollingBudgetList" :key="rollingBudget._id">
-          <div class="featured-rolling-budget-name">
+          <div class="featured-rolling-budget-name" style="margin-bottom: 8px">
             {{ rollingBudget.name }} ({{ prettifyDate(rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].startEpoch) }} to
             {{ prettifyDate(rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].endEpoch) }})
           </div>
           <div>
-            <q-linear-progress
-              :value="(rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount + rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount) / rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount"
-              class="q-mt-sm"
-              rounded
-              size="10px"
-              :color="rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount + rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount > rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount ? 'negative' : 'positive'"
-            />
+            <div class="row no-wrap" style="height: 10px; border-radius: 5px; overflow: hidden">
+              <div
+                :style="{
+                  width: (rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount / rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount * 100) + '%',
+                  backgroundColor: rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount + rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount > rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount ? 'var(--q-negative)' : 'var(--q-positive)',
+                  height: '100%',
+                }"
+              ></div>
+              <div
+                :style="{
+                  width: (rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount / rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount * 100) + '%',
+                  backgroundColor: 'var(--q-warning)',
+                  height: '100%',
+                }"
+              ></div>
+              <div
+                :style="{
+                  flex: 1,
+                  backgroundColor: '#e0e0e0',
+                  height: '100%',
+                }"
+              ></div>
+            </div>
             <div class="text-caption text-right">
               {{
                 formatService.getPrintableAmount(
-                  rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount +
-                    rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount,
+                  rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount,
+                  rollingBudget.currencyId
+                )
+              }}
+              +
+              {{
+                formatService.getPrintableAmount(
+                  rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount,
                   rollingBudget.currencyId
                 )
               }}
