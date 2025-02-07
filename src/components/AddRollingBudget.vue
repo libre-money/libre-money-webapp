@@ -6,6 +6,7 @@
         <q-form class="q-gutter-md q-pa-md" ref="budgetForm">
           <q-input filled v-model="budgetName" label="Name of the Rolling Budget" lazy-rules :rules="validators.name" />
           <select-currency v-model="budgetCurrencyId"></select-currency>
+          <q-checkbox v-model="budgetIsFeatured" label="Show in Records Page" @update:model-value="optionChanged('featured')" />
           <q-select
             v-model="budgetRollOverRule"
             :options="rollOverRuleList"
@@ -128,7 +129,7 @@ export default {
     const newPeriodAmount: Ref<number> = ref(0);
     const budgetRollOverRule: Ref<string> = ref(defaultRollOverRule);
     const budgetCurrencySign: Ref<string | null> = ref(null);
-
+    const budgetIsFeatured: Ref<boolean> = ref(false);
     const tableColumns = [
       {
         name: "startDate",
@@ -185,6 +186,7 @@ export default {
       budgetCurrencyId.value = res.currencyId;
       budgetedPeriodList.value = res.budgetedPeriodList;
       budgetRollOverRule.value = res.rollOverRule;
+      budgetIsFeatured.value = res.isFeatured;
     }
 
     function addPeriod() {
@@ -231,6 +233,7 @@ export default {
         frequency: "monthly",
         budgetedPeriodList: budgetedPeriodList.value,
         rollOverRule: budgetRollOverRule.value as "always" | "never" | "positive-only" | "negative-only",
+        isFeatured: budgetIsFeatured.value,
       };
 
       await computationService.computeUsedAmountForRollingBudgetInPlace(rollingBudget);
@@ -281,6 +284,7 @@ export default {
         frequency: "monthly",
         budgetedPeriodList: budgetedPeriodList.value,
         rollOverRule: budgetRollOverRule.value as "always" | "never" | "positive-only" | "negative-only",
+        isFeatured: budgetIsFeatured.value,
       };
 
       if (initialDoc) {
@@ -341,6 +345,7 @@ export default {
       budgetRollOverRule,
       rollOverRuleList,
       allocatedAmountChanged,
+      budgetIsFeatured,
     };
   },
 };

@@ -1,5 +1,43 @@
 <template>
   <q-page class="row items-start justify-evenly">
+    <!-- Featured Rolling Budgets -->
+    <q-card class="std-card" style="margin-bottom: 4px" v-if="featuredRollingBudgetList.length > 0">
+      <div class="featured-rolling-budget-list q-pa-md q-gutter-sm">
+        <div class="featured-rolling-budget" v-for="rollingBudget in featuredRollingBudgetList" :key="rollingBudget._id">
+          <div class="featured-rolling-budget-name">
+            {{ rollingBudget.name }} ({{ prettifyDate(rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].startEpoch) }} to
+            {{ prettifyDate(rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].endEpoch) }})
+          </div>
+          <div>
+            <q-linear-progress
+              :value="rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount / rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount"
+              class="q-mt-sm"
+              rounded
+              size="10px"
+              :color="rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange! ].usedAmount > rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount ? 'negative' : 'positive'"
+            />
+            <div class="text-caption text-right">
+              {{
+                formatService.getPrintableAmount(
+                  rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount,
+                  rollingBudget.currencyId
+                )
+              }}
+              /
+              {{
+                formatService.getPrintableAmount(
+                  rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount,
+                  rollingBudget.currencyId
+                )
+              }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </q-card>
+    <!-- End of Featured Rolling Budgets -->
+
+    <!-- Records -->
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <q-btn color="secondary" icon="filter_list" flat round @click="setFiltersClicked" />
@@ -188,6 +226,7 @@
         </div>
       </div>
     </q-card>
+    <!-- End of Records -->
 
     <!-- Quick Summary - Start -->
     <q-card class="std-card" v-if="!isLoading && quickSummaryList.length > 0"> </q-card>
@@ -196,7 +235,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useQuasar } from "quasar";
+import { debounce, useQuasar } from "quasar";
 import AddAssetAppreciationDepreciationRecord from "src/components/AddAssetAppreciationDepreciationRecord.vue";
 import AddAssetPurchaseRecord from "src/components/AddAssetPurchaseRecord.vue";
 import AddAssetSaleRecord from "src/components/AddAssetSaleRecord.vue";
@@ -222,12 +261,14 @@ import { QuickSummary } from "src/models/inferred/quick-summary";
 import { RecordFilters } from "src/models/inferred/record-filters";
 import { Party } from "src/models/party";
 import { Record } from "src/models/record";
+import { RollingBudget } from "src/models/rolling-budget";
 import { Wallet } from "src/models/wallet";
 import { computationService } from "src/services/computation-service";
 import { dialogService } from "src/services/dialog-service";
 import { formatService } from "src/services/format-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { recordService } from "src/services/record-service";
+import { rollingBudgetService } from "src/services/rolling-budget-service";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
 import { useRecordPaginationSizeStore } from "src/stores/record-pagination";
 import { normalizeEpochRange } from "src/utils/date-utils";
@@ -258,6 +299,8 @@ const quickSummaryList: Ref<QuickSummary[]> = ref([]);
 
 let cachedInferredRecordList: InferredRecord[] = [];
 
+const featuredRollingBudgetList: Ref<RollingBudget[]> = ref([]);
+
 // ----- Functions
 async function applyFilters(recordList: Record[]) {
   return recordService.applyRecordFilters(recordList, recordFilters.value);
@@ -268,6 +311,8 @@ async function loadData(origin = "unspecified") {
 
   // Need to update cache if the cache is empty or the request is not from pagination interaction
   if (cachedInferredRecordList.length === 0 || origin !== "pagination") {
+    hideRollingBudgets();
+
     loadingIndicator.value?.startPhase({ phase: 1, weight: 10, label: "Updating cache" });
 
     loadingIndicator.value?.startPhase({ phase: 2, weight: 20, label: "Filtering records" });
@@ -321,8 +366,34 @@ async function loadData(origin = "unspecified") {
   let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
   rows.value = cachedInferredRecordList.slice(startIndex, startIndex + recordCountPerPage);
 
+  if (cachedInferredRecordList.length === 0 || origin !== "pagination") {
+    loadFeaturedRollingBudgetsDebounced();
+  }
+
   isLoading.value = false;
 }
+
+function hideRollingBudgets() {
+  featuredRollingBudgetList.value = [];
+}
+
+async function loadFeaturedRollingBudgets() {
+  let startEpoch,
+    endEpoch = 0;
+  if (recordFilters.value) {
+    [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
+  } else {
+    let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
+    let rangeEnd = new Date(filterYear.value, filterMonth.value, 1);
+    rangeEnd.setMonth(rangeEnd.getMonth() + 1);
+    rangeEnd.setDate(rangeEnd.getDate() - 1);
+    [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
+  }
+  featuredRollingBudgetList.value = await rollingBudgetService.listAllFeaturedInRange(startEpoch, endEpoch);
+  console.debug({ featuredRollingBudgetList: deepClone(featuredRollingBudgetList.value) });
+}
+
+const loadFeaturedRollingBudgetsDebounced = debounce(loadFeaturedRollingBudgets, 100, true);
 
 // ----- Event Handlers
 

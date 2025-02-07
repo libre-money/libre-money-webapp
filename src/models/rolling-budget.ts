@@ -26,7 +26,10 @@ export type RollingBudget = {
 
   rollOverRule: "always" | "never" | "positive-only" | "negative-only";
 
+  isFeatured: boolean;
+
   currencyId: string;
   _currencySign?: string;
-  _usedAmount?: number;
+
+  _budgetedPeriodIndexInRange?: number;
 };

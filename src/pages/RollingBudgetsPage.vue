@@ -251,24 +251,6 @@ export default defineComponent({
       dialogService.alert("Not implemented", "This feature is not implemented yet.");
     }
 
-    function viewUnbudgetedRecordsClicked() {
-      let recordFilter: RecordFilters = {
-        startEpoch: 0,
-        endEpoch: Date.now(),
-        recordTypeList: [RecordType.EXPENSE, RecordType.ASSET_PURCHASE],
-        tagIdWhiteList: [],
-        tagIdBlackList: [],
-        searchString: "",
-        deepSearchString: "",
-        sortBy: "transactionEpochDesc",
-        type: "budget",
-        _budgetName: UNBUDGETED_RECORDS_BUDGET_NAME,
-        _preset: "custom",
-      };
-      recordFiltersStore.setRecordFilters(recordFilter);
-      router.push({ name: "records" });
-    }
-
     return {
       addBudgetClicked,
       searchFilter,
@@ -281,7 +263,6 @@ export default defineComponent({
       pagination,
       dataForTableRequested,
       viewRecordsClicked,
-      viewUnbudgetedRecordsClicked,
       duplicateClicked,
     };
   },
