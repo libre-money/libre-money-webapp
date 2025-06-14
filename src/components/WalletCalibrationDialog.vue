@@ -78,6 +78,11 @@ import { useSettingsStore } from "src/stores/settings";
 import { prettifyAmount } from "src/utils/misc-utils";
 import SelectExpenseAvenue from "./SelectExpenseAvenue.vue";
 import SelectIncomeSource from "./SelectIncomeSource.vue";
+import { pouchdbService } from "src/services/pouchdb-service";
+import { Collection, fixtureCode, RecordType } from "src/constants/constants";
+import { asAmount } from "src/utils/misc-utils";
+import { Record } from "src/models/record";
+import { dialogService } from "src/services/dialog-service";
 
 type WalletCalibration = {
   walletId: string;
@@ -175,8 +180,106 @@ export default {
       newBalance.value = props.balance;
     }
 
-    function saveClicked() {
-      // TODO: Implement save logic
+    async function saveClicked() {
+      console.debug({ calibration: JSON.parse(JSON.stringify(calibration.value)) });
+      console.debug({ breakdownRows: JSON.parse(JSON.stringify(breakdownRows.value)) });
+      console.debug({ newBalance: newBalance.value });
+      console.debug({ balanceDifference: balanceDifference.value });
+      console.debug({ totalBreakdownAmount: totalBreakdownAmount.value });
+      console.debug({ remainingAmount: remainingAmount.value });
+
+      const autoCalibratedExpenseAvenue = await entityService.getExpenseAvenueByFixtureCode(fixtureCode.AUTO_CALIBRATED_EXPENSE);
+      const autoCalibratedIncomeSource = await entityService.getIncomeSourceByFixtureCode(fixtureCode.AUTO_CALIBRATED_INCOME);
+
+      if (!autoCalibratedExpenseAvenue || !autoCalibratedIncomeSource) {
+        await dialogService.alert("Error", "Auto-calibrated expense avenue or income source not found. Please sync your database and try again.");
+        return;
+      }
+
+      // Create records for each breakdown row
+      for (const row of breakdownRows.value) {
+        let record: Record;
+        if (row.type === "income") {
+          record = {
+            $collection: Collection.RECORD,
+            notes: `Added during wallet calibration for ${props.wallet.name}`,
+            type: RecordType.INCOME,
+            tagIdList: [],
+            transactionEpoch: Date.now(),
+            income: {
+              incomeSourceId: row.incomeSourceId,
+              amount: asAmount(row.amount),
+              currencyId: calibration.value!.currencyId,
+              walletId: calibration.value!.walletId,
+              amountPaid: asAmount(row.amount),
+              amountUnpaid: 0,
+              partyId: null,
+            },
+          };
+        } else {
+          record = {
+            $collection: Collection.RECORD,
+            notes: `Added during wallet calibration for ${props.wallet.name}`,
+            type: RecordType.EXPENSE,
+            tagIdList: [],
+            transactionEpoch: Date.now(),
+            expense: {
+              expenseAvenueId: row.expenseAvenueId,
+              amount: asAmount(row.amount),
+              currencyId: calibration.value!.currencyId,
+              walletId: calibration.value!.walletId,
+              amountPaid: asAmount(row.amount),
+              amountUnpaid: 0,
+              partyId: null,
+            },
+          };
+        }
+
+        await pouchdbService.upsertDoc(record);
+      }
+
+      // Create auto-calibrated record for remaining amount if any
+      if (remainingAmount.value !== 0) {
+        let record: Record;
+        if (remainingAmount.value > 0) {
+          record = {
+            $collection: Collection.RECORD,
+            notes: `Auto-calibrated adjustment for ${props.wallet.name}`,
+            type: RecordType.INCOME,
+            tagIdList: [],
+            transactionEpoch: Date.now(),
+            income: {
+              incomeSourceId: autoCalibratedIncomeSource!._id!,
+              amount: asAmount(Math.abs(remainingAmount.value)),
+              currencyId: calibration.value!.currencyId,
+              walletId: calibration.value!.walletId,
+              amountPaid: asAmount(Math.abs(remainingAmount.value)),
+              amountUnpaid: 0,
+              partyId: null,
+            },
+          };
+        } else {
+          record = {
+            $collection: Collection.RECORD,
+            notes: `Auto-calibrated adjustment for ${props.wallet.name}`,
+            type: RecordType.EXPENSE,
+            tagIdList: [],
+            transactionEpoch: Date.now(),
+            expense: {
+              expenseAvenueId: autoCalibratedExpenseAvenue!._id!,
+              amount: asAmount(Math.abs(remainingAmount.value)),
+              currencyId: calibration.value!.currencyId,
+              walletId: calibration.value!.walletId,
+              amountPaid: asAmount(Math.abs(remainingAmount.value)),
+              amountUnpaid: 0,
+              partyId: null,
+            },
+          };
+        }
+
+        await pouchdbService.upsertDoc(record);
+      }
+
       onDialogOK();
     }
 
@@ -201,6 +304,7 @@ export default {
       addBreakdownRow,
       removeBreakdownRow,
       prettifyAmount,
+      totalBreakdownAmount,
     };
   },
 };
