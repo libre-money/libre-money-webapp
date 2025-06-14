@@ -11,7 +11,7 @@
             <tbody>
               <tr>
                 <th style="width: 140px">Wallet</th>
-                <th>Balance</th>
+                <th colspan="2">Balance</th>
               </tr>
               <tr v-for="row in overviewAndCurrency.overview!.wallets.list" v-bind:key="row.walletId">
                 <td>{{ row.wallet.name }}</td>
@@ -29,10 +29,21 @@
                     </span>
                   </span>
                 </td>
+                <td>
+                  <q-btn v-if="intent === 'balances'" flat dense round icon="tune" @click="onCalibrateClick(row.walletId)" class="q-ml-sm" />
+                  <q-btn
+                    v-else-if="intent === 'calibration'"
+                    color="primary"
+                    size="sm"
+                    label="Calibrate"
+                    @click="onCalibrateClick(row.walletId)"
+                    class="q-ml-sm"
+                  />
+                </td>
               </tr>
               <tr>
                 <th>Grand Total</th>
-                <th>{{ prettifyAmount(overviewAndCurrency.overview!.wallets.sumOfBalances) }} {{ overviewAndCurrency.currency.sign }}</th>
+                <th colspan="2">{{ prettifyAmount(overviewAndCurrency.overview!.wallets.sumOfBalances) }} {{ overviewAndCurrency.currency.sign }}</th>
               </tr>
             </tbody>
           </table>
@@ -40,7 +51,7 @@
       </q-card-section>
 
       <q-card-actions class="row justify-end" style="margin-right: 8px; margin-bottom: 8px">
-        <q-btn color="primary" label="Close" @click="okClicked" />
+        <q-btn color="primary" label="Close" @click="cancelClicked" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -61,9 +72,16 @@ import { CodedError } from "src/utils/error-utils";
 import { Collection } from "src/constants/constants";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Currency } from "src/models/currency";
+import WalletCalibrationDialog from "./WalletCalibrationDialog.vue";
 
 export default {
-  props: {},
+  props: {
+    intent: {
+      type: String,
+      default: "balances",
+      validator: (value: string) => ["balances", "calibration"].includes(value),
+    },
+  },
 
   components: { LoadingIndicator },
 
@@ -100,8 +118,20 @@ export default {
       isLoading.value = false;
     }
 
-    async function okClicked() {
-      onDialogOK();
+    async function onCalibrateClick(walletId: string) {
+      const wallet = overviewAndCurrencyList.value.flatMap((oc) => oc.overview?.wallets.list || []).find((w) => w.walletId === walletId)?.wallet;
+
+      if (!wallet) {
+        throw new CodedError("WALLET_NOT_FOUND", "Wallet not found");
+      }
+
+      $q.dialog({ component: WalletCalibrationDialog, componentProps: { wallet } })
+        .onOk(() => {
+          onDialogOK();
+        })
+        .onCancel(() => {
+          onDialogCancel();
+        });
     }
 
     onMounted(() => {
@@ -111,11 +141,11 @@ export default {
     return {
       dialogRef,
       onDialogHide,
-      okClicked,
       cancelClicked: onDialogCancel,
       isLoading,
       prettifyAmount,
       overviewAndCurrencyList,
+      onCalibrateClick,
     };
   },
 };

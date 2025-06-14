@@ -114,6 +114,11 @@
                 <q-item-label>Add Expenses (Bulk)</q-item-label>
               </q-item-section>
             </q-item>
+            <q-item clickable v-close-popup @click="showQuickBalanceCalibrationClicked">
+              <q-item-section>
+                <q-item-label>Calibrate Balances</q-item-label>
+              </q-item-section>
+            </q-item>
             <q-separator inset />
             <q-item clickable v-close-popup @click="showQuickSummaryClicked">
               <q-item-section>
@@ -565,7 +570,15 @@ async function deleteClicked(record: InferredRecord) {
 }
 
 async function showQuickBalanceClicked() {
-  $q.dialog({ component: QuickBalanceDialog, componentProps: {} });
+  $q.dialog({ component: QuickBalanceDialog, componentProps: { intent: "balances" } }).onOk(() => {
+    loadData();
+  });
+}
+
+async function showQuickBalanceCalibrationClicked() {
+  $q.dialog({ component: QuickBalanceDialog, componentProps: { intent: "calibration" } }).onOk(() => {
+    loadData();
+  });
 }
 
 async function showQuickExpenseSummaryClicked() {
