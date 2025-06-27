@@ -85,7 +85,7 @@ export default {
 
     const importForm: Ref<QForm | null> = ref(null);
     const importText: Ref<string | null> = ref(null);
-    const selectedRuleId: Ref<string | null> = ref(null);
+    const selectedRuleId: Ref<string | null> = ref("AUTO_DETECT_ALL_RULES");
     const parsedData: Ref<ExpenseRecordSuggestion | null> = ref(null);
 
     const ruleOptions = ref<{ label: string; value: string }[]>([]);
@@ -97,12 +97,18 @@ export default {
     }
 
     async function loadRules() {
-      ruleOptions.value = (await getRuleList())
-        .filter((rule) => rule.isActive)
-        .map((rule) => ({
+      const activeRules = (await getRuleList()).filter((rule) => rule.isActive);
+
+      ruleOptions.value = [
+        {
+          label: "🔍 Try all rules (auto-detect)",
+          value: "AUTO_DETECT_ALL_RULES",
+        },
+        ...activeRules.map((rule) => ({
           label: rule.name,
           value: rule._id!,
-        }));
+        })),
+      ];
     }
 
     loadRules();
@@ -110,28 +116,87 @@ export default {
     const parseText = async () => {
       if (!selectedRuleId.value || !importText.value) return;
 
-      const rule = (await getRuleList()).find((r) => r._id === selectedRuleId.value);
-      if (!rule) {
-        $q.notify({
-          type: "negative",
-          message: "Selected rule not found",
-        });
-        return;
+      let rule: TextImportRules | null = null;
+      let match: RegExpMatchArray | null = null;
+
+      if (selectedRuleId.value === "AUTO_DETECT_ALL_RULES") {
+        // Try all rules and find the first one that matches
+        const allRules = (await getRuleList()).filter((r) => r.isActive);
+        console.debug("Auto-detecting rule from", allRules.length, "active rules");
+
+        for (const testRule of allRules) {
+          console.debug("Testing rule:", testRule.name);
+          const regex = new RegExp(testRule.regex);
+          const testMatch = importText.value.match(regex);
+
+          if (testMatch) {
+            // Check if all capture groups are present (non-empty)
+            const capturedWallet = testMatch[testRule.walletCaptureGroup];
+            const capturedExpenseAvenue = testMatch[testRule.expenseAvenueCaptureGroup];
+            const capturedDate = testMatch[testRule.dateCaptureGroup];
+            const capturedAmount = testMatch[testRule.amountCaptureGroup];
+
+            if (capturedWallet && capturedExpenseAvenue && capturedDate && capturedAmount) {
+              console.debug("Rule matched:", testRule.name);
+              rule = testRule;
+              match = testMatch;
+
+              // Update the dropdown to show which rule was selected
+              selectedRuleId.value = testRule._id!;
+
+              $q.notify({
+                type: "positive",
+                message: `Auto-detected rule: "${testRule.name}"`,
+                timeout: 2000,
+              });
+              break;
+            } else {
+              console.debug("Rule regex matched but capture groups incomplete:", testRule.name);
+            }
+          }
+        }
+
+        if (!rule) {
+          $q.notify({
+            type: "negative",
+            message: "No matching rule found for the provided text",
+          });
+          return;
+        }
+      } else {
+        // Use the manually selected rule
+        rule = (await getRuleList()).find((r) => r._id === selectedRuleId.value) || null;
+        if (!rule) {
+          $q.notify({
+            type: "negative",
+            message: "Selected rule not found",
+          });
+          return;
+        }
+
+        console.debug("Selected rule:", rule);
+        console.debug("Text to parse:", importText.value);
+
+        const regex = new RegExp(rule.regex);
+        console.debug("Regex pattern:", regex);
+
+        match = importText.value.match(regex);
+        console.debug("Match result:", match);
+
+        if (!match) {
+          $q.notify({
+            type: "negative",
+            message: "Text does not match the selected rule pattern",
+          });
+          return;
+        }
       }
 
-      console.debug("Selected rule:", rule);
-      console.debug("Text to parse:", importText.value);
-
-      const regex = new RegExp(rule.regex);
-      console.debug("Regex pattern:", regex);
-
-      const match = importText.value.match(regex);
-      console.debug("Match result:", match);
-
-      if (!match) {
+      // Final validation that we have both rule and match
+      if (!rule || !match) {
         $q.notify({
           type: "negative",
-          message: "Text does not match the selected rule pattern",
+          message: "Unable to process text with selected rule",
         });
         return;
       }
