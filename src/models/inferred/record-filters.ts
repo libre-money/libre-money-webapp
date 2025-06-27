@@ -13,4 +13,5 @@ export type RecordFilters = {
   _budgetName?: string;
   _partyName?: string;
   _preset?: string;
+  highlightDuplicates?: boolean;
 };

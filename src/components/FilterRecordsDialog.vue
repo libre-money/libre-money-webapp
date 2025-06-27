@@ -47,6 +47,9 @@
             <div style="margin-top: 12px; margin-bottom: 12px">
               <q-select filled v-model="recordFilters.sortBy" :options="sortByTypeList" label="Sort by" emit-value map-options />
             </div>
+            <div style="margin-top: 12px; margin-bottom: 12px">
+              <q-checkbox v-model="recordFilters.highlightDuplicates" label="Highlight possible duplicates" />
+            </div>
           </div>
         </div>
       </q-card-section>
@@ -112,6 +115,7 @@ export default {
         searchString: "",
         deepSearchString: "",
         sortBy: "transactionEpochDesc",
+        highlightDuplicates: false,
         type: "standard",
       };
     }

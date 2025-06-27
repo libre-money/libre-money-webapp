@@ -166,7 +166,10 @@
             <!-- Unified Single Amount Record - start -->
             <div class="single-amount-row row" v-if="isSingleAmountType(record)" :data-index="index">
               <div class="details-section">
-                <div class="record-date">{{ prettifyDate(record.transactionEpoch) }}</div>
+                <div class="record-date">
+                  {{ prettifyDate(record.transactionEpoch) }}
+                  <q-icon v-if="isPotentialDuplicate(record)" name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
+                </div>
 
                 <div class="primary-line" v-if="record.type === RecordType.EXPENSE">
                   {{ record.expense?.expenseAvenue.name }}
@@ -224,7 +227,10 @@
             <!-- Money Transfer - start -->
             <div class="money-transfer-row row" v-else-if="record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer" :data-index="index">
               <div class="details-section">
-                <div class="record-date">{{ prettifyDate(record.transactionEpoch) }}</div>
+                <div class="record-date">
+                  {{ prettifyDate(record.transactionEpoch) }}
+                  <q-icon v-if="isPotentialDuplicate(record)" name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
+                </div>
 
                 <div class="primary-line">Transfer {{ record.moneyTransfer.fromWallet.name }} to {{ record.moneyTransfer.toWallet.name }}</div>
 
@@ -323,6 +329,7 @@ import { RollingBudget } from "src/models/rolling-budget";
 import { Wallet } from "src/models/wallet";
 import { computationService } from "src/services/computation-service";
 import { dialogService } from "src/services/dialog-service";
+import { duplicateFinderService } from "src/services/duplicate-finder-service";
 import { formatService } from "src/services/format-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { recordService } from "src/services/record-service";
@@ -359,6 +366,9 @@ let cachedInferredRecordList: InferredRecord[] = [];
 
 const featuredRollingBudgetList: Ref<RollingBudget[]> = ref([]);
 const showAllRollingBudgets = ref(false);
+
+// Duplicate detection
+const duplicateIds: Ref<Set<string>> = ref(new Set<string>());
 
 // ----- Functions
 async function applyFilters(recordList: Record[]) {
@@ -424,6 +434,13 @@ async function loadData(origin = "unspecified") {
 
   let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
   rows.value = cachedInferredRecordList.slice(startIndex, startIndex + recordCountPerPage);
+
+  // Detect duplicates if the feature is enabled
+  if (recordFilters.value?.highlightDuplicates) {
+    duplicateIds.value = duplicateFinderService.findPotentialDuplicates(cachedInferredRecordList);
+  } else {
+    duplicateIds.value = new Set<string>();
+  }
 
   if (cachedInferredRecordList.length === 0 || origin !== "pagination") {
     loadFeaturedRollingBudgetsDebounced();
@@ -699,6 +716,10 @@ function toggleShowAllRollingBudgets() {
   showAllRollingBudgets.value = !showAllRollingBudgets.value;
 }
 
+function isPotentialDuplicate(record: InferredRecord): boolean {
+  return duplicateIds.value.has(record._id || "");
+}
+
 // ----- Watchers
 
 watch(paginationCurrentPage, (currentPage, previousPage) => {
@@ -729,6 +750,13 @@ onMounted(() => {
   .record-date {
     font-size: 10px;
     display: inline-block;
+
+    .duplicate-flag {
+      color: #a61c1c;
+      margin-left: 4px;
+      font-size: 12px;
+      animation: pulse 2s infinite;
+    }
   }
 
   .details-section {
@@ -847,6 +875,18 @@ onMounted(() => {
 .username {
   font-size: 8px;
   text-transform: capitalize;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .divider-line-date {
