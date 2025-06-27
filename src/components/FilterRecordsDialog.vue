@@ -27,11 +27,27 @@
         <div style="margin-top: -20px">
           <q-input filled v-model="recordFilters.searchString" label="Search in notes" />
         </div>
-        <div style="margin-top: 12px">
-          <q-input filled v-model="recordFilters.deepSearchString" label="Deep search (advanced)" />
-        </div>
-        <div style="margin-top: 12px; margin-bottom: 12px">
-          <q-select filled v-model="recordFilters.sortBy" :options="sortByTypeList" label="Sort by" emit-value map-options />
+
+        <!-- More Options Section -->
+        <div style="margin-top: 16px">
+          <div
+            class="row items-center cursor-pointer"
+            @click="moreOptionsExpanded = !moreOptionsExpanded"
+            style="padding: 8px 0; border-top: 1px solid rgba(0, 0, 0, 0.12)"
+          >
+            <div class="text-subtitle2 text-grey-7">More Options</div>
+            <q-space />
+            <q-icon :name="moreOptionsExpanded ? 'expand_less' : 'expand_more'" class="text-grey-6" />
+          </div>
+
+          <div v-show="moreOptionsExpanded">
+            <div style="margin-top: 12px">
+              <q-input filled v-model="recordFilters.deepSearchString" label="Deep search (advanced)" />
+            </div>
+            <div style="margin-top: 12px; margin-bottom: 12px">
+              <q-select filled v-model="recordFilters.sortBy" :options="sortByTypeList" label="Sort by" emit-value map-options />
+            </div>
+          </div>
         </div>
       </q-card-section>
 
@@ -72,6 +88,7 @@ export default {
 
   setup(props) {
     const isLoading = ref(false);
+    const moreOptionsExpanded = ref(false);
 
     const recordFilters: Ref<RecordFilters | null> = ref(null);
 
@@ -142,6 +159,7 @@ export default {
       startEpochChanged,
       endEpochChanged,
       sortByTypeList,
+      moreOptionsExpanded,
     };
   },
 };
