@@ -119,7 +119,7 @@
         <div class="filters-activated-area" v-if="recordFilters">
           <div style="flex: 1">
             <span v-if="recordFilters.type === 'standard'">These results are filtered.</span>
-
+            <span v-else-if="recordFilters.type === 'budget' && recordFilters._budgetName === UNBUDGETED_RECORDS_BUDGET_NAME">Viewing unbudgeted records.</span>
             <span v-else-if="recordFilters.type === 'budget'">Viewing records under budget: {{ recordFilters._budgetName }}.</span>
             <span v-else-if="recordFilters.type === 'loansAndDebts'">Viewing dealings with party: {{ recordFilters._partyName }}.</span>
           </div>
@@ -299,7 +299,7 @@ import QuickExpenseSummaryDialog from "src/components/QuickExpenseSummaryDialog.
 import QuickSummaryDialog from "src/components/QuickSummaryDialog.vue";
 import SelectTemplateDialog from "src/components/SelectTemplateDialog.vue";
 import ImportTextDialog from "src/components/ImportTextDialog.vue";
-import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD } from "src/constants/config-constants";
+import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD, UNBUDGETED_RECORDS_BUDGET_NAME } from "src/constants/config-constants";
 import { Collection, RecordType } from "src/constants/constants";
 import { Asset } from "src/models/asset";
 import { InferredRecord } from "src/models/inferred/inferred-record";

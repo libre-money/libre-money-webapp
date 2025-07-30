@@ -3,6 +3,7 @@
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <div class="title"></div>
+        <q-btn color="secondary" text-color="white" label="View Unbudgeted" @click="viewUnbudgetedRecordsClicked" />
         <q-btn color="primary" text-color="white" label="Add Rolling Budget" @click="addBudgetClicked" />
       </div>
 
@@ -75,6 +76,8 @@ import { Ref, defineComponent, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddRollingBudget from "./../components/AddRollingBudget.vue";
 import { Collection, RecordType, rowsPerPageOptions } from "./../constants/constants";
+import { UNBUDGETED_RECORDS_BUDGET_NAME } from "src/constants/config-constants";
+import { rollingBudgetService } from "src/services/rolling-budget-service";
 
 export default defineComponent({
   name: "RollingBudgetsPage",
@@ -250,7 +253,26 @@ export default defineComponent({
     }
 
     function viewRecordsClicked(rollingBudget: RollingBudget) {
-      dialogService.alert("Not implemented", "This feature is not implemented yet.");
+      recordFiltersStore.setRecordFilters(rollingBudgetService.createRecordFiltersForRollingBudget(rollingBudget));
+      router.push({ name: "records" });
+    }
+
+    function viewUnbudgetedRecordsClicked() {
+      let recordFilter: RecordFilters = {
+        startEpoch: 0,
+        endEpoch: Date.now(),
+        recordTypeList: [RecordType.EXPENSE, RecordType.ASSET_PURCHASE],
+        tagIdWhiteList: [],
+        tagIdBlackList: [],
+        searchString: "",
+        deepSearchString: "",
+        sortBy: "transactionEpochDesc",
+        type: "budget",
+        _budgetName: UNBUDGETED_RECORDS_BUDGET_NAME,
+        _preset: "custom",
+      };
+      recordFiltersStore.setRecordFilters(recordFilter);
+      router.push({ name: "records" });
     }
 
     return {
@@ -265,6 +287,7 @@ export default defineComponent({
       pagination,
       dataForTableRequested,
       viewRecordsClicked,
+      viewUnbudgetedRecordsClicked,
       duplicateClicked,
     };
   },

@@ -1,4 +1,5 @@
 import { Collection, RecordType } from "src/constants/constants";
+import { UNBUDGETED_RECORDS_BUDGET_NAME } from "src/constants/config-constants";
 import { Asset } from "src/models/asset";
 import { Currency } from "src/models/currency";
 import { ExpenseAvenue } from "src/models/expense-avenue";
@@ -13,6 +14,7 @@ import { normalizeEpochRange } from "src/utils/date-utils";
 import { deepClone } from "src/utils/misc-utils";
 import { entityService } from "./entity-service";
 import { pouchdbService } from "./pouchdb-service";
+import { rollingBudgetService } from "./rolling-budget-service";
 
 class RecordService {
   async inferRecord(record: Record): Promise<InferredRecord> {
@@ -360,6 +362,25 @@ class RecordService {
     }
 
     recordList = recordList.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
+
+    if (recordFilters.type === "budget" && recordFilters._budgetName === UNBUDGETED_RECORDS_BUDGET_NAME) {
+      recordList = await this.filterUnbudgetedRecords(recordList);
+    }
+
+    return recordList;
+  }
+
+  private async filterUnbudgetedRecords(recordList: Record[]) {
+    const rollingBudgetList = await rollingBudgetService.listAll();
+
+    for (const rollingBudget of rollingBudgetList) {
+      // Check each period of the rolling budget
+      for (let periodIndex = 0; periodIndex < rollingBudget.budgetedPeriodList.length; periodIndex++) {
+        const recordFilters = rollingBudgetService.createRecordFiltersForRollingBudget(rollingBudget, periodIndex);
+        const filteredRecordList = await this.applyRecordFilters(recordList, recordFilters);
+        recordList = recordList.filter((record) => !filteredRecordList.includes(record));
+      }
+    }
 
     return recordList;
   }
