@@ -102,7 +102,8 @@ import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
 import { CodedError } from "src/utils/error-utils";
-import { prettifyAmount, sleep } from "src/utils/misc-utils";
+import { sleep } from "src/utils/misc-utils";
+import { printAmount as printAmountUtil } from "src/utils/de-facto-utils";
 import { Ref, onMounted, ref, watch } from "vue";
 
 const $q = useQuasar();
@@ -176,7 +177,7 @@ async function reloadClicked() {
 // ----- Computed and Embedded
 
 function printAmount(amount: number) {
-  return `${overview.value?.currency.sign} ${prettifyAmount(amount)}`;
+  return printAmountUtil(amount, overview.value?.currency._id);
 }
 
 function printUsedPercentage(budget: Budget) {

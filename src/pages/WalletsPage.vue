@@ -57,7 +57,8 @@ import AddWallet from "./../components/AddWallet.vue";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Wallet } from "src/models/wallet";
 import { dialogService } from "src/services/dialog-service";
-import { asAmount, prettifyAmount, sleep } from "src/utils/misc-utils";
+import { asAmount, sleep } from "src/utils/misc-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import { Currency } from "src/models/currency";
 import { computationService } from "src/services/computation-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
@@ -98,7 +99,7 @@ export default defineComponent({
         label: "Balance",
         sortable: true,
         field: (wallet: Wallet) => {
-          return `${wallet._currencySign!} ${prettifyAmount(wallet._balance)}`;
+          return printAmount(wallet._balance, wallet.currencyId);
         },
       },
       {

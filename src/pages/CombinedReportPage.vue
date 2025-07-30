@@ -334,7 +334,8 @@ import DateInput from "src/components/lib/DateInput.vue";
 import { Overview } from "src/models/inferred/overview";
 import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
-import { asAmount, prettifyAmount, prettifyCount } from "src/utils/misc-utils";
+import { asAmount } from "src/utils/misc-utils";
+import { printAmount as printAmountUtil, printCount as printCountUtil } from "src/utils/de-facto-utils";
 import { entityService } from "src/services/entity-service";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { Ref, onMounted, ref, watch } from "vue";
@@ -411,11 +412,11 @@ async function presetClicked(rangeIdentifier: string) {
 // ----- Computed and Embedded
 
 function printAmount(amount: number) {
-  return `${overview.value?.currency.sign} ${prettifyAmount(amount)}`;
+  return printAmountUtil(amount, overview.value?.currency._id);
 }
 
 function printCount(count: number) {
-  return `${prettifyCount(count)}`;
+  return printCountUtil(count);
 }
 
 // ----- Watchers

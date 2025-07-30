@@ -70,7 +70,7 @@ import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
-import { prettifyAmount } from "src/utils/misc-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import { Ref, defineComponent, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddBudget from "./../components/AddBudget.vue";
@@ -122,7 +122,7 @@ export default defineComponent({
         label: "Used",
         sortable: true,
         field: (budget: Budget) => {
-          return `${budget._currencySign!} ${prettifyAmount(budget._usedAmount)} (${printUsedPercentage(budget)})`;
+          return `${printAmount(budget._usedAmount, budget.currencyId)} (${printUsedPercentage(budget)})`;
         },
       },
       {
@@ -131,7 +131,7 @@ export default defineComponent({
         label: "Limit",
         sortable: true,
         field: (budget: Budget) => {
-          return `${budget._currencySign!} ${prettifyAmount(budget.overflowLimit)}`;
+          return printAmount(budget.overflowLimit, budget.currencyId);
         },
       },
       {

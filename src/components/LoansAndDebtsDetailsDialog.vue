@@ -62,7 +62,7 @@
 import { useDialogPluginComponent } from "quasar";
 import { partyTypeList } from "src/constants/constants";
 import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
-import { prettifyAmount } from "src/utils/misc-utils";
+import { printAmount as printAmountUtil } from "src/utils/de-facto-utils";
 import { validators } from "src/utils/validators";
 import { Ref, ref } from "vue";
 
@@ -97,7 +97,7 @@ export default {
     }
 
     function printAmount(amount: number) {
-      return `${recordSummary.value?.currencySign} ${prettifyAmount(amount)}`;
+      return printAmountUtil(amount, recordSummary.value?.currencyId);
     }
 
     return {

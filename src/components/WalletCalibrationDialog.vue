@@ -10,7 +10,7 @@
           <div class="balance-section">
             <div class="balance-row">
               <span class="balance-label">Current Balance:</span>
-              <span class="balance-value">{{ prettifyAmount(calibration?.currentBalance) }} {{ calibration?.currencySign }}</span>
+              <span class="balance-value">{{ printAmount(calibration?.currentBalance, calibration?.currencyId) }}</span>
             </div>
 
             <div class="balance-row">
@@ -24,7 +24,7 @@
 
             <div class="balance-row" v-if="balanceDifference !== 0">
               <span class="balance-label">Total {{ balanceDifference > 0 ? "Increase" : "Decrease" }}:</span>
-              <span class="balance-value">{{ prettifyAmount(Math.abs(balanceDifference)) }} {{ calibration?.currencySign }}</span>
+              <span class="balance-value">{{ printAmount(Math.abs(balanceDifference), calibration?.currencyId) }}</span>
             </div>
           </div>
 
@@ -54,7 +54,7 @@
 
             <div class="breakdown-row" v-if="remainingAmount !== 0">
               <span class="auto-adjusted">
-                Auto-adjusted {{ remainingAmount > 0 ? "Income" : "Expense" }}: {{ prettifyAmount(Math.abs(remainingAmount)) }} {{ calibration?.currencySign }}
+                Auto-adjusted {{ remainingAmount > 0 ? "Income" : "Expense" }}: {{ printAmount(Math.abs(remainingAmount), calibration?.currencyId) }}
               </span>
             </div>
           </div>
@@ -75,7 +75,7 @@ import { useDialogPluginComponent } from "quasar";
 import { ref, Ref, watch, computed, onMounted } from "vue";
 import { entityService } from "src/services/entity-service";
 import { useSettingsStore } from "src/stores/settings";
-import { prettifyAmount } from "src/utils/misc-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import SelectExpenseAvenue from "./SelectExpenseAvenue.vue";
 import SelectIncomeSource from "./SelectIncomeSource.vue";
 import { pouchdbService } from "src/services/pouchdb-service";
@@ -303,7 +303,7 @@ export default {
       decrementBalance,
       addBreakdownRow,
       removeBreakdownRow,
-      prettifyAmount,
+      printAmount,
       totalBreakdownAmount,
     };
   },

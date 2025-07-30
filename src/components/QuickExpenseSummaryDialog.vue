@@ -20,11 +20,11 @@
                     {{ summaryItem.description }}
                     <span v-if="summaryItem.type === 'Purchase'"> (Asset)</span>
                   </td>
-                  <td>{{ prettifyAmount(summaryItem.amount) }}</td>
+                  <td>{{ printCount(summaryItem.amount) }}</td>
                 </tr>
                 <tr>
                   <th>Total</th>
-                  <th>{{ prettifyAmount(summary.sum) }}</th>
+                  <th>{{ printCount(summary.sum) }}</th>
                 </tr>
               </tbody>
             </table>
@@ -46,7 +46,8 @@ import { Currency } from "src/models/currency";
 import { QuickExpenseSummary } from "src/models/inferred/quick-expense-summary";
 import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
-import { asFinancialAmount, prettifyAmount } from "src/utils/misc-utils";
+import { asFinancialAmount } from "src/utils/misc-utils";
+import { printCount } from "src/utils/de-facto-utils";
 import { Ref, onMounted, ref } from "vue";
 
 export default {
@@ -94,7 +95,7 @@ export default {
       okClicked,
       cancelClicked: onDialogCancel,
       isLoading,
-      prettifyAmount,
+      printCount,
       summaryList,
       asFinancialAmount,
     };

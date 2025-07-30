@@ -73,7 +73,7 @@ import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
-import { prettifyAmount } from "src/utils/misc-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import { Ref, defineComponent, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { rowsPerPageOptions } from "./../constants/constants";
@@ -107,7 +107,7 @@ export default defineComponent({
         label: "They owe you",
         sortable: true,
         field: (summary: LoanAndDebtSummary) => {
-          return `${summary.currencySign!} ${prettifyAmount(summary.totalOwedByParty)}`;
+          return printAmount(summary.totalOwedByParty, summary.currencyId);
         },
       },
       {
@@ -116,7 +116,7 @@ export default defineComponent({
         label: "You owe them",
         sortable: true,
         field: (summary: LoanAndDebtSummary) => {
-          return `${summary.currencySign!} ${prettifyAmount(summary.totalOwedToParty)}`;
+          return printAmount(summary.totalOwedToParty, summary.currencyId);
         },
       },
       {

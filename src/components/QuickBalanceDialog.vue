@@ -16,16 +16,16 @@
               <tr v-for="row in overviewAndCurrency.overview!.wallets.list" v-bind:key="row.walletId">
                 <td>{{ row.wallet.name }}</td>
                 <td>
-                  {{ prettifyAmount(row.balance) }} {{ overviewAndCurrency.currency.sign }}
+                  {{ printAmount(row.balance, overviewAndCurrency.currency._id) }}
                   <span class="wallet-limit" v-if="row.minimumBalanceState !== 'not-set'">
                     <span class="wallet-limit-warning" v-if="row.minimumBalanceState === 'warning'">
-                      (Approaching limit {{ prettifyAmount(row.wallet.minimumBalance!) }} {{ overviewAndCurrency.currency.sign }})
+                      (Approaching limit {{ printAmount(row.wallet.minimumBalance!, overviewAndCurrency.currency._id) }})
                     </span>
                     <span class="wallet-limit-exceeded" v-else-if="row.minimumBalanceState === 'exceeded'">
-                      (Exceeded limit {{ prettifyAmount(row.wallet.minimumBalance!) }} {{ overviewAndCurrency.currency.sign }})
+                      (Exceeded limit {{ printAmount(row.wallet.minimumBalance!, overviewAndCurrency.currency._id) }})
                     </span>
                     <span class="wallet-limit-normal" v-else-if="row.minimumBalanceState === 'normal'">
-                      (Limit {{ prettifyAmount(row.wallet.minimumBalance!) }} {{ overviewAndCurrency.currency.sign }})
+                      (Limit {{ printAmount(row.wallet.minimumBalance!, overviewAndCurrency.currency._id) }})
                     </span>
                   </span>
                 </td>
@@ -43,7 +43,7 @@
               </tr>
               <tr>
                 <th>Grand Total</th>
-                <th colspan="2">{{ prettifyAmount(overviewAndCurrency.overview!.wallets.sumOfBalances) }} {{ overviewAndCurrency.currency.sign }}</th>
+                <th colspan="2">{{ printAmount(overviewAndCurrency.overview!.wallets.sumOfBalances, overviewAndCurrency.currency._id) }}</th>
               </tr>
             </tbody>
           </table>
@@ -59,7 +59,7 @@
 
 <script lang="ts">
 import { useDialogPluginComponent, useQuasar } from "quasar";
-import { prettifyAmount } from "src/utils/misc-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import { Ref, onMounted, ref } from "vue";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { computationService } from "src/services/computation-service";
@@ -143,7 +143,7 @@ export default {
       onDialogHide,
       cancelClicked: onDialogCancel,
       isLoading,
-      prettifyAmount,
+      printAmount,
       overviewAndCurrencyList,
       onCalibrateClick,
     };

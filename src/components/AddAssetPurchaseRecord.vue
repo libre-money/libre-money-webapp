@@ -90,7 +90,8 @@ import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
 import { NotificationType, dialogService } from "src/services/dialog-service";
-import { asAmount, deepClone, isNullOrUndefined, prettifyAmount } from "src/utils/misc-utils";
+import { asAmount, deepClone, isNullOrUndefined } from "src/utils/misc-utils";
+import { printAmount as printAmountUtil } from "src/utils/de-facto-utils";
 import DateTimeInput from "./lib/DateTimeInput.vue";
 import { entityService } from "src/services/entity-service";
 import { Wallet, WalletWithPotentialBalance } from "src/models/wallet";
@@ -292,7 +293,7 @@ export default {
     }
 
     function printAmount(amount: number) {
-      return `${recordCurrencySign.value} ${prettifyAmount(amount)}`;
+      return printAmountUtil(amount, recordCurrencyId.value);
     }
 
     watch(recordWalletId, async (newWalletId: any) => {

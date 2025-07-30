@@ -69,7 +69,8 @@ import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
-import { prettifyAmount, prettifyDate } from "src/utils/misc-utils";
+import { prettifyDate } from "src/utils/misc-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import { Ref, defineComponent, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import AddRollingBudget from "./../components/AddRollingBudget.vue";
@@ -121,7 +122,7 @@ export default defineComponent({
         field: (rollingBudget: RollingBudget) => {
           const period = rollingBudget.budgetedPeriodList.find((period) => period.startEpoch <= Date.now() && period.endEpoch >= Date.now());
           if (!period) return "N/A";
-          return `${rollingBudget._currencySign!} ${prettifyAmount(period.usedAmount)}`;
+          return printAmount(period.usedAmount, rollingBudget.currencyId);
         },
       },
       {
@@ -132,7 +133,7 @@ export default defineComponent({
         field: (rollingBudget: RollingBudget) => {
           const period = rollingBudget.budgetedPeriodList.find((period) => period.startEpoch <= Date.now() && period.endEpoch >= Date.now());
           if (!period) return "N/A";
-          return `${rollingBudget._currencySign!} ${prettifyAmount(period.totalAllocatedAmount)}`;
+          return printAmount(period.totalAllocatedAmount, rollingBudget.currencyId);
         },
       },
       {

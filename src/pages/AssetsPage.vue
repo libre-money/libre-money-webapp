@@ -77,7 +77,8 @@ import { Record } from "src/models/record";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Asset } from "src/models/asset";
 import { dialogService } from "src/services/dialog-service";
-import { prettifyAmount, sleep } from "src/utils/misc-utils";
+import { sleep } from "src/utils/misc-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import { Currency } from "src/models/currency";
 import { computationService } from "src/services/computation-service";
 import { entityService } from "src/services/entity-service";
@@ -124,7 +125,7 @@ export default defineComponent({
         label: "Current Value",
         sortable: true,
         field: (asset: Asset) => {
-          return `${asset._currencySign!} ${prettifyAmount(asset._balance)}`;
+          return printAmount(asset._balance, asset.currencyId);
         },
       },
       {
