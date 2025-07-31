@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { OFFLINE_DOMAIN } from "src/constants/auth-constants";
 import { User } from "src/models/user";
 
 const LOCAL_STORAGE_USER_KEY = "--ck-user";
@@ -19,7 +20,10 @@ export const useUserStore = defineStore("user", {
 
   getters: {
     isUserLoggedIn(state): boolean {
-      return !!state.user;
+      if (!state.user) return false;
+      if (state.user.isOfflineUser && state.user.hasCompletedOnboarding) return true;
+      if (!state.user.isOfflineUser) return true;
+      return false;
     },
     currentUser(state): User | null {
       return state.user;

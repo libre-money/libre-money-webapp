@@ -10,3 +10,5 @@ export const serverOptions: ServerOption[] = [
   { label: "Cash Keeper (Cluster 2)", value: "cluster-2" },
   { label: "Self Hosted", value: "self-hosted" },
 ];
+
+export const OFFLINE_DOMAIN = "offline";

@@ -186,7 +186,7 @@ export default {
       try {
         await updateSyncStatus("Connecting to server...", "Establishing secure connection");
 
-        await updateSyncStatus("Synchronizing data...", "This may take a few moments depending on your data size");
+        await updateSyncStatus("Synchronizing data...", "This may take a few moments depending on the size of your data");
         let errorCount = (await pouchdbService.sync()) as number;
 
         if (errorCount > 0) {
@@ -254,7 +254,7 @@ export default {
 <style scoped lang="scss">
 .sync-dialog-card {
   min-width: 480px;
-  max-width: 600px;
+  max-width: 500px;
   border-radius: 2px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
@@ -336,7 +336,7 @@ export default {
 }
 
 // Responsive design
-@media (max-width: 600px) {
+@media (max-width: 500px) {
   .sync-dialog-card {
     min-width: 300px;
     margin: 16px;

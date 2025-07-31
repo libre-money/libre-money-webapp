@@ -26,6 +26,18 @@
         </div>
       </q-form>
 
+      <!-- Offline Trial Option -->
+      <q-card-section v-if="currentStep === 1" class="offline-trial-section">
+        <q-separator class="q-mb-md" />
+
+        <div class="text-center q-mb-md">
+          <div class="text-h6 q-mb-sm">Try Without Account</div>
+          <div class="text-body2 text-grey-7">Start using Cash Keeper immediately with unlimited offline access</div>
+        </div>
+
+        <q-btn unelevated color="secondary" label="Start Your Journey" icon="offline_bolt" class="full-width" @click="startOfflineTrial" />
+      </q-card-section>
+
       <!-- Step 2: Username & Password -->
       <q-form v-if="currentStep === 2" ref="loginForm" @submit="onLoginSubmit" class="q-gutter-md q-pa-md">
         <!-- Server info display -->
@@ -165,6 +177,10 @@ export default defineComponent({
         localDataService.removeLocalData();
         configService.clearRemoteServerUrl();
       },
+
+      async startOfflineTrial() {
+        await router.push({ name: "offline-onboarding" });
+      },
     };
   },
 });
@@ -200,7 +216,17 @@ export default defineComponent({
 
 .login-card {
   min-width: 300px;
-  max-width: 600px;
+  max-width: 500px;
+  width: 100%;
   margin: 12px;
+}
+
+.offline-trial-section {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+
+  .q-btn {
+    font-weight: 500;
+  }
 }
 </style>

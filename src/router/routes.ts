@@ -22,6 +22,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import("pages/PostLogoutPage.vue"),
         meta: { requiresAuthentication: false, title: null },
       },
+      {
+        path: "offline-onboarding",
+        name: "offline-onboarding",
+        component: () => import("pages/OfflineOnboardingPage.vue"),
+        meta: { requiresAuthentication: false, title: null },
+      },
       // --- Core:
       {
         path: "overview",

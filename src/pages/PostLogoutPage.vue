@@ -135,13 +135,13 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .post-logout-card {
-  min-width: 500px;
-  max-width: 700px;
+  min-width: 300px;
+  max-width: 500px;
   margin: 16px;
   border-radius: 2px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 
-  @media (max-width: 600px) {
+  @media (max-width: 500px) {
     min-width: 300px;
     margin: 8px;
   }
@@ -177,7 +177,7 @@ export default defineComponent({
 .post-logout-content {
   padding: 32px 24px;
 
-  @media (max-width: 600px) {
+  @media (max-width: 500px) {
     padding: 24px 16px;
   }
 }
@@ -204,7 +204,7 @@ export default defineComponent({
 }
 
 // Responsive adjustments
-@media (max-width: 600px) {
+@media (max-width: 500px) {
   .options-section {
     .option-cards {
       .option-card {
