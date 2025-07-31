@@ -16,6 +16,7 @@ export interface SyncRequest {
   initTimestamp: number;
   completionCallback: ((result: boolean) => void) | null;
   reloadWindowAfterSync: boolean;
+  invocationOrigin: string;
 }
 
 class SyncService {
@@ -36,7 +37,7 @@ class SyncService {
   }
 
   // Entry point for full sync - delegates to SyncDialog for UI and credential handling
-  doFullSync($q: QVueGlobals, reloadWindowAfterSync: boolean): Promise<boolean> {
+  doFullSync($q: QVueGlobals, reloadWindowAfterSync: boolean, invocationOrigin: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.$q = $q;
       const syncRequest: SyncRequest = {
@@ -44,6 +45,7 @@ class SyncService {
         initTimestamp: Date.now(),
         completionCallback: resolve,
         reloadWindowAfterSync,
+        invocationOrigin,
       };
 
       this.syncQueue.push(syncRequest);
@@ -58,6 +60,7 @@ class SyncService {
       initTimestamp: Date.now(),
       completionCallback: null,
       reloadWindowAfterSync: false,
+      invocationOrigin: "unknown",
     };
 
     this.syncQueue.push(syncRequest);
@@ -133,7 +136,11 @@ class SyncService {
       // Let SyncDialog handle the full sync including credential collection
       this.$q!.dialog({
         component: SyncDialog,
-        componentProps: { bidirectional: true, reloadWindowAfterSync: syncRequest.reloadWindowAfterSync },
+        componentProps: {
+          bidirectional: true,
+          reloadWindowAfterSync: syncRequest.reloadWindowAfterSync,
+          invocationOrigin: syncRequest.invocationOrigin,
+        },
       }).onDismiss(() => {
         if (syncRequest.completionCallback) {
           syncRequest.completionCallback(true);

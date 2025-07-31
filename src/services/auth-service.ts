@@ -66,11 +66,16 @@ export const authService = {
   async updateAndTestCredentials(username: string, password: string) {
     try {
       await credentialService.storeCredentials(username, password, false);
+      const { domain, serverUrl } = configService.getServerUrlAndDomainNameOrFail();
 
-      const validateUrl = `${configService.getRemoteServerUrl()}/${configService.getServerUrlAndDomainNameOrFail()}/_all_docs`;
+      const validateUrl = `${serverUrl}/${domain}/_all_docs`;
       const validateResponse = await axios.get(validateUrl, {
         auth: credentialService.getCredentials(),
       });
+
+      if (validateResponse.status !== 200) {
+        return [false, "Invalid login credentials provided."];
+      }
 
       return [true, null];
     } catch (error) {

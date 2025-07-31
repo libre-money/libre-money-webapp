@@ -141,7 +141,7 @@ export default defineComponent({
         dialogService.notify(NotificationType.LOGIN, "Successfully logged in.");
 
         try {
-          await syncService.doFullSync($q, false);
+          await syncService.doFullSync($q, false, "LoginPage");
         } catch (error) {
           console.error(error);
           await dialogService.alert("Sync Error", "Unable to sync data. Please try again later.");
