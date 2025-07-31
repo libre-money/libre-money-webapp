@@ -2,12 +2,12 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
     <q-card class="q-dialog-plugin">
       <q-card-section>
-        <div class="std-dialog-title q-pa-md">{{ existingCurrencyId ? "Editing a Currency" : "Adding a Currency" }}
-        </div>
+        <div class="std-dialog-title q-pa-md">{{ existingCurrencyId ? "Editing a Currency" : "Adding a Currency" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="currencyForm">
           <q-input filled v-model="currencyName" label="Name of the Currency" lazy-rules :rules="validators.name" />
-          <q-input filled v-model="currencySign" label="Currency Sign (i.e. USD)" lazy-rules
-            :rules="validators.currencySign" />
+          <q-input filled v-model="currencySign" label="Currency Sign (i.e. USD)" lazy-rules :rules="validators.currencySign" />
+          <q-input filled v-model="precisionMinimum" label="Minimum Precision" lazy-rules :rules="validators.nonNegativeNumber" type="number" />
+          <q-input filled v-model="precisionMaximum" label="Maximum Precision" lazy-rules :rules="validators.nonNegativeNumber" type="number" />
         </q-form>
       </q-card-section>
 
@@ -47,6 +47,8 @@ export default {
 
     const currencyName: Ref<string | null> = ref(null);
     const currencySign: Ref<string | null> = ref(null);
+    const precisionMinimum: Ref<number | null> = ref(null);
+    const precisionMaximum: Ref<number | null> = ref(null);
 
     const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
@@ -57,6 +59,8 @@ export default {
         initialDoc = res;
         currencyName.value = res.name;
         currencySign.value = res.sign;
+        precisionMinimum.value = res.precisionMinimum || 0;
+        precisionMaximum.value = res.precisionMaximum || 0;
         isLoading.value = false;
       })();
     }
@@ -69,6 +73,8 @@ export default {
         $collection: Collection.CURRENCY,
         name: currencyName.value!,
         sign: currencySign.value!,
+        precisionMinimum: precisionMinimum.value!,
+        precisionMaximum: precisionMaximum.value!,
       };
 
       if (initialDoc) {
@@ -90,6 +96,8 @@ export default {
       currencySign,
       validators,
       currencyForm,
+      precisionMinimum,
+      precisionMaximum,
     };
   },
 };

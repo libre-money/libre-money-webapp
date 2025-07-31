@@ -1,6 +1,6 @@
 import { Collection } from "src/constants/constants";
 import { Currency } from "src/models/currency";
-import { formatCurrency, NumberValue, CurrencyFormatOptions } from "src/utils/number-utils";
+import { formatCurrency, NumberValue, CurrencyFormatOptions, isNonNegativeNumber } from "src/utils/number-utils";
 import { pouchdbService } from "./pouchdb-service";
 
 let currencyCacheList: Currency[] = [];
@@ -33,6 +33,10 @@ class CurrencyFormatService {
 
   getPrintableAmountWithCurrencyAndConfiguration(amount: NumberValue, currencyId: string, options: CurrencyFormatOptions): string {
     const currency = currencyCacheList.find((_currency) => _currency._id === currencyId);
+    if (currency && isNonNegativeNumber(currency.precisionMinimum) && isNonNegativeNumber(currency.precisionMaximum)) {
+      options.minimumFractionDigits = currency.precisionMinimum;
+      options.maximumFractionDigits = currency.precisionMaximum;
+    }
     return formatCurrency(amount, currency?.sign || "", options);
   }
 }
