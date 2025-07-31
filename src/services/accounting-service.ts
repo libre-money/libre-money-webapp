@@ -1,12 +1,9 @@
-import { AccDefaultAccounts, AccTypeList } from "src/constants/accounting-constants";
+import { AccDefaultAccounts } from "src/constants/accounting-constants";
 import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD } from "src/constants/config-constants";
 import { Collection, RecordType } from "src/constants/constants";
 import { AccAccount } from "src/models/accounting/acc-account";
 import { AccDebitOrCredit, AccJournalEntry } from "src/models/accounting/acc-journal-entry";
 import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
-import { AccLedger } from "src/models/accounting/acc-ledger";
-import { AccLedgerEntry } from "src/models/accounting/acc-ledger-entry";
-import { AccTrialBalance, AccTrialBalanceWithCurrency } from "src/models/accounting/acc-trial-balance";
 import { Asset } from "src/models/asset";
 import { Currency } from "src/models/currency";
 import { InferredRecord } from "src/models/inferred/inferred-record";
@@ -14,13 +11,10 @@ import { Record as SourceRecord } from "src/models/record";
 import { Wallet } from "src/models/wallet";
 import { asAmount, printAmount } from "src/utils/de-facto-utils";
 import PromisePool from "src/utils/promise-pool";
-import { dialogService } from "./dialog-service";
+import { accountingLedgerService } from "./accounting-ledger-service";
+import { accountingTrialBalanceService } from "./accounting-trial-balance-service";
 import { pouchdbService } from "./pouchdb-service";
 import { recordService } from "./record-service";
-
-type TrialBalanceInterimContainer = {
-  accountVsDebitBalanceMap: Record<string, number>;
-};
 
 export type AccAccountingReturnable = {
   accountMap: Record<string, AccAccount>;
@@ -1054,259 +1048,15 @@ class AccountingService {
     return filteredEntryList;
   }
 
-  private async injectCurencyAndOtherMetaDataToLedgerEntries(ledger: AccLedger) {
-    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-    const currencyMap: Record<string, Currency> = {};
-    currencyList.forEach((currency) => {
-      currencyMap[currency._id!] = currency;
-    });
-
-    for (const journalEntry of ledger.ledgerEntryList) {
-      journalEntry._currencySign = currencyMap[journalEntry.currencyId].sign;
-    }
-
-    for (const balance of ledger.balanceList) {
-      balance._currency = currencyMap[balance.currencyId];
-    }
-  }
-
+  // ----- Ledger
   async generateLedgerFromJournal(journalEntryList: AccJournalEntry[], accountMap: Record<string, AccAccount>, accountCode: string) {
-    const ledgerEntryList: AccLedgerEntry[] = [];
-
-    const account = accountMap[accountCode];
-    const isBalanceDebit = ["Asset", "Expense"].includes(account.type);
-
-    const currencyIdVsBalanceMap: Record<string, number> = {};
-    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-    currencyList.forEach((currency) => {
-      currencyIdVsBalanceMap[currency._id!] = 0;
-    });
-
-    let serialSeed = 0;
-    for (const journalEntry of journalEntryList) {
-      const debitEntryList = journalEntry.debitList.filter((item) => item.account.code === accountCode);
-      const creditEntryList = journalEntry.creditList.filter((item) => item.account.code === accountCode);
-      if (debitEntryList.length === 0 && creditEntryList.length === 0) continue;
-
-      for (const debitEntry of debitEntryList) {
-        const creditAmount = 0;
-        const debitAmount = debitEntry.amount;
-        const currencyId = debitEntry.currencyId;
-
-        if (isBalanceDebit) {
-          currencyIdVsBalanceMap[debitEntry.currencyId] += debitAmount;
-        } else {
-          currencyIdVsBalanceMap[debitEntry.currencyId] -= debitAmount;
-        }
-
-        const ledgerEntry: AccLedgerEntry = {
-          serial: serialSeed++,
-          account,
-          entryEpoch: journalEntry.entryEpoch,
-          isBalanceDebit,
-          currencyId,
-          debitAmount: asAmount(debitAmount),
-          creditAmount: asAmount(creditAmount),
-          balance: asAmount(currencyIdVsBalanceMap[currencyId]),
-          description: journalEntry.description,
-          notes: journalEntry.notes,
-          journalEntryRef: journalEntry,
-        };
-
-        ledgerEntryList.push(ledgerEntry);
-      }
-
-      for (const creditEntry of creditEntryList) {
-        const debitAmount = 0;
-        const creditAmount = creditEntry.amount;
-        const currencyId = creditEntry.currencyId;
-
-        if (!isBalanceDebit) {
-          currencyIdVsBalanceMap[creditEntry.currencyId] += creditAmount;
-        } else {
-          currencyIdVsBalanceMap[creditEntry.currencyId] -= creditAmount;
-        }
-
-        const ledgerEntry: AccLedgerEntry = {
-          serial: serialSeed++,
-          account,
-          entryEpoch: journalEntry.entryEpoch,
-          isBalanceDebit,
-          currencyId,
-          debitAmount: asAmount(debitAmount),
-          creditAmount: asAmount(creditAmount),
-          balance: asAmount(currencyIdVsBalanceMap[currencyId]),
-          description: journalEntry.description,
-          notes: journalEntry.notes,
-          journalEntryRef: journalEntry,
-        };
-
-        ledgerEntryList.push(ledgerEntry);
-      }
-    }
-
-    const balanceList = Object.keys(currencyIdVsBalanceMap).map((currencyId) => {
-      return { currencyId, balance: asAmount(currencyIdVsBalanceMap[currencyId]) };
-    });
-
-    const ledger: AccLedger = {
-      ledgerEntryList,
-      account,
-      isBalanceDebit,
-      balanceList,
-    };
-
-    await this.injectCurencyAndOtherMetaDataToLedgerEntries(ledger);
-
+    const ledger = await accountingLedgerService.generateLedgerFromJournal(journalEntryList, accountMap, accountCode);
     return ledger;
   }
 
-  private async closeTrialBalanceWithCurrency(
-    currency: Currency,
-    trialBalanceWithCurrency: AccTrialBalanceWithCurrency,
-    accountMap: Record<string, AccAccount>
-  ) {
-    const retainedEarnings = asAmount(
-      trialBalanceWithCurrency.trialBalanceOfTypeMap["Income"].totalBalance - trialBalanceWithCurrency.trialBalanceOfTypeMap["Expense"].totalBalance
-    );
-
-    const gapInPermanentBalance = asAmount(
-      trialBalanceWithCurrency.trialBalanceOfTypeMap["Asset"].totalBalance -
-        (trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].totalBalance + trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].totalBalance)
-    );
-
-    if (retainedEarnings !== gapInPermanentBalance) {
-      const message = "The Trial Balance has been generated. However, a mismatch was found regarding Retained Earnings.";
-      await dialogService.alert("Error", message);
-      return;
-    }
-
-    const equity = trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"];
-    equity.balanceList.push({
-      account: accountMap[AccDefaultAccounts.EQUITY__RETAINED_EARNINGS.code],
-      balance: retainedEarnings,
-      isBalanceDebit: false,
-    });
-    equity.totalBalance += retainedEarnings;
-  }
-
-  private async prepareTrialBalanceWithCurrency(
-    currency: Currency,
-    currencyVsInterimMap: Record<string, TrialBalanceInterimContainer>,
-    accountMap: Record<string, AccAccount>
-  ) {
-    const currencyId = currency._id!;
-    const trialBalanceWithCurrency: AccTrialBalanceWithCurrency = {
-      currencyId,
-      _currency: currency,
-      trialBalanceOfTypeMap: {},
-    };
-    AccTypeList.forEach((type) => {
-      trialBalanceWithCurrency.trialBalanceOfTypeMap[type] = {
-        isBalanceDebit: true,
-        balanceList: [],
-        totalBalance: 0,
-      };
-    });
-
-    const map = currencyVsInterimMap[currencyId].accountVsDebitBalanceMap;
-    for (const accountCode of Object.keys(map)) {
-      const account = accountMap[accountCode];
-      const debitBalance = map[accountCode];
-
-      if (account.type === "Asset") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Asset"].isBalanceDebit = true;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Asset"].totalBalance += asAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Asset"].balanceList.push({
-          account,
-          balance: asAmount(debitBalance),
-          isBalanceDebit: true,
-        });
-      } else if (account.type === "Expense") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Expense"].isBalanceDebit = true;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Expense"].totalBalance += asAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Expense"].balanceList.push({
-          account,
-          balance: asAmount(debitBalance),
-          isBalanceDebit: true,
-        });
-      } else if (account.type === "Income") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Income"].isBalanceDebit = false;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Income"].totalBalance -= asAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Income"].balanceList.push({
-          account,
-          balance: asAmount(debitBalance) * -1,
-          isBalanceDebit: false,
-        });
-      } else if (account.type === "Liability") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].isBalanceDebit = false;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].totalBalance -= asAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].balanceList.push({
-          account,
-          balance: asAmount(debitBalance) * -1,
-          isBalanceDebit: false,
-        });
-      } else if (account.type === "Equity") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].isBalanceDebit = false;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].totalBalance -= asAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].balanceList.push({
-          account,
-          balance: asAmount(debitBalance) * -1,
-          isBalanceDebit: false,
-        });
-      }
-    }
-
-    await this.closeTrialBalanceWithCurrency(currency, trialBalanceWithCurrency, accountMap);
-
-    Object.keys(trialBalanceWithCurrency.trialBalanceOfTypeMap).forEach((key) => {
-      const tbType = trialBalanceWithCurrency.trialBalanceOfTypeMap[key];
-      tbType.totalBalance = asAmount(tbType.totalBalance);
-    });
-
-    return trialBalanceWithCurrency;
-  }
-
+  // ----- Trial Balance
   async generateTrialBalanceFromJournal(journalEntryList: AccJournalEntry[], accountMap: Record<string, AccAccount>) {
-    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-    const currencyMap: Record<string, Currency> = {};
-
-    const currencyVsInterimMap: Record<string, TrialBalanceInterimContainer> = {};
-    currencyList.forEach((currency) => {
-      currencyMap[currency._id!] = currency;
-      const interim: TrialBalanceInterimContainer = {
-        accountVsDebitBalanceMap: {},
-      };
-      currencyVsInterimMap[currency._id!] = interim;
-    });
-
-    for (const journalEntry of journalEntryList) {
-      for (const debit of journalEntry.debitList) {
-        const map = currencyVsInterimMap[debit.currencyId].accountVsDebitBalanceMap;
-        if (!(debit.account.code in map)) {
-          map[debit.account.code] = 0;
-        }
-        map[debit.account.code] += debit.amount;
-      }
-
-      for (const credit of journalEntry.creditList) {
-        const map = currencyVsInterimMap[credit.currencyId].accountVsDebitBalanceMap;
-        if (!(credit.account.code in map)) {
-          map[credit.account.code] = 0;
-        }
-        map[credit.account.code] -= credit.amount;
-      }
-    }
-
-    const trialBalance: AccTrialBalance = {
-      trialBalanceWithCurrencyList: [],
-    };
-
-    for (const currency of currencyList) {
-      const trialBalanceWithCurrency = await this.prepareTrialBalanceWithCurrency(currency, currencyVsInterimMap, accountMap);
-      trialBalance.trialBalanceWithCurrencyList.push(trialBalanceWithCurrency);
-    }
-
+    const trialBalance = await accountingTrialBalanceService.generateTrialBalanceFromJournal(journalEntryList, accountMap);
     return trialBalance;
   }
 }
