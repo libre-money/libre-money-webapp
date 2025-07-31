@@ -129,14 +129,14 @@ import { useRecordFiltersStore } from "src/stores/record-filters-store";
 import { printAmount } from "src/utils/de-facto-utils";
 import { prettifyDate } from "src/utils/misc-utils";
 import { useRouter } from "vue-router";
-import { computed } from "vue";
+import { computed, PropType } from "vue";
 
-// Props
-interface Props {
-  rollingBudget: RollingBudget;
-}
-
-const props = defineProps<Props>();
+const props = defineProps({
+  rollingBudget: {
+    type: Object as PropType<RollingBudget>,
+    required: true,
+  },
+});
 
 // Quasar and router
 const $q = useQuasar();
@@ -145,6 +145,9 @@ const recordFiltersStore = useRecordFiltersStore();
 
 // Dialog setup
 const { dialogRef, onDialogHide, onDialogOK } = useDialogPluginComponent();
+
+// Emits
+defineEmits([...useDialogPluginComponent.emits]);
 
 // Computed properties
 const currentPeriod = computed(() => {
@@ -180,13 +183,9 @@ function editBudgetClicked() {
 }
 
 function viewRecordsClicked() {
-  onDialogOK();
   recordFiltersStore.setRecordFilters(rollingBudgetService.createRecordFiltersForRollingBudget(props.rollingBudget));
-  router.push({ name: "records" });
+  onDialogOK({ reloadRecords: true });
 }
-
-// Export component emits
-defineEmits([...useDialogPluginComponent.emits]);
 </script>
 
 <style scoped lang="scss">

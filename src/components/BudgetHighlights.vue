@@ -99,6 +99,9 @@ const props = withDefaults(defineProps<Props>(), {
   filterYear: () => new Date().getFullYear(),
 });
 
+// Emits
+const emit = defineEmits(["reloadRecords"]);
+
 // Quasar
 const $q = useQuasar();
 
@@ -139,6 +142,10 @@ function showBudgetDetails(rollingBudget: RollingBudget) {
     componentProps: {
       rollingBudget: rollingBudget,
     },
+  }).onOk((data) => {
+    if (data.reloadRecords) {
+      emit("reloadRecords");
+    }
   });
 }
 

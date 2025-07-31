@@ -1,7 +1,13 @@
 <template>
   <q-page class="column items-center justify-evenly">
     <!-- Budget Highlights -->
-    <BudgetHighlights ref="budgetHighlightsRef" :record-filters="recordFilters" :filter-month="filterMonth" :filter-year="filterYear" />
+    <BudgetHighlights
+      ref="budgetHighlightsRef"
+      :record-filters="recordFilters"
+      :filter-month="filterMonth"
+      :filter-year="filterYear"
+      @reloadRecords="loadData"
+    />
     <!-- End of Budget Highlights -->
 
     <!-- Records -->
@@ -269,6 +275,10 @@ const $q = useQuasar();
 
 const recordPaginationStore = useRecordPaginationSizeStore();
 const recordFiltersStore = useRecordFiltersStore();
+
+recordFiltersStore.$subscribe((mutation, state) => {
+  recordFilters.value = state.recordFilters;
+});
 
 // ----- Refs
 const isLoading = ref(false);
