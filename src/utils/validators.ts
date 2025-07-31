@@ -66,4 +66,15 @@ export const validators = {
   ],
   notes: [(val: string) => !val || (val && val.length < 1000) || "Note must be less than 1000 characters"],
   document: [(val: string) => !val || (val && val.length < 10000) || "Document must be less than 10000 characters"],
+  url: [
+    (val: string) => {
+      if (!val || val.length === 0) return "Please enter a URL";
+      try {
+        new URL(val);
+        return true;
+      } catch {
+        return "Please enter a valid URL (e.g., https://example.com)";
+      }
+    },
+  ],
 };

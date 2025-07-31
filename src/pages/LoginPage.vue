@@ -2,20 +2,50 @@
   <q-page class="row items-center justify-evenly">
     <q-card class="login-card">
       <div class="app-name q-pa-xs"><img class="logo" src="icons/logo.png" alt="CK" />Cash Keeper</div>
-      <div class="title q-pa-xs">Login</div>
-      <q-form ref="loginForm" @submit="onSubmit" class="q-gutter-md q-pa-md">
-        <q-input filled v-model="domain" label="Domain" hint="Your domain" lazy-rules :rules="validators.domain" />
+      <div class="title q-pa-xs">{{ currentStep === 1 ? "Select Server" : "Login" }}</div>
 
-        <q-input filled v-model="username" label="Username" hint="Your username" lazy-rules :rules="validators.username" />
+      <!-- Step 1: Server Selection -->
+      <q-form v-if="currentStep === 1" ref="serverForm" @submit="onServerSubmit" class="q-gutter-md q-pa-md">
+        <q-select
+          filled
+          v-model="selectedServer"
+          :options="serverOptions"
+          label="Select Server"
+          lazy-rules
+          :rules="[(val) => !!val || 'Please select a server']"
+        />
 
-        <q-input type="password" filled v-model="password" label="Password" hint="Your password" lazy-rules :rules="validators.password" />
+        <!-- Custom Server URL input (only for Self Hosted) -->
+        <q-input v-if="selectedServer?.value === 'self-hosted'" filled v-model="customServerUrl" label="Server URL" lazy-rules :rules="validators.url" />
+
+        <!-- Domain input -->
+        <q-input filled v-model="domain" label="Domain" lazy-rules :rules="validators.domain" />
+
+        <div class="row justify-end">
+          <q-btn label="Next" type="submit" color="primary" />
+        </div>
+      </q-form>
+
+      <!-- Step 2: Username & Password -->
+      <q-form v-if="currentStep === 2" ref="loginForm" @submit="onLoginSubmit" class="q-gutter-md q-pa-md">
+        <!-- Server info display -->
+        <q-banner class="bg-grey-2 text-dark q-mb-md">
+          <div class="text-subtitle2">Server: {{ selectedServer?.label }}</div>
+          <div class="text-caption">{{ displayServerUrl }}</div>
+          <div class="text-caption">Domain: {{ domain }}</div>
+        </q-banner>
+
+        <q-input filled v-model="username" label="Username" lazy-rules :rules="validators.username" />
+
+        <q-input type="password" filled v-model="password" label="Password" lazy-rules :rules="validators.password" />
 
         <q-checkbox v-model="shouldRememberPassword" label="Store password on this device" />
 
         <div class="row">
+          <q-btn label="Back" type="button" color="grey" flat @click="goBackToServerSelection" />
           <q-btn label="Reset Local Data" type="button" color="grey" flat class="q-ml-sm" @click="removeLocalDataClicked" />
           <div class="spacer"></div>
-          <q-btn label="Login" type="submit" color="primary" />
+          <q-btn label="Login" type="submit" color="primary" :loading="isLoading" />
         </div>
       </q-form>
     </q-card>
@@ -23,65 +53,82 @@
 </template>
 
 <script lang="ts">
-import { QForm, useQuasar } from "quasar";
+import { QForm } from "quasar";
 import { configService } from "src/services/config-service";
 import { NotificationType, dialogService } from "src/services/dialog-service";
 import { localDataService } from "src/services/local-data-service";
-import { loginService } from "src/services/login-service";
-import { lockService } from "src/services/lock-service";
+import { authService } from "src/services/auth-service";
+
 import { validators } from "src/utils/validators";
-import { Ref, defineComponent, ref } from "vue";
+import { Ref, defineComponent, ref, computed } from "vue";
 import { RouteLocationRaw, useRoute, useRouter } from "vue-router";
+import { DEFAULT_REMOTE_SERVER_URL, serverOptions, ServerOption } from "src/constants/auth-constants";
 
 export default defineComponent({
   name: "IndexPage",
   components: {},
   setup() {
-    const $q = useQuasar();
     const route = useRoute();
     const router = useRouter();
 
+    const currentStep = ref(1);
+
     const isLoading = ref(false);
 
+    const serverForm: Ref<QForm | null> = ref(null);
     const loginForm: Ref<QForm | null> = ref(null);
 
-    const previousDomainName = configService.getDomainName(false);
-    const domain: Ref<string | null> = ref(previousDomainName);
+    // Server selection state
+    const selectedServer: Ref<ServerOption | null> = ref(serverOptions[0]); // Default to first cluster
+    const customServerUrl: Ref<string | null> = ref(configService.getRemoteServerUrl());
+    const domain: Ref<string | null> = ref(configService.getDomainName());
 
+    // Login state
     const username: Ref<string | null> = ref(null);
     const password: Ref<string | null> = ref(null);
-
     const shouldRememberPassword: Ref<boolean> = ref(false);
+
+    // Computed server URL for display
+    const displayServerUrl = computed(() => {
+      if (selectedServer.value?.value === "self-hosted") {
+        return customServerUrl.value || "";
+      }
+      return DEFAULT_REMOTE_SERVER_URL;
+    });
 
     return {
       validators,
+      currentStep,
+      isLoading,
+      serverForm,
+      loginForm,
+      serverOptions,
+      selectedServer,
+      customServerUrl,
       domain,
       username,
       password,
-      loginForm,
       shouldRememberPassword,
+      displayServerUrl,
 
-      async onSubmit() {
-        if (!lockService.acquireLock("LoginPage/Login", 1000)) return;
+      async onServerSubmit() {
+        const isValid = await serverForm.value!.validate();
+        if (!isValid) return;
+        currentStep.value = 2;
+      },
 
+      async onLoginSubmit() {
         const isValid = await loginForm.value!.validate();
         if (!isValid) return;
 
-        if (previousDomainName && previousDomainName !== domain.value) {
-          const message = `Your new domain ${domain.value} is different from ${previousDomainName}.
-          If you continue with this login, your data from ${previousDomainName} will be copied over to ${domain.value} once you sync. Continue?`;
-          const answerContinue = await dialogService.confirm("Please confirm", message);
-          if (!answerContinue) {
-            const message = 'Hint: to clear local data on this device use the "Reset Local Data" button after dismissing this message.';
-            await dialogService.alert("Login aborted", message);
-            return;
-          }
-        }
-
-        configService.setDomainName(domain.value || "");
-
         isLoading.value = true;
-        let [successful, failureReason] = await loginService.login(username.value!, password.value!, shouldRememberPassword.value);
+        let [successful, failureReason] = await authService.login(
+          displayServerUrl.value,
+          domain.value!,
+          username.value!,
+          password.value!,
+          shouldRememberPassword.value
+        );
         isLoading.value = false;
 
         if (!successful) {
@@ -98,11 +145,16 @@ export default defineComponent({
         }
       },
 
+      goBackToServerSelection() {
+        currentStep.value = 1;
+      },
+
       async removeLocalDataClicked() {
         domain.value = null;
         username.value = null;
         password.value = null;
         localDataService.removeLocalData();
+        configService.clearRemoteServerUrl();
       },
     };
   },

@@ -1,5 +1,5 @@
 import { dialogService } from "./dialog-service";
-import { loginService } from "./login-service";
+import { authService } from "./auth-service";
 import { pouchdbService } from "./pouchdb-service";
 
 class LocalDataService {
@@ -8,7 +8,7 @@ class LocalDataService {
     if (!answer) return;
 
     await pouchdbService.getDb().destroy();
-    await loginService.logout();
+    await authService.logout();
 
     localStorage.clear();
     sessionStorage.clear();

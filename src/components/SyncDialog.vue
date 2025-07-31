@@ -33,9 +33,9 @@
 <script lang="ts">
 import { useDialogPluginComponent, useQuasar } from "quasar";
 import { partyTypeList } from "src/constants/constants";
+import { authService } from "src/services/auth-service";
 import { credentialService } from "src/services/credential-service";
 import { dialogService } from "src/services/dialog-service";
-import { loginService } from "src/services/login-service";
 import { migrationService } from "src/services/migration-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useUserStore } from "src/stores/user";
@@ -55,7 +55,7 @@ export default {
 
   emits: [...useDialogPluginComponent.emits],
 
-  setup(props) {
+  setup() {
     const isLoading = ref(false);
 
     const userStore = useUserStore();
@@ -107,7 +107,7 @@ export default {
     }
 
     async function onSubmit() {
-      let [successful, failureReason] = await loginService.updateAndTestCredentials(username.value!, password.value!);
+      let [successful, failureReason] = await authService.updateAndTestCredentials(username.value!, password.value!);
       if (!successful) {
         await dialogService.alert("Credentials Error", failureReason as string);
         return;

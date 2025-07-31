@@ -91,7 +91,7 @@
 import { defineComponent, ref } from "vue";
 import { useUserStore } from "src/stores/user";
 import EssentialLink from "components/sidebar/EssentialLink.vue";
-import { loginService } from "src/services/login-service";
+import { authService } from "src/services/auth-service";
 import { dialogService } from "src/services/dialog-service";
 import { sleep } from "src/utils/misc-utils";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
@@ -285,7 +285,7 @@ export default defineComponent({
     checkIfInDevMode();
 
     async function logoutClicked() {
-      let [successful, failureReason] = await loginService.logout();
+      let [successful, failureReason] = await authService.logout();
       if (!successful) {
         await dialogService.alert("Logout Error", failureReason as string);
       }

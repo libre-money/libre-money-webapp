@@ -126,7 +126,8 @@ export const pouchdbService = {
 
   async sync() {
     return await new Promise((accept, reject) => {
-      const remoteDbUrl = `${configService.getRemoteServerUrl()}/${configService.getDomainName()}`;
+      const { domain, serverUrl } = configService.getServerUrlAndDomainNameOrFail();
+      const remoteDbUrl = `${serverUrl}/${domain}`;
       const remoteDB = new PouchDB(remoteDbUrl, {
         auth: credentialService.getCredentials(),
       });
