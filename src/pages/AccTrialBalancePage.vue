@@ -69,18 +69,17 @@
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
 import FilterAccStatementDialog from "src/components/FilterAccStatementDialog.vue";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { AccTypeList } from "src/constants/accounting-constants";
 import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
 import { AccLedgerFilters } from "src/models/accounting/acc-ledger-filters";
 import { AccStatementFilters } from "src/models/accounting/acc-statement-filters";
 import { AccTrialBalance } from "src/models/accounting/acc-trial-balance";
-import { Record } from "src/models/record";
 import { accountingService } from "src/services/accounting-service";
-import { deepClone, prettifyDate } from "src/utils/misc-utils";
 import { printAmount } from "src/utils/de-facto-utils";
+import { deepClone, prettifyDate } from "src/utils/misc-utils";
 import { Ref, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import LoadingIndicator from "src/components/LoadingIndicator.vue";
 
 const getDefaultFilters = () => {
   return {

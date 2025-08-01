@@ -50,14 +50,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, Ref } from "vue";
-import { Collection, rowsPerPageOptions } from "./../constants/constants";
 import { useQuasar } from "quasar";
-import AddCurrency from "./../components/AddCurrency.vue";
-import { pouchdbService } from "src/services/pouchdb-service";
 import { Currency } from "src/models/currency";
 import { dialogService } from "src/services/dialog-service";
+import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
+import { ref, Ref, watch } from "vue";
+import AddCurrency from "./../components/AddCurrency.vue";
+import { Collection, rowsPerPageOptions } from "./../constants/constants";
 
 const $q = useQuasar();
 

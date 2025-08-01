@@ -65,23 +65,21 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, Ref } from "vue";
-import { Collection, RecordType, assetLiquidityList, assetTypeList, rowsPerPageOptions } from "./../constants/constants";
 import { useQuasar } from "quasar";
-import AddAsset from "./../components/AddAsset.vue";
-import AddAssetPurchaseRecord from "./../components/AddAssetPurchaseRecord.vue";
-import AddAssetSaleRecord from "./../components/AddAssetSaleRecord.vue";
-import AddAssetAppreciationDepreciationRecord from "./../components/AddAssetAppreciationDepreciationRecord.vue";
-import { Record } from "src/models/record";
-import { pouchdbService } from "src/services/pouchdb-service";
 import { Asset } from "src/models/asset";
-import { dialogService } from "src/services/dialog-service";
-import { sleep } from "src/utils/misc-utils";
-import { printAmount } from "src/utils/de-facto-utils";
 import { Currency } from "src/models/currency";
 import { computationService } from "src/services/computation-service";
+import { dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
+import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
+import { printAmount } from "src/utils/de-facto-utils";
+import { Ref, ref, watch } from "vue";
+import AddAsset from "./../components/AddAsset.vue";
+import AddAssetAppreciationDepreciationRecord from "./../components/AddAssetAppreciationDepreciationRecord.vue";
+import AddAssetPurchaseRecord from "./../components/AddAssetPurchaseRecord.vue";
+import AddAssetSaleRecord from "./../components/AddAssetSaleRecord.vue";
+import { Collection, rowsPerPageOptions } from "./../constants/constants";
 
 const $q = useQuasar();
 

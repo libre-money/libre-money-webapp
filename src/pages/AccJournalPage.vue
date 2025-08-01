@@ -80,18 +80,14 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { AccJournalEntry } from "src/models/accounting/acc-journal-entry";
-import { Record } from "src/models/record";
-import { accountingService } from "src/services/accounting-service";
-import { Ref, onMounted, ref, watch } from "vue";
-import { deepClone, prettifyDate, prettifyDateTime, sleep } from "src/utils/misc-utils";
-import { printAmount } from "src/utils/de-facto-utils";
-import { Collection, dateRangePresetList, defaultPartyType, partyTypeList } from "src/constants/constants";
-import DateInput from "src/components/lib/DateInput.vue";
-import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
-import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
 import FilterAccJournalDialog from "src/components/FilterAccJournalDialog.vue";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
+import { AccJournalEntry } from "src/models/accounting/acc-journal-entry";
+import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
+import { accountingService } from "src/services/accounting-service";
+import { printAmount } from "src/utils/de-facto-utils";
+import { deepClone, prettifyDate } from "src/utils/misc-utils";
+import { Ref, onMounted, ref } from "vue";
 
 const getDefaultFilters = () => {
   return {

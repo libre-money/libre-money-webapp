@@ -76,24 +76,18 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { AccLedgerEntry } from "src/models/accounting/acc-ledger-entry";
-import { Record } from "src/models/record";
-import { accountingService } from "src/services/accounting-service";
-import { Ref, onMounted, ref, watch } from "vue";
-import { deepClone, prettifyDate, prettifyDateTime, sleep } from "src/utils/misc-utils";
-import { printAmount } from "src/utils/de-facto-utils";
-import { Collection, dateRangePresetList, defaultPartyType, partyTypeList } from "src/constants/constants";
-import DateInput from "src/components/lib/DateInput.vue";
-import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
-import { AccLedgerFilters } from "src/models/accounting/acc-ledger-filters";
 import FilterAccLedgerDialog from "src/components/FilterAccLedgerDialog.vue";
-import { useRoute, useRouter } from "vue-router";
-import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
-import { dialogService } from "src/services/dialog-service";
-import { AccAccount } from "src/models/accounting/acc-account";
-import { AccLedger } from "src/models/accounting/acc-ledger";
-import { entityService } from "src/services/entity-service";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
+import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
+import { AccLedger } from "src/models/accounting/acc-ledger";
+import { AccLedgerFilters } from "src/models/accounting/acc-ledger-filters";
+import { accountingService } from "src/services/accounting-service";
+import { dialogService } from "src/services/dialog-service";
+import { entityService } from "src/services/entity-service";
+import { printAmount } from "src/utils/de-facto-utils";
+import { deepClone, prettifyDate } from "src/utils/misc-utils";
+import { Ref, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const getDefaultFilters = (): AccLedgerFilters => {
   return {

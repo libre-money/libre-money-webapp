@@ -50,14 +50,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import { rowsPerPageOptions } from "./../constants/constants";
 import { useQuasar } from "quasar";
+import { AccAccount } from "src/models/accounting/acc-account";
+import { accountingService } from "src/services/accounting-service";
 import { dialogService } from "src/services/dialog-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
-import { accountingService } from "src/services/accounting-service";
-import { AccAccount } from "src/models/accounting/acc-account";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { rowsPerPageOptions } from "./../constants/constants";
 
 const $q = useQuasar();
 const router = useRouter();

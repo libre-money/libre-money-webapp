@@ -36,11 +36,11 @@
 </template>
 
 <script setup lang="ts">
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
 import { dialogService } from "src/services/dialog-service";
 import { getCurrentYear, sleep } from "src/utils/misc-utils";
 import { ref } from "vue";
-import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
