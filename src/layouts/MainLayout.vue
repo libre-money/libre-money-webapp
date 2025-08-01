@@ -22,11 +22,11 @@
           <q-menu>
             <q-list style="min-width: 150px">
               <q-item clickable v-close-popup @click="fullSyncClicked" :disable="syncService.isSyncing()">
-                <q-item-section>Full Sync</q-item-section>
+                <q-item-section>Sync</q-item-section>
               </q-item>
-              <q-item clickable v-close-popup @click="backgroundSyncClicked" :disable="syncService.isSyncing()">
+              <!-- <q-item clickable v-close-popup @click="backgroundSyncClicked" :disable="syncService.isSyncing()">
                 <q-item-section>Background Sync</q-item-section>
-              </q-item>
+              </q-item> -->
               <q-separator />
               <q-item clickable v-close-popup @click="logoutClicked">
                 <q-item-section>Logout</q-item-section>

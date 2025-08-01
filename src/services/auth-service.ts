@@ -1,5 +1,6 @@
 import { User } from "src/models/user";
 import { useUserStore } from "src/stores/user";
+import { previousSessionService } from "./previous-session-service";
 
 const userStore = useUserStore();
 
@@ -11,6 +12,12 @@ import { localDataService } from "./local-data-service";
 export const authService = {
   async logout() {
     try {
+      // Store previous session before clearing user data
+      const currentUser = userStore.currentUser;
+      if (currentUser) {
+        previousSessionService.storePreviousSession(currentUser);
+      }
+
       await credentialService.clearCredentials();
       userStore.setUser(null);
       return [true, null];
@@ -45,6 +52,7 @@ export const authService = {
 
       const user = {
         domain,
+        serverUrl,
         username,
         loginAt: Date.now(),
       };

@@ -10,7 +10,7 @@ import { Asset } from "src/models/asset";
 import { Party } from "src/models/party";
 import { Tag } from "src/models/tag";
 import { sleep } from "src/utils/misc-utils";
-import { OFFLINE_DOMAIN } from "src/constants/auth-constants";
+import { OFFLINE_DOMAIN, OFFLINE_SERVER_URL } from "src/constants/auth-constants";
 
 const userStore = useUserStore();
 
@@ -27,6 +27,7 @@ class OnboardingService {
   async createOfflineUser(username: string): Promise<User> {
     const user: User = {
       domain: OFFLINE_DOMAIN,
+      serverUrl: OFFLINE_SERVER_URL,
       username,
       loginAt: Date.now(),
       isOfflineUser: true,
