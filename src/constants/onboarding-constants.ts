@@ -8,19 +8,6 @@ export interface CurrencyInfo {
   sign: string;
 }
 
-export const CURRENCY_OPTIONS: CurrencyOption[] = [
-  { label: "US Dollar (USD)", value: "USD" },
-  { label: "Euro (EUR)", value: "EUR" },
-  { label: "British Pound (GBP)", value: "GBP" },
-  { label: "Japanese Yen (JPY)", value: "JPY" },
-  { label: "Canadian Dollar (CAD)", value: "CAD" },
-  { label: "Australian Dollar (AUD)", value: "AUD" },
-  { label: "Swiss Franc (CHF)", value: "CHF" },
-  { label: "Chinese Yuan (CNY)", value: "CNY" },
-  { label: "Bangladeshi Taka (BDT)", value: "BDT" },
-  { label: "Custom Currency", value: "custom" },
-];
-
 export const CURRENCY_MAP: Record<string, CurrencyInfo> = {
   USD: { name: "US Dollar", sign: "USD" },
   EUR: { name: "Euro", sign: "EUR" },
@@ -32,3 +19,11 @@ export const CURRENCY_MAP: Record<string, CurrencyInfo> = {
   CNY: { name: "Chinese Yuan", sign: "CNY" },
   BDT: { name: "Bangladeshi Taka", sign: "BDT" },
 };
+
+export const CURRENCY_OPTIONS: CurrencyOption[] = [
+  ...Object.entries(CURRENCY_MAP).map(([code, info]) => ({
+    label: `${info.name} (${code})`,
+    value: code,
+  })),
+  { label: "Custom Currency", value: "custom" },
+];
