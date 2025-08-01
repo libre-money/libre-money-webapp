@@ -68,23 +68,22 @@
       </q-card-section>
 
       <q-card-actions class="row justify-end">
-        <q-btn color="blue-grey" label="Cancel" @click="cancelClicked" />
+        <q-btn color="blue-grey" label="Cancel" @click="onDialogCancel" />
         <q-btn color="primary" label="OK" @click="okClicked" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-
 import { Collection, defaultRollOverRule, rollOverRuleList } from "src/constants/constants";
 import { BudgetedPeriod, RollingBudget } from "src/models/rolling-budget";
 import { dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { validators } from "src/utils/validators";
-import { Ref, ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import DateInput from "./lib/DateInput.vue";
 import SelectCurrency from "./SelectCurrency.vue";
 import SelectTag from "./SelectTag.vue";
@@ -92,274 +91,240 @@ import { prettifyDate } from "src/utils/misc-utils";
 import { asAmount } from "src/utils/de-facto-utils";
 import { computationService } from "src/services/computation-service";
 import { normalizeEpochAsDate } from "src/utils/date-utils";
-export default {
-  props: {
-    existingBudgetId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-    prefill: {
-      type: Object,
-      required: false,
-      default: null,
-    },
+
+// Props
+const props = defineProps<{
+  existingBudgetId?: string | null;
+  prefill?: object | null;
+}>();
+
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
+
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+
+// State
+let initialDoc: RollingBudget | null = null;
+
+const isLoading = ref(false);
+
+const budgetForm = ref<QForm | null>(null);
+
+const budgetName = ref<string | null>(null);
+const budgetStartEpoch = ref<number>(Date.now());
+const budgetEndEpoch = ref<number>(Date.now());
+const budgetIncludeExpenses = ref<boolean>(true);
+const budgetIncludeAssetPurchases = ref<boolean>(false);
+const budgetTagIdWhiteList = ref<string[]>([]);
+const budgetTagIdBlackList = ref<string[]>([]);
+const budgetCurrencyId = ref<string | null>(null);
+const budgetedPeriodList = ref<BudgetedPeriod[]>([]);
+const budgetRollOverRule = ref<string>(defaultRollOverRule);
+const budgetCurrencySign = ref<string | null>(null);
+const budgetIsFeatured = ref<boolean>(false);
+
+const tableColumns = [
+  {
+    name: "startDate",
+    label: "Start Date",
+    field: "startEpoch",
+    align: "left",
   },
-
-  components: {
-    SelectCurrency,
-    DateInput,
-    SelectTag,
+  {
+    name: "endDate",
+    label: "End Date",
+    field: "endEpoch",
+    align: "left",
   },
+  {
+    name: "allocated",
+    label: "Allocated Amount",
+    field: "allocatedAmount",
+    align: "right",
+  },
+  {
+    name: "rolledOver",
+    label: "Rolled Over",
+    field: "rolledOverAmount",
+    align: "right",
+  },
+  {
+    name: "total",
+    label: "Total Allocated",
+    field: "totalAllocatedAmount",
+    align: "right",
+  },
+  {
+    name: "used",
+    label: "Used Amount",
+    field: "usedAmount",
+    align: "right",
+  },
+  {
+    name: "held",
+    label: "Reserved Amount",
+    field: "heldAmount",
+    align: "right",
+  },
+  {
+    name: "remaining",
+    label: "Remaining",
+    field: "remainingAmount",
+    align: "right",
+  },
+];
 
-  emits: [...useDialogPluginComponent.emits],
+// Methods
 
-  setup(props) {
-    let initialDoc: RollingBudget | null = null;
+function prefillBudget(res: RollingBudget) {
+  budgetName.value = res.name;
+  budgetIncludeExpenses.value = res.includeExpenses;
+  budgetIncludeAssetPurchases.value = res.includeAssetPurchases;
+  budgetTagIdWhiteList.value = res.tagIdWhiteList;
+  budgetTagIdBlackList.value = res.tagIdBlackList;
+  budgetCurrencyId.value = res.currencyId;
+  budgetedPeriodList.value = res.budgetedPeriodList;
+  budgetRollOverRule.value = res.rollOverRule;
+  budgetIsFeatured.value = res.isFeatured;
+}
 
-    const isLoading = ref(false);
+function addPeriod() {
+  budgetedPeriodList.value.push({
+    startEpoch: budgetStartEpoch.value,
+    endEpoch: budgetEndEpoch.value,
+    title: "Untitled",
+    allocatedAmount: 0,
+    rolledOverAmount: 0,
+    totalAllocatedAmount: 0,
+    usedAmount: 0,
+    remainingAmount: 0,
+    heldAmount: 0,
+    calculatedEpoch: Date.now(),
+  });
+}
 
-    const budgetForm: Ref<QForm | null> = ref(null);
+function removePeriod(index: number) {
+  budgetedPeriodList.value.splice(index, 1);
+}
 
-    const budgetName: Ref<string | null> = ref(null);
-    const budgetStartEpoch: Ref<number> = ref(Date.now());
-    const budgetEndEpoch: Ref<number> = ref(Date.now());
-    const budgetIncludeExpenses: Ref<boolean> = ref(true);
-    const budgetIncludeAssetPurchases: Ref<boolean> = ref(false);
-    const budgetTagIdWhiteList: Ref<string[]> = ref([]);
-    const budgetTagIdBlackList: Ref<string[]> = ref([]);
-    const budgetCurrencyId: Ref<string | null> = ref(null);
-    const budgetedPeriodList: Ref<BudgetedPeriod[]> = ref([]);
-    const budgetRollOverRule: Ref<string> = ref(defaultRollOverRule);
-    const budgetCurrencySign: Ref<string | null> = ref(null);
-    const budgetIsFeatured: Ref<boolean> = ref(false);
+async function calculatePeriods() {
+  budgetedPeriodList.value = budgetedPeriodList.value.map((period) => ({
+    calculatedEpoch: Date.now(),
+    startEpoch: normalizeEpochAsDate(period.startEpoch),
+    endEpoch: normalizeEpochAsDate(period.endEpoch),
+    title: `${prettifyDate(period.startEpoch)} to ${prettifyDate(period.endEpoch)}`,
+    allocatedAmount: asAmount(period.allocatedAmount),
+    rolledOverAmount: asAmount(period.rolledOverAmount),
+    totalAllocatedAmount: asAmount(period.totalAllocatedAmount),
+    usedAmount: asAmount(period.usedAmount),
+    heldAmount: asAmount(period.heldAmount),
+    remainingAmount: asAmount(period.remainingAmount),
+  }));
 
-    const tableColumns = [
-      {
-        name: "startDate",
-        label: "Start Date",
-        field: "startEpoch",
-        align: "left",
-      },
-      {
-        name: "endDate",
-        label: "End Date",
-        field: "endEpoch",
-        align: "left",
-      },
-      {
-        name: "allocated",
-        label: "Allocated Amount",
-        field: "allocatedAmount",
-        align: "right",
-      },
-      {
-        name: "rolledOver",
-        label: "Rolled Over",
-        field: "rolledOverAmount",
-        align: "right",
-      },
-      {
-        name: "total",
-        label: "Total Allocated",
-        field: "totalAllocatedAmount",
-        align: "right",
-      },
-      {
-        name: "used",
-        label: "Used Amount",
-        field: "usedAmount",
-        align: "right",
-      },
-      {
-        name: "held",
-        label: "Reserved Amount",
-        field: "heldAmount",
-        align: "right",
-      },
-      {
-        name: "remaining",
-        label: "Remaining",
-        field: "remainingAmount",
-        align: "right",
-      },
-    ];
+  budgetedPeriodList.value = budgetedPeriodList.value.sort((a, b) => a.startEpoch - b.startEpoch);
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+  let rollingBudget: RollingBudget = {
+    $collection: Collection.ROLLING_BUDGET,
+    name: budgetName.value!,
+    includeExpenses: budgetIncludeExpenses.value,
+    includeAssetPurchases: budgetIncludeAssetPurchases.value,
+    tagIdWhiteList: budgetTagIdWhiteList.value,
+    tagIdBlackList: budgetTagIdBlackList.value,
+    currencyId: budgetCurrencyId.value!,
+    frequency: "monthly",
+    budgetedPeriodList: budgetedPeriodList.value,
+    rollOverRule: budgetRollOverRule.value as "always" | "never" | "positive-only" | "negative-only",
+    isFeatured: budgetIsFeatured.value,
+  };
 
-    function prefillBudget(res: RollingBudget) {
-      budgetName.value = res.name;
-      budgetIncludeExpenses.value = res.includeExpenses;
-      budgetIncludeAssetPurchases.value = res.includeAssetPurchases;
-      budgetTagIdWhiteList.value = res.tagIdWhiteList;
-      budgetTagIdBlackList.value = res.tagIdBlackList;
-      budgetCurrencyId.value = res.currencyId;
-      budgetedPeriodList.value = res.budgetedPeriodList;
-      budgetRollOverRule.value = res.rollOverRule;
-      budgetIsFeatured.value = res.isFeatured;
+  await computationService.computeUsedAmountForRollingBudgetInPlace(rollingBudget);
+
+  budgetedPeriodList.value = budgetedPeriodList.value.map((period) => ({
+    ...period,
+    calculatedEpoch: Date.now(),
+  }));
+}
+
+async function okClicked() {
+  if (!(await budgetForm.value?.validate())) {
+    return;
+  }
+
+  let rollingBudget: RollingBudget = {
+    $collection: Collection.ROLLING_BUDGET,
+    name: budgetName.value!,
+    includeExpenses: budgetIncludeExpenses.value,
+    includeAssetPurchases: budgetIncludeAssetPurchases.value,
+    tagIdWhiteList: budgetTagIdWhiteList.value,
+    tagIdBlackList: budgetTagIdBlackList.value,
+    currencyId: budgetCurrencyId.value!,
+    frequency: "monthly",
+    budgetedPeriodList: budgetedPeriodList.value,
+    rollOverRule: budgetRollOverRule.value as "always" | "never" | "positive-only" | "negative-only",
+    isFeatured: budgetIsFeatured.value,
+  };
+
+  if (initialDoc) {
+    rollingBudget = Object.assign({}, initialDoc, rollingBudget);
+  }
+
+  pouchdbService.upsertDoc(rollingBudget);
+
+  onDialogOK();
+}
+
+function optionChanged(which: string) {
+  if (!budgetIncludeExpenses.value && !budgetIncludeAssetPurchases.value) {
+    if (which === "expenses") {
+      budgetIncludeAssetPurchases.value = true;
+    } else {
+      budgetIncludeExpenses.value = true;
     }
+  }
+}
 
-    function addPeriod() {
-      budgetedPeriodList.value.push({
-        startEpoch: budgetStartEpoch.value,
-        endEpoch: budgetEndEpoch.value,
-        title: "Untitled",
-        allocatedAmount: 0,
-        rolledOverAmount: 0,
-        totalAllocatedAmount: 0,
-        usedAmount: 0,
-        remainingAmount: 0,
-        heldAmount: 0,
-        calculatedEpoch: Date.now(),
-      });
-    }
+function allocatedAmountChanged(row: BudgetedPeriod) {
+  row.totalAllocatedAmount = parseFloat(String(row.allocatedAmount)) + (parseFloat(String(row.rolledOverAmount)) || 0);
+  row.remainingAmount = row.totalAllocatedAmount - (parseFloat(String(row.usedAmount)) || 0) - (parseFloat(String(row.heldAmount)) || 0);
+}
 
-    function removePeriod(index: number) {
-      budgetedPeriodList.value.splice(index, 1);
-    }
+function heldAmountChanged(row: BudgetedPeriod) {
+  allocatedAmountChanged(row);
+}
 
-    async function calculatePeriods() {
-      budgetedPeriodList.value = budgetedPeriodList.value.map((period) => ({
-        calculatedEpoch: Date.now(),
-        startEpoch: normalizeEpochAsDate(period.startEpoch),
-        endEpoch: normalizeEpochAsDate(period.endEpoch),
-        title: `${prettifyDate(period.startEpoch)} to ${prettifyDate(period.endEpoch)}`,
-        allocatedAmount: asAmount(period.allocatedAmount),
-        rolledOverAmount: asAmount(period.rolledOverAmount),
-        totalAllocatedAmount: asAmount(period.totalAllocatedAmount),
-        usedAmount: asAmount(period.usedAmount),
-        heldAmount: asAmount(period.heldAmount),
-        remainingAmount: asAmount(period.remainingAmount),
-      }));
+// Watchers
 
-      budgetedPeriodList.value = budgetedPeriodList.value.sort((a, b) => a.startEpoch - b.startEpoch);
+watch(budgetCurrencyId, async (newCurrencyId: any) => {
+  if (!newCurrencyId) {
+    budgetCurrencySign.value = null;
+    return;
+  }
+  let currency = await entityService.getCurrency(newCurrencyId);
+  budgetCurrencySign.value = currency.sign;
+});
 
-      let rollingBudget: RollingBudget = {
-        $collection: Collection.ROLLING_BUDGET,
-        name: budgetName.value!,
-        includeExpenses: budgetIncludeExpenses.value,
-        includeAssetPurchases: budgetIncludeAssetPurchases.value,
-        tagIdWhiteList: budgetTagIdWhiteList.value,
-        tagIdBlackList: budgetTagIdBlackList.value,
-        currencyId: budgetCurrencyId.value!,
-        frequency: "monthly",
-        budgetedPeriodList: budgetedPeriodList.value,
-        rollOverRule: budgetRollOverRule.value as "always" | "never" | "positive-only" | "negative-only",
-        isFeatured: budgetIsFeatured.value,
-      };
-
-      await computationService.computeUsedAmountForRollingBudgetInPlace(rollingBudget);
-
-      budgetedPeriodList.value = budgetedPeriodList.value.map((period) => ({
-        ...period,
-        calculatedEpoch: Date.now(),
-      }));
-    }
-
-    if (props.existingBudgetId) {
-      isLoading.value = true;
-      (async function () {
+// Prefill logic
+onMounted(() => {
+  if (props.existingBudgetId) {
+    isLoading.value = true;
+    (async function () {
+      if (props.existingBudgetId) {
         let res = (await pouchdbService.getDocById(props.existingBudgetId)) as RollingBudget;
         initialDoc = res;
         prefillBudget(res);
-        isLoading.value = false;
-      })();
-    }
-
-    if (props.prefill) {
-      isLoading.value = true;
-      (async function () {
-        let res = props.prefill as RollingBudget;
-        prefillBudget(res);
-        isLoading.value = false;
-      })();
-    }
-
-    async function okClicked() {
-      if (!(await budgetForm.value?.validate())) {
-        return;
       }
-
-      let rollingBudget: RollingBudget = {
-        $collection: Collection.ROLLING_BUDGET,
-        name: budgetName.value!,
-        includeExpenses: budgetIncludeExpenses.value,
-        includeAssetPurchases: budgetIncludeAssetPurchases.value,
-        tagIdWhiteList: budgetTagIdWhiteList.value,
-        tagIdBlackList: budgetTagIdBlackList.value,
-        currencyId: budgetCurrencyId.value!,
-        frequency: "monthly",
-        budgetedPeriodList: budgetedPeriodList.value,
-        rollOverRule: budgetRollOverRule.value as "always" | "never" | "positive-only" | "negative-only",
-        isFeatured: budgetIsFeatured.value,
-      };
-
-      if (initialDoc) {
-        rollingBudget = Object.assign({}, initialDoc, rollingBudget);
-      }
-
-      pouchdbService.upsertDoc(rollingBudget);
-
-      onDialogOK();
-    }
-
-    function optionChanged(which: string) {
-      if (!budgetIncludeExpenses.value && !budgetIncludeAssetPurchases.value) {
-        if (which === "expenses") {
-          budgetIncludeAssetPurchases.value = true;
-        } else {
-          budgetIncludeExpenses.value = true;
-        }
-      }
-    }
-
-    function allocatedAmountChanged(row: BudgetedPeriod) {
-      row.totalAllocatedAmount = parseFloat(String(row.allocatedAmount)) + (parseFloat(String(row.rolledOverAmount)) || 0);
-      row.remainingAmount = row.totalAllocatedAmount - (parseFloat(String(row.usedAmount)) || 0) - (parseFloat(String(row.heldAmount)) || 0);
-    }
-
-    function heldAmountChanged(row: BudgetedPeriod) {
-      allocatedAmountChanged(row);
-    }
-
-    watch(budgetCurrencyId, async (newCurrencyId: any) => {
-      let currency = await entityService.getCurrency(newCurrencyId);
-      budgetCurrencySign.value = currency.sign;
-    });
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      validators,
-      budgetForm,
-      budgetName,
-      budgetStartEpoch,
-      budgetEndEpoch,
-      budgetIncludeExpenses,
-      budgetIncludeAssetPurchases,
-      budgetTagIdWhiteList,
-      budgetTagIdBlackList,
-      budgetCurrencyId,
-      budgetCurrencySign,
-      budgetedPeriodList,
-      SelectTag,
-      optionChanged,
-      addPeriod,
-      removePeriod,
-      calculatePeriods,
-      tableColumns,
-      prettifyDate,
-      budgetRollOverRule,
-      rollOverRuleList,
-      allocatedAmountChanged,
-      budgetIsFeatured,
-      heldAmountChanged,
-    };
-  },
-};
+      isLoading.value = false;
+    })();
+  } else if (props.prefill) {
+    isLoading.value = true;
+    (async function () {
+      let res = props.prefill as RollingBudget;
+      prefillBudget(res);
+      isLoading.value = false;
+    })();
+  }
+});
 </script>
 <style scoped lang="scss">
 .budgeted-period-table {

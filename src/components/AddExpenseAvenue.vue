@@ -18,75 +18,57 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
+import { ref, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { ExpenseAvenue } from "src/models/expense-avenue";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Collection } from "src/constants/constants";
 
-export default {
-  props: {
-    existingExpenseAvenueId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+const props = defineProps<{
+  existingExpenseAvenueId?: string | null;
+}>();
 
-  emits: [...useDialogPluginComponent.emits],
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  setup(props) {
-    let initialDoc: ExpenseAvenue | null = null;
+let initialDoc: ExpenseAvenue | null = null;
 
-    const isLoading = ref(false);
+const isLoading = ref(false);
+const expenseAvenueForm = ref<QForm | null>(null);
+const expenseAvenueName = ref<string | null>(null);
 
-    const expenseAvenueForm: Ref<QForm | null> = ref(null);
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-    const expenseAvenueName: Ref<string | null> = ref(null);
+onMounted(async () => {
+  if (props.existingExpenseAvenueId) {
+    isLoading.value = true;
+    const res = (await pouchdbService.getDocById(props.existingExpenseAvenueId)) as ExpenseAvenue;
+    initialDoc = res;
+    expenseAvenueName.value = res.name;
+    isLoading.value = false;
+  }
+});
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+async function okClicked() {
+  if (!(await expenseAvenueForm.value?.validate())) {
+    return;
+  }
 
-    if (props.existingExpenseAvenueId) {
-      isLoading.value = true;
-      (async function () {
-        let res = (await pouchdbService.getDocById(props.existingExpenseAvenueId)) as ExpenseAvenue;
-        initialDoc = res;
-        expenseAvenueName.value = res.name;
-        isLoading.value = false;
-      })();
-    }
-    async function okClicked() {
-      if (!(await expenseAvenueForm.value?.validate())) {
-        return;
-      }
+  let expenseAvenue: ExpenseAvenue = {
+    $collection: Collection.EXPENSE_AVENUE,
+    name: expenseAvenueName.value!,
+  };
 
-      let expenseAvenue: ExpenseAvenue = {
-        $collection: Collection.EXPENSE_AVENUE,
-        name: expenseAvenueName.value!,
-      };
+  if (initialDoc) {
+    expenseAvenue = Object.assign({}, initialDoc, expenseAvenue);
+  }
 
-      if (initialDoc) {
-        expenseAvenue = Object.assign({}, initialDoc, expenseAvenue);
-      }
+  pouchdbService.upsertDoc(expenseAvenue);
 
-      pouchdbService.upsertDoc(expenseAvenue);
+  onDialogOK();
+}
 
-      onDialogOK();
-    }
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      expenseAvenueName,
-      validators,
-      expenseAvenueForm,
-    };
-  },
-};
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>

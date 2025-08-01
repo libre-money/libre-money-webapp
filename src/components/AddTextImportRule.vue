@@ -115,9 +115,9 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent, useQuasar } from "quasar";
-import { Ref, ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { TextImportRules, TextImportRulesValidator, WalletMatchRule, ExpenseAvenueMatchRule, MatchingOperator } from "src/models/text-import-rules";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Collection } from "src/constants/constants";
@@ -127,256 +127,225 @@ import { validators } from "src/utils/validators";
 import ExportTextImportRuleDialog from "./ExportTextImportRuleDialog.vue";
 import ImportTextImportRuleDialog from "./ImportTextImportRuleDialog.vue";
 
-export default {
-  components: {
-    SelectWallet,
-    SelectExpenseAvenue,
-  },
+const props = defineProps<{
+  existingRuleId?: string | null;
+}>();
 
-  props: {
-    existingRuleId: {
-      type: String,
-      required: false,
-      default: null,
+// Emits
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+
+// Quasar
+const $q = useQuasar();
+
+// State
+let initialDoc: TextImportRules | null = null;
+
+const isLoading = ref(false);
+const ruleForm = ref<QForm | null>(null);
+const ruleName = ref("");
+const ruleDescription = ref("");
+const ruleRegex = ref("");
+const walletCaptureGroup = ref(1);
+const expenseAvenueCaptureGroup = ref(2);
+const dateCaptureGroup = ref(3);
+const amountCaptureGroup = ref(4);
+const dateFormat = ref("DD/MM/YYYY");
+const walletMatchRules = ref<WalletMatchRule[]>([]);
+const expenseAvenueMatchRules = ref<ExpenseAvenueMatchRule[]>([]);
+const ruleIsActive = ref(true);
+
+const operatorOptions = [
+  { label: "Exact Match", value: "exact-match" as MatchingOperator },
+  { label: "Contains", value: "contains" as MatchingOperator },
+  { label: "Starts With", value: "starts-with" as MatchingOperator },
+  { label: "Ends With", value: "ends-with" as MatchingOperator },
+  { label: "Regex", value: "regex" as MatchingOperator },
+];
+
+// Load existing rule if editing
+onMounted(async () => {
+  if (props.existingRuleId) {
+    isLoading.value = true;
+    try {
+      const res = (await pouchdbService.getDocById(props.existingRuleId)) as TextImportRules;
+      initialDoc = res;
+
+      // Populate form fields
+      ruleName.value = res.name;
+      ruleDescription.value = res.description || "";
+      ruleRegex.value = res.regex;
+      walletCaptureGroup.value = res.walletCaptureGroup;
+      expenseAvenueCaptureGroup.value = res.expenseAvenueCaptureGroup;
+      dateCaptureGroup.value = res.dateCaptureGroup;
+      amountCaptureGroup.value = res.amountCaptureGroup;
+      dateFormat.value = res.dateFormat;
+      walletMatchRules.value = [...res.walletMatchRules];
+      expenseAvenueMatchRules.value = [...res.expenseAvenueMatchRules];
+      ruleIsActive.value = res.isActive;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Initialize with at least one rule for each type
+  if (walletMatchRules.value.length === 0) {
+    addWalletRule();
+  }
+  if (expenseAvenueMatchRules.value.length === 0) {
+    addExpenseAvenueRule();
+  }
+});
+
+// Validation
+const validationErrors = computed(() => {
+  const rule: Partial<TextImportRules> = {
+    name: ruleName.value,
+    description: ruleDescription.value,
+    regex: ruleRegex.value,
+    walletCaptureGroup: walletCaptureGroup.value,
+    expenseAvenueCaptureGroup: expenseAvenueCaptureGroup.value,
+    dateCaptureGroup: dateCaptureGroup.value,
+    amountCaptureGroup: amountCaptureGroup.value,
+    dateFormat: dateFormat.value,
+    walletMatchRules: walletMatchRules.value,
+    expenseAvenueMatchRules: expenseAvenueMatchRules.value,
+  };
+
+  return TextImportRulesValidator.validate(rule).errors;
+});
+
+function validateRegex(val: string) {
+  if (!val) return "Regex is required";
+  try {
+    new RegExp(val);
+    return true;
+  } catch (e) {
+    return "Invalid regular expression";
+  }
+}
+
+// Rule management
+function addWalletRule() {
+  walletMatchRules.value.push({
+    operator: "contains",
+    value: "",
+    walletId: "",
+  });
+}
+
+function removeWalletRule(index: number) {
+  walletMatchRules.value.splice(index, 1);
+}
+
+function addExpenseAvenueRule() {
+  expenseAvenueMatchRules.value.push({
+    operator: "contains",
+    value: "",
+    expenseAvenueId: "",
+  });
+}
+
+function removeExpenseAvenueRule(index: number) {
+  expenseAvenueMatchRules.value.splice(index, 1);
+}
+
+function getCurrentRuleData(): Partial<TextImportRules> {
+  return {
+    name: ruleName.value,
+    description: ruleDescription.value,
+    regex: ruleRegex.value,
+    walletCaptureGroup: walletCaptureGroup.value,
+    expenseAvenueCaptureGroup: expenseAvenueCaptureGroup.value,
+    dateCaptureGroup: dateCaptureGroup.value,
+    amountCaptureGroup: amountCaptureGroup.value,
+    dateFormat: dateFormat.value,
+    walletMatchRules: walletMatchRules.value,
+    expenseAvenueMatchRules: expenseAvenueMatchRules.value,
+    isActive: ruleIsActive.value,
+  };
+}
+
+// Export/Import
+function exportAsCodeClicked() {
+  $q.dialog({
+    component: ExportTextImportRuleDialog,
+    componentProps: {
+      rule: getCurrentRuleData(),
     },
-  },
+  });
+}
 
-  emits: [...useDialogPluginComponent.emits],
+function importCodeClicked() {
+  $q.dialog({
+    component: ImportTextImportRuleDialog,
+  }).onOk((importedRule: Partial<TextImportRules>) => {
+    // Update UI values with imported data
+    if (importedRule.name !== undefined) ruleName.value = importedRule.name;
+    if (importedRule.description !== undefined) ruleDescription.value = importedRule.description;
+    if (importedRule.regex !== undefined) ruleRegex.value = importedRule.regex;
+    if (importedRule.walletCaptureGroup !== undefined) walletCaptureGroup.value = importedRule.walletCaptureGroup;
+    if (importedRule.expenseAvenueCaptureGroup !== undefined) expenseAvenueCaptureGroup.value = importedRule.expenseAvenueCaptureGroup;
+    if (importedRule.dateCaptureGroup !== undefined) dateCaptureGroup.value = importedRule.dateCaptureGroup;
+    if (importedRule.amountCaptureGroup !== undefined) amountCaptureGroup.value = importedRule.amountCaptureGroup;
+    if (importedRule.dateFormat !== undefined) dateFormat.value = importedRule.dateFormat;
+    if (importedRule.walletMatchRules !== undefined) walletMatchRules.value = [...importedRule.walletMatchRules];
+    if (importedRule.expenseAvenueMatchRules !== undefined) expenseAvenueMatchRules.value = [...importedRule.expenseAvenueMatchRules];
+    if (importedRule.isActive !== undefined) ruleIsActive.value = importedRule.isActive;
 
-  setup(props) {
-    const $q = useQuasar();
-    let initialDoc: TextImportRules | null = null;
-
-    const isLoading = ref(false);
-    const ruleForm: Ref<QForm | null> = ref(null);
-    const ruleName = ref("");
-    const ruleDescription = ref("");
-    const ruleRegex = ref("");
-    const walletCaptureGroup = ref(1);
-    const expenseAvenueCaptureGroup = ref(2);
-    const dateCaptureGroup = ref(3);
-    const amountCaptureGroup = ref(4);
-    const dateFormat = ref("DD/MM/YYYY");
-    const walletMatchRules = ref<WalletMatchRule[]>([]);
-    const expenseAvenueMatchRules = ref<ExpenseAvenueMatchRule[]>([]);
-    const ruleIsActive = ref(true);
-
-    const operatorOptions = [
-      { label: "Exact Match", value: "exact-match" as MatchingOperator },
-      { label: "Contains", value: "contains" as MatchingOperator },
-      { label: "Starts With", value: "starts-with" as MatchingOperator },
-      { label: "Ends With", value: "ends-with" as MatchingOperator },
-      { label: "Regex", value: "regex" as MatchingOperator },
-    ];
-
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
-
-    if (props.existingRuleId) {
-      isLoading.value = true;
-      (async function () {
-        let res = (await pouchdbService.getDocById(props.existingRuleId)) as TextImportRules;
-        initialDoc = res;
-
-        // Populate form fields
-        ruleName.value = res.name;
-        ruleDescription.value = res.description || "";
-        ruleRegex.value = res.regex;
-        walletCaptureGroup.value = res.walletCaptureGroup;
-        expenseAvenueCaptureGroup.value = res.expenseAvenueCaptureGroup;
-        dateCaptureGroup.value = res.dateCaptureGroup;
-        amountCaptureGroup.value = res.amountCaptureGroup;
-        dateFormat.value = res.dateFormat;
-        walletMatchRules.value = [...res.walletMatchRules];
-        expenseAvenueMatchRules.value = [...res.expenseAvenueMatchRules];
-        ruleIsActive.value = res.isActive;
-
-        isLoading.value = false;
-      })();
-    }
-
-    const validationErrors = computed(() => {
-      const rule: Partial<TextImportRules> = {
-        name: ruleName.value,
-        description: ruleDescription.value,
-        regex: ruleRegex.value,
-        walletCaptureGroup: walletCaptureGroup.value,
-        expenseAvenueCaptureGroup: expenseAvenueCaptureGroup.value,
-        dateCaptureGroup: dateCaptureGroup.value,
-        amountCaptureGroup: amountCaptureGroup.value,
-        dateFormat: dateFormat.value,
-        walletMatchRules: walletMatchRules.value,
-        expenseAvenueMatchRules: expenseAvenueMatchRules.value,
-      };
-
-      return TextImportRulesValidator.validate(rule).errors;
+    $q.notify({
+      type: "positive",
+      message: "Rule imported successfully! Review and save to apply changes.",
     });
+  });
+}
 
-    const validateRegex = (val: string) => {
-      if (!val) return "Regex is required";
-      try {
-        new RegExp(val);
-        return true;
-      } catch (e) {
-        return "Invalid regular expression";
-      }
+// Save
+async function okClicked() {
+  if (!(await ruleForm.value?.validate())) {
+    return;
+  }
+
+  if (validationErrors.value.length > 0) {
+    $q.notify({
+      type: "negative",
+      message: "Please fix validation errors before saving",
+    });
+    return;
+  }
+
+  try {
+    let rule: TextImportRules = {
+      $collection: Collection.TEXT_IMPORT_RULES,
+      name: ruleName.value,
+      description: ruleDescription.value,
+      regex: ruleRegex.value,
+      walletCaptureGroup: walletCaptureGroup.value,
+      expenseAvenueCaptureGroup: expenseAvenueCaptureGroup.value,
+      dateCaptureGroup: dateCaptureGroup.value,
+      amountCaptureGroup: amountCaptureGroup.value,
+      dateFormat: dateFormat.value,
+      walletMatchRules: walletMatchRules.value,
+      expenseAvenueMatchRules: expenseAvenueMatchRules.value,
+      isActive: ruleIsActive.value,
     };
 
-    const addWalletRule = () => {
-      walletMatchRules.value.push({
-        operator: "contains",
-        value: "",
-        walletId: "",
-      });
-    };
-
-    const removeWalletRule = (index: number) => {
-      walletMatchRules.value.splice(index, 1);
-    };
-
-    const addExpenseAvenueRule = () => {
-      expenseAvenueMatchRules.value.push({
-        operator: "contains",
-        value: "",
-        expenseAvenueId: "",
-      });
-    };
-
-    const removeExpenseAvenueRule = (index: number) => {
-      expenseAvenueMatchRules.value.splice(index, 1);
-    };
-
-    const getCurrentRuleData = (): Partial<TextImportRules> => {
-      return {
-        name: ruleName.value,
-        description: ruleDescription.value,
-        regex: ruleRegex.value,
-        walletCaptureGroup: walletCaptureGroup.value,
-        expenseAvenueCaptureGroup: expenseAvenueCaptureGroup.value,
-        dateCaptureGroup: dateCaptureGroup.value,
-        amountCaptureGroup: amountCaptureGroup.value,
-        dateFormat: dateFormat.value,
-        walletMatchRules: walletMatchRules.value,
-        expenseAvenueMatchRules: expenseAvenueMatchRules.value,
-        isActive: ruleIsActive.value,
-      };
-    };
-
-    const exportAsCodeClicked = () => {
-      $q.dialog({
-        component: ExportTextImportRuleDialog,
-        componentProps: {
-          rule: getCurrentRuleData(),
-        },
-      });
-    };
-
-    const importCodeClicked = () => {
-      $q.dialog({
-        component: ImportTextImportRuleDialog,
-      }).onOk((importedRule: Partial<TextImportRules>) => {
-        // Update UI values with imported data
-        if (importedRule.name !== undefined) ruleName.value = importedRule.name;
-        if (importedRule.description !== undefined) ruleDescription.value = importedRule.description;
-        if (importedRule.regex !== undefined) ruleRegex.value = importedRule.regex;
-        if (importedRule.walletCaptureGroup !== undefined) walletCaptureGroup.value = importedRule.walletCaptureGroup;
-        if (importedRule.expenseAvenueCaptureGroup !== undefined) expenseAvenueCaptureGroup.value = importedRule.expenseAvenueCaptureGroup;
-        if (importedRule.dateCaptureGroup !== undefined) dateCaptureGroup.value = importedRule.dateCaptureGroup;
-        if (importedRule.amountCaptureGroup !== undefined) amountCaptureGroup.value = importedRule.amountCaptureGroup;
-        if (importedRule.dateFormat !== undefined) dateFormat.value = importedRule.dateFormat;
-        if (importedRule.walletMatchRules !== undefined) walletMatchRules.value = [...importedRule.walletMatchRules];
-        if (importedRule.expenseAvenueMatchRules !== undefined) expenseAvenueMatchRules.value = [...importedRule.expenseAvenueMatchRules];
-        if (importedRule.isActive !== undefined) ruleIsActive.value = importedRule.isActive;
-
-        $q.notify({
-          type: "positive",
-          message: "Rule imported successfully! Review and save to apply changes.",
-        });
-      });
-    };
-
-    async function okClicked() {
-      if (!(await ruleForm.value?.validate())) {
-        return;
-      }
-
-      if (validationErrors.value.length > 0) {
-        $q.notify({
-          type: "negative",
-          message: "Please fix validation errors before saving",
-        });
-        return;
-      }
-
-      try {
-        let rule: TextImportRules = {
-          $collection: Collection.TEXT_IMPORT_RULES,
-          name: ruleName.value,
-          description: ruleDescription.value,
-          regex: ruleRegex.value,
-          walletCaptureGroup: walletCaptureGroup.value,
-          expenseAvenueCaptureGroup: expenseAvenueCaptureGroup.value,
-          dateCaptureGroup: dateCaptureGroup.value,
-          amountCaptureGroup: amountCaptureGroup.value,
-          dateFormat: dateFormat.value,
-          walletMatchRules: walletMatchRules.value,
-          expenseAvenueMatchRules: expenseAvenueMatchRules.value,
-          isActive: ruleIsActive.value,
-        };
-
-        if (initialDoc) {
-          rule = Object.assign({}, initialDoc, rule);
-        }
-
-        await pouchdbService.upsertDoc(rule);
-        onDialogOK();
-      } catch (error) {
-        console.error("Error saving rule:", error);
-        $q.notify({
-          type: "negative",
-          message: "Error saving rule",
-        });
-      }
+    if (initialDoc) {
+      rule = Object.assign({}, initialDoc, rule);
     }
 
-    // Initialize with at least one rule for each type
-    if (walletMatchRules.value.length === 0) {
-      addWalletRule();
-    }
-    if (expenseAvenueMatchRules.value.length === 0) {
-      addExpenseAvenueRule();
-    }
+    await pouchdbService.upsertDoc(rule);
+    onDialogOK();
+  } catch (error) {
+    console.error("Error saving rule:", error);
+    $q.notify({
+      type: "negative",
+      message: "Error saving rule",
+    });
+  }
+}
 
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      ruleForm,
-      ruleName,
-      ruleDescription,
-      ruleRegex,
-      walletCaptureGroup,
-      expenseAvenueCaptureGroup,
-      dateCaptureGroup,
-      amountCaptureGroup,
-      dateFormat,
-      walletMatchRules,
-      expenseAvenueMatchRules,
-      ruleIsActive,
-      operatorOptions,
-      validationErrors,
-      validateRegex,
-      addWalletRule,
-      removeWalletRule,
-      addExpenseAvenueRule,
-      removeExpenseAvenueRule,
-      validators,
-      exportAsCodeClicked,
-      importCodeClicked,
-    };
-  },
-};
+// Cancel
+const cancelClicked = onDialogCancel;
 </script>
 
 <style scoped lang="scss"></style>

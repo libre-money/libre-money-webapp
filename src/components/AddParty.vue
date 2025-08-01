@@ -17,80 +17,71 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
+import { ref, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { Collection, defaultPartyType, partyTypeList } from "src/constants/constants";
 import { Party } from "src/models/party";
 import { pouchdbService } from "src/services/pouchdb-service";
 
-export default {
-  props: {
-    existingPartyId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  existingPartyId?: string | null;
+}>();
 
-  emits: [...useDialogPluginComponent.emits],
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  setup(props) {
-    let initialDoc: Party | null = null;
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-    const isLoading = ref(false);
+// State
+let initialDoc: Party | null = null;
 
-    const partyForm: Ref<QForm | null> = ref(null);
+const isLoading = ref(false);
 
-    const partyName: Ref<string | null> = ref(null);
-    const partyType: Ref<string | null> = ref(partyTypeList.find((partyType) => partyType.value === defaultPartyType)!.value);
+const partyForm = ref<QForm | null>(null);
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+const partyName = ref<string | null>(null);
+const partyType = ref<string | null>(partyTypeList.find((partyType) => partyType.value === defaultPartyType)!.value);
 
-    if (props.existingPartyId) {
-      isLoading.value = true;
-      (async function () {
+// Load existing party if editing
+onMounted(() => {
+  if (props.existingPartyId) {
+    isLoading.value = true;
+    (async function () {
+      if (props.existingPartyId) {
         let res = (await pouchdbService.getDocById(props.existingPartyId)) as Party;
         initialDoc = res;
         partyName.value = res.name;
         partyType.value = res.type;
         isLoading.value = false;
-      })();
-    }
-    async function okClicked() {
-      if (!(await partyForm.value?.validate())) {
-        return;
       }
+    })();
+  }
+});
 
-      let party: Party = {
-        $collection: Collection.PARTY,
-        name: partyName.value!,
-        type: partyType.value!,
-      };
+async function okClicked() {
+  if (!(await partyForm.value?.validate())) {
+    return;
+  }
 
-      if (initialDoc) {
-        party = Object.assign({}, initialDoc, party);
-      }
+  let party: Party = {
+    $collection: Collection.PARTY,
+    name: partyName.value!,
+    type: partyType.value!,
+  };
 
-      pouchdbService.upsertDoc(party);
+  if (initialDoc) {
+    party = Object.assign({}, initialDoc, party);
+  }
 
-      onDialogOK();
-    }
+  pouchdbService.upsertDoc(party);
 
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      partyTypeList,
-      partyName,
-      partyType,
-      validators,
-      partyForm,
-    };
-  },
-};
+  onDialogOK();
+}
+
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>

@@ -19,87 +19,70 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { validators } from "src/utils/validators";
 import { Collection } from "src/constants/constants";
 import { Currency } from "src/models/currency";
 import { pouchdbService } from "src/services/pouchdb-service";
 
-export default {
-  props: {
-    existingCurrencyId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+const props = defineProps<{
+  existingCurrencyId?: string | null;
+}>();
 
-  emits: [...useDialogPluginComponent.emits],
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  setup(props) {
-    let initialDoc: Currency | null = null;
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-    const isLoading = ref(false);
+const isLoading = ref(false);
 
-    const currencyForm: Ref<QForm | null> = ref(null);
+const currencyForm = ref<QForm | null>(null);
 
-    const currencyName: Ref<string | null> = ref(null);
-    const currencySign: Ref<string | null> = ref(null);
-    const precisionMinimum: Ref<number | null> = ref(null);
-    const precisionMaximum: Ref<number | null> = ref(null);
+const currencyName = ref<string | null>(null);
+const currencySign = ref<string | null>(null);
+const precisionMinimum = ref<number | null>(null);
+const precisionMaximum = ref<number | null>(null);
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+let initialDoc: Currency | null = null;
 
-    if (props.existingCurrencyId) {
-      isLoading.value = true;
-      (async function () {
-        let res = (await pouchdbService.getDocById(props.existingCurrencyId)) as Currency;
-        initialDoc = res;
-        currencyName.value = res.name;
-        currencySign.value = res.sign;
-        precisionMinimum.value = res.precisionMinimum || 0;
-        precisionMaximum.value = res.precisionMaximum || 0;
-        isLoading.value = false;
-      })();
-    }
-    async function okClicked() {
-      if (!(await currencyForm.value?.validate())) {
-        return;
-      }
-
-      let currency: Currency = {
-        $collection: Collection.CURRENCY,
-        name: currencyName.value!,
-        sign: currencySign.value!,
-        precisionMinimum: precisionMinimum.value!,
-        precisionMaximum: precisionMaximum.value!,
-      };
-
-      if (initialDoc) {
-        currency = Object.assign({}, initialDoc, currency);
-      }
-
-      pouchdbService.upsertDoc(currency);
-
-      onDialogOK();
-    }
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      currencyName,
-      currencySign,
-      validators,
-      currencyForm,
-      precisionMinimum,
-      precisionMaximum,
-    };
-  },
+const loadCurrency = async (id: string) => {
+  isLoading.value = true;
+  const res = (await pouchdbService.getDocById(id)) as Currency;
+  initialDoc = res;
+  currencyName.value = res.name;
+  currencySign.value = res.sign;
+  precisionMinimum.value = res.precisionMinimum || 0;
+  precisionMaximum.value = res.precisionMaximum || 0;
+  isLoading.value = false;
 };
+
+if (props.existingCurrencyId) {
+  loadCurrency(props.existingCurrencyId);
+}
+
+async function okClicked() {
+  if (!(await currencyForm.value?.validate())) {
+    return;
+  }
+
+  let currency: Currency = {
+    $collection: Collection.CURRENCY,
+    name: currencyName.value!,
+    sign: currencySign.value!,
+    precisionMinimum: precisionMinimum.value!,
+    precisionMaximum: precisionMaximum.value!,
+  };
+
+  if (initialDoc) {
+    currency = Object.assign({}, initialDoc, currency);
+  }
+
+  pouchdbService.upsertDoc(currency);
+
+  onDialogOK();
+}
+
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>

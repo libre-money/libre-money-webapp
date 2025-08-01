@@ -26,79 +26,66 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
+import { ref, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { Tag } from "src/models/tag";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Collection, defaultTagColor } from "src/constants/constants";
 
-export default {
-  props: {
-    existingTagId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  existingTagId?: string | null;
+}>();
 
-  emits: [...useDialogPluginComponent.emits],
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  setup(props) {
-    let initialDoc: Tag | null = null;
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-    const isLoading = ref(false);
+// State
+let initialDoc: Tag | null = null;
+const isLoading = ref(false);
+const tagForm = ref<QForm | null>(null);
+const tagName = ref<string | null>(null);
+const tagColor = ref<string | null>(null);
 
-    const tagForm: Ref<QForm | null> = ref(null);
+// Load existing tag if editing
+onMounted(async () => {
+  if (props.existingTagId) {
+    isLoading.value = true;
+    const res = (await pouchdbService.getDocById(props.existingTagId)) as Tag;
+    initialDoc = res;
+    tagName.value = res.name;
+    tagColor.value = res.color || defaultTagColor;
+    isLoading.value = false;
+  }
+});
 
-    const tagName: Ref<string | null> = ref(null);
-    const tagColor: Ref<string | null> = ref(null);
+async function okClicked() {
+  if (!(await tagForm.value?.validate())) {
+    return;
+  }
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+  let tag: Tag = {
+    $collection: Collection.TAG,
+    name: tagName.value!,
+    color: tagColor.value!,
+  };
 
-    if (props.existingTagId) {
-      isLoading.value = true;
-      (async function () {
-        let res = (await pouchdbService.getDocById(props.existingTagId)) as Tag;
-        initialDoc = res;
-        tagName.value = res.name;
-        tagColor.value = res.color || defaultTagColor;
-        isLoading.value = false;
-      })();
-    }
-    async function okClicked() {
-      if (!(await tagForm.value?.validate())) {
-        return;
-      }
+  if (initialDoc) {
+    tag = Object.assign({}, initialDoc, tag);
+  }
 
-      let tag: Tag = {
-        $collection: Collection.TAG,
-        name: tagName.value!,
-        color: tagColor.value!,
-      };
+  await pouchdbService.upsertDoc(tag);
 
-      if (initialDoc) {
-        tag = Object.assign({}, initialDoc, tag);
-      }
+  onDialogOK();
+}
 
-      pouchdbService.upsertDoc(tag);
-
-      onDialogOK();
-    }
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      tagName,
-      validators,
-      tagForm,
-      tagColor,
-    };
-  },
-};
+function cancelClicked() {
+  onDialogCancel();
+}
 </script>
 <style scoped lang="scss"></style>

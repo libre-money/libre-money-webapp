@@ -26,77 +26,62 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
+import { ref, onMounted } from "vue";
 import { validators } from "src/utils/validators";
-import { Collection } from "src/constants/constants";
 import { pouchdbService } from "src/services/pouchdb-service";
-import { Party } from "src/models/party";
-import SelectCurrency from "./SelectCurrency.vue";
 
-export default {
-  props: {
-    existingDocumentId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  existingDocumentId?: string | null;
+}>();
 
-  components: {},
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  emits: [...useDialogPluginComponent.emits],
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-  setup(props) {
-    let initialDoc: string | null = null;
+// State
+const isLoading = ref(false);
+const documentForm = ref<QForm | null>(null);
+const contentString = ref<string | null>(null);
 
-    const isLoading = ref(false);
-
-    const documentForm: Ref<QForm | null> = ref(null);
-    const contentString: Ref<string | null> = ref(null);
-
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
-
-    if (props.existingDocumentId) {
-      isLoading.value = true;
-      (async function () {
-        let res = await pouchdbService.getDocById(props.existingDocumentId);
-        initialDoc = JSON.stringify(res);
-        contentString.value = initialDoc;
-        isLoading.value = false;
-      })();
+// Load existing document if editing
+onMounted(async () => {
+  if (props.existingDocumentId) {
+    isLoading.value = true;
+    try {
+      const res = await pouchdbService.getDocById(props.existingDocumentId);
+      const initialDoc = JSON.stringify(res);
+      contentString.value = initialDoc;
+    } finally {
+      isLoading.value = false;
     }
-    async function okClicked() {
-      if (!(await documentForm.value?.validate())) {
-        return;
-      }
+  }
+});
 
-      let document = "";
-      try {
-        document = JSON.parse(contentString.value || "{}");
-      } catch (ex) {
-        console.error(ex);
-        // TODO alert dialog
-        return;
-      }
+// Methods
+async function okClicked() {
+  if (!(await documentForm.value?.validate())) {
+    return;
+  }
 
-      pouchdbService.upsertDoc(document);
+  let document;
+  try {
+    document = JSON.parse(contentString.value || "{}");
+  } catch (ex) {
+    console.error(ex);
+    // TODO alert dialog
+    return;
+  }
 
-      onDialogOK();
-    }
+  pouchdbService.upsertDoc(document);
 
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      validators,
-      documentForm,
-      contentString,
-    };
-  },
-};
+  onDialogOK();
+}
+
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>
