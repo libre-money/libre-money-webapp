@@ -1,5 +1,5 @@
 <template>
-  <q-page class="column items-center justify-evenly">
+  <q-page class="column items-center justify-evenly" style="padding: 0px">
     <!-- Desktop Only Notice -->
     <q-card class="std-card desktop-only-notice" v-if="!$q.screen.gt.sm">
       <div class="q-pa-lg text-center">
@@ -17,6 +17,7 @@
       <q-card class="std-card pro-mode-table-card">
         <!-- Header - Start -->
         <div class="title-row q-pa-md q-gutter-sm" style="margin-bottom: -12px">
+          <q-btn color="secondary" icon="filter_list" label="Filters" @click="setFiltersClicked" />
           <q-select
             v-model="pageSize"
             :options="[25, 50, 100, 200]"
@@ -35,6 +36,18 @@
             {{ changedRecords.size }} edit{{ changedRecords.size !== 1 ? "s" : ""
             }}{{ deletedRecords.size > 0 ? ", " + deletedRecords.size + " deletion" + (deletedRecords.size !== 1 ? "s" : "") : "" }}
           </q-chip>
+        </div>
+
+        <!-- Filter Status -->
+        <div class="filters-activated-area q-pa-md" v-if="recordFilters">
+          <div style="flex: 1">
+            <span v-if="recordFilters.type === 'standard'">Records are filtered.</span>
+            <span v-else-if="recordFilters.type === 'budget' && recordFilters._budgetName">Viewing records under budget: {{ recordFilters._budgetName }}.</span>
+            <span v-else-if="recordFilters.type === 'loansAndDebts' || recordFilters.type === 'parties'">
+              Viewing dealings with party: {{ recordFilters._partyName }}.
+            </span>
+          </div>
+          <q-btn size="sm" color="secondary" outline rounded label="Clear Filters" @click="clearFiltersClicked" />
         </div>
         <!-- Header - End -->
 
@@ -351,6 +364,7 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
+import FilterRecordsDialog from "src/components/FilterRecordsDialog.vue";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { Collection, RecordType } from "src/constants/constants";
 import { Asset } from "src/models/asset";
@@ -358,6 +372,7 @@ import { Currency } from "src/models/currency";
 import { ExpenseAvenue } from "src/models/expense-avenue";
 import { IncomeSource } from "src/models/income-source";
 import { InferredRecord } from "src/models/inferred/inferred-record";
+import { RecordFilters } from "src/models/inferred/record-filters";
 import { Party } from "src/models/party";
 import { Record } from "src/models/record";
 import { Tag } from "src/models/tag";
@@ -365,10 +380,14 @@ import { Wallet } from "src/models/wallet";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { recordService } from "src/services/record-service";
+import { useRecordFiltersStore } from "src/stores/record-filters-store";
 import { deepClone, guessFontColorCode } from "src/utils/misc-utils";
 import { Ref, computed, onMounted, ref } from "vue";
 
 const $q = useQuasar();
+
+// Store initialization
+const recordFiltersStore = useRecordFiltersStore();
 
 // ----- Refs
 const isLoading = ref(false);
@@ -379,6 +398,9 @@ const records: Ref<InferredRecord[]> = ref([]);
 const originalRecords: Ref<Map<string, InferredRecord>> = ref(new Map());
 const changedRecords: Ref<Map<string, InferredRecord>> = ref(new Map());
 const deletedRecords: Ref<Set<string>> = ref(new Set<string>());
+
+// Filters
+const recordFilters: Ref<RecordFilters | null> = ref(recordFiltersStore.currentRecordFilters);
 
 // Pagination
 const currentPage = ref(1);
@@ -428,9 +450,21 @@ async function loadData() {
 
     loadingIndicator.value?.startPhase({ phase: 2, weight: 40, label: "Processing records" });
 
-    // Store all raw records and sort them
-    allRawRecords.value = recordDocs.docs as Record[];
-    allRawRecords.value.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
+    // Apply filters if they exist
+    let filteredRecords = recordDocs.docs as Record[];
+    if (recordFilters.value) {
+      filteredRecords = await recordService.applyRecordFilters(filteredRecords, recordFilters.value);
+    }
+
+    // Store filtered records and sort them
+    allRawRecords.value = filteredRecords;
+
+    // Apply sorting based on filters or default
+    if (!recordFilters.value || recordFilters.value.sortBy === "transactionEpochDesc") {
+      allRawRecords.value.sort((a, b) => (b.transactionEpoch || 0) - (a.transactionEpoch || 0));
+    } else {
+      allRawRecords.value.sort((a, b) => (b.modifiedEpoch || 0) - (a.modifiedEpoch || 0));
+    }
 
     totalRecords.value = allRawRecords.value.length;
 
@@ -875,6 +909,21 @@ function removeTag(recordId: string, tagId: string) {
   }
 }
 
+// ----- Filter Functions
+async function setFiltersClicked() {
+  $q.dialog({ component: FilterRecordsDialog, componentProps: { inputFilters: recordFilters.value } }).onOk((res: RecordFilters) => {
+    recordFilters.value = res;
+    recordFiltersStore.setRecordFilters(res);
+    loadData();
+  });
+}
+
+async function clearFiltersClicked() {
+  recordFilters.value = null;
+  recordFiltersStore.setRecordFilters(null);
+  loadData();
+}
+
 // ----- New Record Functions
 function addNewRecord() {
   const now = new Date();
@@ -1199,6 +1248,11 @@ async function handlePageSizeChange() {
 }
 
 // ----- Lifecycle
+// Watch for filter store changes
+recordFiltersStore.$subscribe((mutation: any, state: any) => {
+  recordFilters.value = state.recordFilters;
+});
+
 onMounted(() => {
   loadData();
 });
@@ -1488,6 +1542,21 @@ onMounted(() => {
   &.restore-btn:hover:not(:disabled) {
     background-color: #e8f5e8;
     border-color: #4caf50;
+  }
+}
+
+.filters-activated-area {
+  display: flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin: 8px 16px;
+  margin-bottom: 0px;
+
+  span {
+    color: #666;
+    font-size: 14px;
   }
 }
 </style>
