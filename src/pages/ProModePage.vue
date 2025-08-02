@@ -112,7 +112,7 @@
                           <label class="amount-label">From:</label>
                           <input
                             type="number"
-                            step="0.01"
+                            step="1"
                             :value="record.moneyTransfer?.fromAmount || 0"
                             @input="updateMoneyTransferField(record._id!, 'fromAmount', ($event.target as HTMLInputElement).value)"
                             class="cell-input number-input money-transfer-input"
@@ -122,7 +122,7 @@
                           <label class="amount-label">To:</label>
                           <input
                             type="number"
-                            step="0.01"
+                            step="1"
                             :value="record.moneyTransfer?.toAmount || 0"
                             @input="updateMoneyTransferField(record._id!, 'toAmount', ($event.target as HTMLInputElement).value)"
                             class="cell-input number-input money-transfer-input"
@@ -133,7 +133,7 @@
                     <template v-else>
                       <input
                         type="number"
-                        step="0.01"
+                        step="1"
                         :value="getRecordAmount(record)"
                         @input="updateRecordAmount(record._id!, ($event.target as HTMLInputElement).value)"
                         class="cell-input number-input"
@@ -963,7 +963,25 @@ async function saveAllChanges() {
     for (const record of recordsToSave) {
       // Strip the inference data before saving
       const cleanRecord = stripInferenceData(record);
-      await pouchdbService.upsertDoc(cleanRecord);
+      const savedResult = await pouchdbService.upsertDoc(cleanRecord);
+
+      // Update the record with the new revision to prevent conflicts
+      if (savedResult.ok && record._id) {
+        // Update the record in records.value
+        const recordInView = records.value.find((r) => r._id === record._id);
+        if (recordInView) {
+          recordInView._rev = savedResult.rev;
+        }
+
+        // Update the record in allRawRecords
+        const rawRecordIndex = allRawRecords.value.findIndex((r) => r._id === record._id);
+        if (rawRecordIndex > -1) {
+          allRawRecords.value[rawRecordIndex]._rev = savedResult.rev;
+        }
+
+        // Update the record in changedRecords (in case there are multiple saves)
+        record._rev = savedResult.rev;
+      }
     }
 
     // Delete marked records
