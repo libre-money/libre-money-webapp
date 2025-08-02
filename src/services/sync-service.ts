@@ -4,6 +4,8 @@ import { pouchdbService } from "./pouchdb-service";
 import { useUserStore } from "src/stores/user";
 import { QVueGlobals } from "quasar";
 
+export type SyncInvocationOrigin = "background" | "LoginPage" | "GoOnlinePage" | "MainLayout";
+
 export interface SyncStatus {
   isBackgroundSyncing: boolean;
   isFullSyncing: boolean;
@@ -16,7 +18,7 @@ export interface SyncRequest {
   initTimestamp: number;
   completionCallback: ((result: boolean) => void) | null;
   reloadWindowAfterSync: boolean;
-  invocationOrigin: string;
+  invocationOrigin: SyncInvocationOrigin;
 }
 
 class SyncService {
@@ -37,7 +39,7 @@ class SyncService {
   }
 
   // Entry point for full sync - delegates to SyncDialog for UI and credential handling
-  doFullSync($q: QVueGlobals, reloadWindowAfterSync: boolean, invocationOrigin: string): Promise<boolean> {
+  doFullSync($q: QVueGlobals, reloadWindowAfterSync: boolean, invocationOrigin: SyncInvocationOrigin): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.$q = $q;
       const syncRequest: SyncRequest = {
@@ -60,7 +62,7 @@ class SyncService {
       initTimestamp: Date.now(),
       completionCallback: null,
       reloadWindowAfterSync: false,
-      invocationOrigin: "unknown",
+      invocationOrigin: "background",
     };
 
     this.syncQueue.push(syncRequest);

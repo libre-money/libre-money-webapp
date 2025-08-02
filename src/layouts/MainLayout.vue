@@ -8,6 +8,13 @@
           {{ $route.meta.title || "Cash Keeper" }}
         </q-toolbar-title>
 
+        <!-- Offline Indicator -->
+        <div v-if="userStore.currentUser?.isOfflineUser" class="offline-indicator-container" @click="goToOnlinePage">
+          <q-icon name="offline_bolt" color="orange" size="20px" />
+          <span class="offline-indicator-text">Offline</span>
+          <q-tooltip>Click to go online and sync across devices</q-tooltip>
+        </div>
+
         <!-- Sync Spinner -->
         <div v-if="syncService.status.value.isBackgroundSyncing" class="sync-spinner-container">
           <q-spinner color="white" size="20px" :thickness="3" />
@@ -85,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useUserStore } from "src/stores/user";
 import EssentialLink from "components/sidebar/EssentialLink.vue";
 import { authService } from "src/services/auth-service";
@@ -216,14 +223,25 @@ const accountingList = [
   },
 ];
 
-const advancedList = [
-  {
-    title: "Text Import Rules",
-    caption: "",
-    icon: "text_snippet",
-    link: "#/text-import-rules",
-  },
-];
+const advancedList = computed(() => {
+  const list = [
+    {
+      title: "Text Import Rules",
+      caption: "",
+      icon: "text_snippet",
+      link: "#/text-import-rules",
+    },
+  ];
+  if (userStore.currentUser?.isOfflineUser) {
+    list.push({
+      title: "Go Online",
+      caption: "",
+      icon: "cloud_sync",
+      link: "#/go-online",
+    });
+  }
+  return list;
+});
 
 const miscList = [
   {
@@ -290,6 +308,10 @@ async function logoutClicked() {
 }
 
 function fullSyncClicked() {
+  if (userStore.currentUser?.isOfflineUser) {
+    router.push({ name: "go-online" });
+    return;
+  }
   syncService.doFullSync($q, true, "MainLayout");
 }
 
@@ -302,9 +324,35 @@ async function verionClicked() {
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
+
+async function goToOnlinePage() {
+  await router.push({ name: "go-online" });
+}
 </script>
 
 <style scoped lang="scss">
+.offline-indicator-container {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: rgba(255, 165, 0, 0.1);
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 165, 0, 0.2);
+  }
+}
+
+.offline-indicator-text {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .sync-spinner-container {
   display: flex;
   align-items: center;
