@@ -14,12 +14,12 @@
     <!-- Pro Mode Content -->
     <div v-else class="pro-mode-container">
       <!-- Header Controls -->
-      <q-card class="std-card">
+      <q-card class="std-card pro-mode-header-card">
         <div class="title-row q-pa-md q-gutter-sm">
           <q-icon name="grid_view" size="24px" color="primary" />
           <div class="title">Pro Mode</div>
           <div class="spacer"></div>
-          <q-btn color="secondary" icon="refresh" label="Reload" @click="loadData" :disable="isLoading" />
+          <q-btn color="secondary" icon="refresh" :label="hasUnsavedChanges ? 'Discard Changes' : 'Reload'" @click="loadData" :disable="isLoading" />
           <q-btn color="positive" icon="save" label="Save Changes" @click="saveAllChanges" :disable="!hasUnsavedChanges" :loading="isSaving" />
           <q-chip v-if="hasUnsavedChanges" color="orange" text-color="white" icon="edit">
             {{ changedRecords.size }} edit{{ changedRecords.size !== 1 ? "s" : ""
@@ -283,7 +283,7 @@ async function loadData() {
   isLoading.value = true;
 
   try {
-    loadingIndicator.value?.startPhase({ phase: 1, weight: 30, label: "Loading reference data" });
+    loadingIndicator.value?.startPhase({ phase: 1, weight: 20, label: "Loading reference data" });
 
     // Load reference data
     const [currencyDocs, walletDocs, expenseAvenueDocs, incomeSourceDocs, partyDocs, tagDocs] = await Promise.all([
@@ -304,7 +304,7 @@ async function loadData() {
     parties.value = partyDocs.docs as Party[];
     tags.value = tagDocs.docs as Tag[];
 
-    loadingIndicator.value?.startPhase({ phase: 2, weight: 30, label: "Loading records" });
+    loadingIndicator.value?.startPhase({ phase: 2, weight: 25, label: "Loading records" });
 
     // Load records
     const recordDocs = await pouchdbService.listByCollection(Collection.RECORD);
@@ -319,6 +319,8 @@ async function loadData() {
 
     // Convert to inferred records
     const inferredRecords = await recordService.inferInBatch(rawRecords);
+
+    loadingIndicator.value?.startPhase({ phase: 3, weight: 15, label: "Re-inferring records" });
 
     records.value = inferredRecords;
 
@@ -770,17 +772,26 @@ onMounted(() => {
   max-width: none;
 }
 
-.pro-mode-table-card {
+.pro-mode-header-card {
   max-width: none;
-  width: calc(100vw - 280px - 24px); // Account for sidebar and margins
+  width: calc(100% - 24px);
   margin-left: 12px;
   margin-right: 12px;
+}
+
+.pro-mode-table-card {
+  max-width: none;
+  width: calc(100% - 24px);
+  margin-left: 12px;
+  margin-right: 12px;
+  overflow-x: auto;
 }
 
 .pro-mode-table-container {
   overflow-x: auto;
   overflow-y: auto;
   max-height: 70vh;
+  min-width: 1000px;
 }
 
 .pro-mode-table {
