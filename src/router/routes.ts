@@ -54,6 +54,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuthentication: true, title: "Templates", rememberable: true },
       },
       {
+        path: "pro-mode",
+        name: "pro-mode",
+        component: () => import("pages/ProModePage.vue"),
+        meta: { requiresAuthentication: true, title: "Pro Mode", rememberable: true },
+      },
+      {
         path: "wallets",
         name: "wallets",
         component: () => import("pages/WalletsPage.vue"),

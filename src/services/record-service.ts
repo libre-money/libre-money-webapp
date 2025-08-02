@@ -11,7 +11,7 @@ import { Record } from "src/models/record";
 import { Tag } from "src/models/tag";
 import { Wallet } from "src/models/wallet";
 import { normalizeEpochRange } from "src/utils/date-utils";
-import { deepClone } from "src/utils/misc-utils";
+import { deepClone, sleep } from "src/utils/misc-utils";
 import { entityService } from "./entity-service";
 import { pouchdbService } from "./pouchdb-service";
 import { rollingBudgetService } from "./rolling-budget-service";
@@ -212,7 +212,7 @@ class RecordService {
 
     const map = entityMap || (await this.buildEntityMap());
 
-    for (const inferredRecord of inferredRecordList) {
+    for (const [index, inferredRecord] of inferredRecordList.entries()) {
       if (inferredRecord.type === RecordType.EXPENSE && inferredRecord.expense) {
         inferredRecord.expense.expenseAvenue = map.get(Collection.EXPENSE_AVENUE + "-" + inferredRecord.expense.expenseAvenueId) as ExpenseAvenue;
         if (inferredRecord.expense.expenseAvenue) {
@@ -294,6 +294,9 @@ class RecordService {
 
       inferredRecord.typePrettified = inferredRecord.type.replace(/\-/g, " ");
       inferredRecord.tagList = inferredRecord.tagIdList.map((tagId) => map.get(Collection.TAG + "-" + tagId) as Tag).filter(Boolean);
+      if (index % 100 === 0) {
+        await sleep(0);
+      }
     }
 
     return inferredRecordList;

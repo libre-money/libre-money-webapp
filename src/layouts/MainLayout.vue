@@ -226,8 +226,14 @@ const accountingList = [
 const advancedList = computed(() => {
   const list = [
     {
+      title: "Pro Mode",
+      caption: "Edit as a spreadsheet",
+      icon: "grid_view",
+      link: "#/pro-mode",
+    },
+    {
       title: "Text Import Rules",
-      caption: "",
+      caption: "Import records from text/SMS",
       icon: "text_snippet",
       link: "#/text-import-rules",
     },
