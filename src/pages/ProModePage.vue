@@ -351,22 +351,22 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { Collection, RecordType } from "src/constants/constants";
-import { InferredRecord } from "src/models/inferred/inferred-record";
-import { Record } from "src/models/record";
+import { Asset } from "src/models/asset";
 import { Currency } from "src/models/currency";
-import { Wallet } from "src/models/wallet";
 import { ExpenseAvenue } from "src/models/expense-avenue";
 import { IncomeSource } from "src/models/income-source";
+import { InferredRecord } from "src/models/inferred/inferred-record";
 import { Party } from "src/models/party";
+import { Record } from "src/models/record";
 import { Tag } from "src/models/tag";
-import { Asset } from "src/models/asset";
+import { Wallet } from "src/models/wallet";
+import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { recordService } from "src/services/record-service";
-import { dialogService } from "src/services/dialog-service";
-import { guessFontColorCode, deepClone } from "src/utils/misc-utils";
-import LoadingIndicator from "src/components/LoadingIndicator.vue";
-import { Ref, onMounted, ref, computed } from "vue";
+import { deepClone, guessFontColorCode } from "src/utils/misc-utils";
+import { Ref, computed, onMounted, ref } from "vue";
 
 const $q = useQuasar();
 
