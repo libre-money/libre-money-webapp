@@ -28,6 +28,7 @@
           />
           <div class="spacer"></div>
           <q-btn color="secondary" icon="refresh" :label="hasUnsavedChanges ? 'Discard Changes' : 'Reload'" @click="loadData" :disable="isLoading" />
+          <q-btn color="secondary" icon="add" label="Add New Record" @click="addNewRecord" />
           <q-btn color="positive" icon="save" label="Save Changes" @click="saveAllChanges" :disable="!hasUnsavedChanges" :loading="isSaving" />
 
           <q-chip v-if="hasUnsavedChanges" color="orange" text-color="white" icon="edit">
@@ -874,6 +875,53 @@ function removeTag(recordId: string, tagId: string) {
   }
 }
 
+// ----- New Record Functions
+function addNewRecord() {
+  const now = new Date();
+  const tempId = `temp_${now.getTime()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  // Create a new record with defaults
+  const newRecord = {
+    _id: tempId,
+    $collection: "record",
+    type: "expense" as const,
+    transactionEpoch: now.getTime(),
+    tagIdList: [] as string[],
+    notes: "",
+    expense: {
+      amount: 0,
+      amountPaid: 0,
+      currencyId: currencies.value[0]?._id || "",
+      walletId: wallets.value[0]?._id || "",
+      expenseAvenueId: expenseAvenues.value[0]?._id || "",
+      partyId: null as string | null,
+    },
+  };
+
+  // Add inferred properties for display
+  const inferredRecord = {
+    ...newRecord,
+    currency: currencies.value[0],
+    wallet: wallets.value[0],
+    expenseAvenue: expenseAvenues.value[0],
+  } as any;
+
+  // Add to the beginning of current page
+  records.value.unshift(inferredRecord);
+
+  // Track as a new/changed record
+  changedRecords.value.set(tempId, deepClone(inferredRecord));
+
+  // Add to allRawRecords at the beginning (since we sort by date desc)
+  allRawRecords.value.unshift(stripInferenceData(inferredRecord));
+  totalRecords.value = allRawRecords.value.length;
+
+  // If this would exceed page size, remove the last record from view
+  if (records.value.length > pageSize.value) {
+    records.value.pop();
+  }
+}
+
 // ----- Change Tracking
 function markRecordChanged(recordId: string) {
   const record = records.value.find((r) => r._id === recordId);
@@ -923,17 +971,30 @@ function revertRecord(recordId: string) {
 }
 
 function markForDeletion(recordId: string) {
-  deletedRecords.value.add(recordId);
-  // Remove from changed records since deletion takes precedence
-  changedRecords.value.delete(recordId);
+  // Check if this is a temporary record (newly added, not saved)
+  const isTemporaryRecord = recordId.startsWith("temp_");
 
-  // Also revert any changes to the raw record since it's being deleted
-  const original = originalRecords.value.get(recordId);
-  if (original) {
-    const rawRecordIndex = allRawRecords.value.findIndex((r) => r._id === recordId);
-    if (rawRecordIndex > -1) {
-      const cleanOriginal = stripInferenceData(original);
-      allRawRecords.value[rawRecordIndex] = cleanOriginal;
+  if (isTemporaryRecord) {
+    // For temporary records, remove them immediately since they were never saved
+    records.value = records.value.filter((r) => r._id !== recordId);
+    allRawRecords.value = allRawRecords.value.filter((r) => r._id !== recordId);
+    changedRecords.value.delete(recordId);
+    originalRecords.value.delete(recordId);
+    totalRecords.value = allRawRecords.value.length;
+  } else {
+    // For existing records, mark for deletion to be committed later
+    deletedRecords.value.add(recordId);
+    // Remove from changed records since deletion takes precedence
+    changedRecords.value.delete(recordId);
+
+    // Also revert any changes to the raw record since it's being deleted
+    const original = originalRecords.value.get(recordId);
+    if (original) {
+      const rawRecordIndex = allRawRecords.value.findIndex((r) => r._id === recordId);
+      if (rawRecordIndex > -1) {
+        const cleanOriginal = stripInferenceData(original);
+        allRawRecords.value[rawRecordIndex] = cleanOriginal;
+      }
     }
   }
 }
@@ -961,26 +1022,46 @@ async function saveAllChanges() {
 
     // Save updated records
     for (const record of recordsToSave) {
+      const isNewRecord = record._id?.startsWith("temp_");
+
       // Strip the inference data before saving
       const cleanRecord = stripInferenceData(record);
+
+      // For new records, remove the temporary ID so PouchDB assigns a real one
+      if (isNewRecord) {
+        delete cleanRecord._id;
+        delete cleanRecord._rev;
+      }
+
       const savedResult = await pouchdbService.upsertDoc(cleanRecord);
 
       // Update the record with the new revision to prevent conflicts
-      if (savedResult.ok && record._id) {
+      if (savedResult.ok) {
+        const oldId = record._id;
+        const newId = savedResult.id;
+        const newRev = savedResult.rev;
+
         // Update the record in records.value
-        const recordInView = records.value.find((r) => r._id === record._id);
+        const recordInView = records.value.find((r) => r._id === oldId);
         if (recordInView) {
-          recordInView._rev = savedResult.rev;
+          recordInView._id = newId;
+          recordInView._rev = newRev;
         }
 
         // Update the record in allRawRecords
-        const rawRecordIndex = allRawRecords.value.findIndex((r) => r._id === record._id);
+        const rawRecordIndex = allRawRecords.value.findIndex((r) => r._id === oldId);
         if (rawRecordIndex > -1) {
-          allRawRecords.value[rawRecordIndex]._rev = savedResult.rev;
+          allRawRecords.value[rawRecordIndex]._id = newId;
+          allRawRecords.value[rawRecordIndex]._rev = newRev;
         }
 
-        // Update the record in changedRecords (in case there are multiple saves)
-        record._rev = savedResult.rev;
+        // Update the record in changedRecords
+        if (isNewRecord && oldId) {
+          // Remove old temp ID and add with new real ID
+          changedRecords.value.delete(oldId);
+        }
+        record._id = newId;
+        record._rev = newRev;
       }
     }
 
@@ -988,7 +1069,12 @@ async function saveAllChanges() {
     for (const recordId of recordsToDelete) {
       const record = records.value.find((r) => r._id === recordId);
       if (record) {
-        await pouchdbService.removeDoc(record);
+        // Only delete from database if it's not a temporary record
+        const isTemporaryRecord = recordId.startsWith("temp_");
+        if (!isTemporaryRecord) {
+          await pouchdbService.removeDoc(record);
+        }
+        // For temporary records, we just remove them from local state (done below)
       }
     }
 
