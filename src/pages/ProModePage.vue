@@ -1,7 +1,7 @@
 <template>
   <q-page class="column items-center justify-evenly">
     <!-- Desktop Only Notice -->
-    <q-card class="std-card desktop-only-notice" v-if="!$q.screen.gt.md">
+    <q-card class="std-card desktop-only-notice" v-if="!$q.screen.gt.sm">
       <div class="q-pa-lg text-center">
         <q-icon name="desktop_windows" size="64px" color="orange" />
         <div class="text-h6 q-mt-md">Desktop Only Feature</div>
@@ -21,7 +21,10 @@
           <div class="spacer"></div>
           <q-btn color="secondary" icon="refresh" label="Reload" @click="loadData" :disable="isLoading" />
           <q-btn color="positive" icon="save" label="Save Changes" @click="saveAllChanges" :disable="!hasUnsavedChanges" :loading="isSaving" />
-          <q-chip v-if="hasUnsavedChanges" color="orange" text-color="white" icon="edit"> {{ unsavedChangesCount }} unsaved changes </q-chip>
+          <q-chip v-if="hasUnsavedChanges" color="orange" text-color="white" icon="edit">
+            {{ changedRecords.size }} edit{{ changedRecords.size !== 1 ? "s" : ""
+            }}{{ deletedRecords.size > 0 ? ", " + deletedRecords.size + " deletion" + (deletedRecords.size !== 1 ? "s" : "") : "" }}
+          </q-chip>
         </div>
       </q-card>
 
@@ -52,14 +55,16 @@
                   v-for="(record, index) in records"
                   :key="record._id"
                   :class="{
-                    'row-changed': isRowChanged(record._id),
+                    'row-changed': isRowChanged(record._id!),
+                    'row-deleted': isRowDeleted(record._id!),
                     'row-even': index % 2 === 0,
                     'row-odd': index % 2 === 1,
                   }"
                 >
                   <!-- Status Column -->
                   <td class="row-status-col">
-                    <q-icon v-if="isRowChanged(record._id)" name="edit" color="orange" size="16px" title="Row has unsaved changes" />
+                    <q-icon v-if="isRowDeleted(record._id!)" name="delete" color="red" size="16px" title="Row marked for deletion" />
+                    <q-icon v-else-if="isRowChanged(record._id!)" name="edit" color="orange" size="16px" title="Row has unsaved changes" />
                   </td>
 
                   <!-- Date Column -->
@@ -67,14 +72,18 @@
                     <input
                       type="date"
                       :value="formatDateForInput(record.transactionEpoch)"
-                      @input="updateField(record._id, 'transactionEpoch', $event.target.value)"
+                      @input="updateField(record._id!, 'transactionEpoch', ($event.target as HTMLInputElement).value)"
                       class="cell-input date-input"
                     />
                   </td>
 
                   <!-- Type Column -->
                   <td class="type-col">
-                    <select :value="record.type" @change="updateField(record._id!, 'type', $event.target.value)" class="cell-input select-input">
+                    <select
+                      :value="record.type"
+                      @change="updateField(record._id!, 'type', ($event.target as HTMLSelectElement).value)"
+                      class="cell-input select-input"
+                    >
                       <option value="expense">Expense</option>
                       <option value="income">Income</option>
                       <option value="money-transfer">Money Transfer</option>
@@ -93,21 +102,29 @@
                       type="number"
                       step="0.01"
                       :value="getRecordAmount(record)"
-                      @input="updateRecordAmount(record._id!, $event.target.value)"
+                      @input="updateRecordAmount(record._id!, ($event.target as HTMLInputElement).value)"
                       class="cell-input number-input"
                     />
                   </td>
 
                   <!-- Currency Column -->
                   <td class="currency-col">
-                    <select :value="getRecordCurrency(record)" @change="updateRecordCurrency(record._id!, $event.target.value)" class="cell-input select-input">
+                    <select
+                      :value="getRecordCurrency(record)"
+                      @change="updateRecordCurrency(record._id!, ($event.target as HTMLSelectElement).value)"
+                      class="cell-input select-input"
+                    >
                       <option v-for="currency in currencies" :key="currency._id" :value="currency._id">{{ currency.sign }} {{ currency.name }}</option>
                     </select>
                   </td>
 
                   <!-- Wallet Column -->
                   <td class="wallet-col">
-                    <select :value="getRecordWallet(record)" @change="updateRecordWallet(record._id!, $event.target.value)" class="cell-input select-input">
+                    <select
+                      :value="getRecordWallet(record)"
+                      @change="updateRecordWallet(record._id!, ($event.target as HTMLSelectElement).value)"
+                      class="cell-input select-input"
+                    >
                       <option v-for="wallet in wallets" :key="wallet._id" :value="wallet._id">
                         {{ wallet.name }}
                       </option>
@@ -119,7 +136,7 @@
                     <select
                       v-if="record.type === 'expense'"
                       :value="record.expense?.expenseAvenueId"
-                      @change="updateNestedField(record._id!, 'expense', 'expenseAvenueId', $event.target.value)"
+                      @change="updateNestedField(record._id!, 'expense', 'expenseAvenueId', ($event.target as HTMLSelectElement).value)"
                       class="cell-input select-input"
                     >
                       <option v-for="avenue in expenseAvenues" :key="avenue._id" :value="avenue._id">
@@ -129,7 +146,7 @@
                     <select
                       v-else-if="record.type === 'income'"
                       :value="record.income?.incomeSourceId"
-                      @change="updateNestedField(record._id!, 'income', 'incomeSourceId', $event.target.value)"
+                      @change="updateNestedField(record._id!, 'income', 'incomeSourceId', ($event.target as HTMLSelectElement).value)"
                       class="cell-input select-input"
                     >
                       <option v-for="source in incomeSources" :key="source._id" :value="source._id">
@@ -144,7 +161,7 @@
                     <select
                       v-if="supportsParty(record.type)"
                       :value="getRecordParty(record)"
-                      @change="updateRecordParty(record._id!, $event.target.value)"
+                      @change="updateRecordParty(record._id!, ($event.target as HTMLSelectElement).value)"
                       class="cell-input select-input"
                     >
                       <option value="">No Party</option>
@@ -159,8 +176,8 @@
                   <td class="notes-col">
                     <div
                       :contenteditable="true"
-                      @input="updateField(record._id!, 'notes', $event.target.textContent)"
-                      @blur="updateField(record._id!, 'notes', $event.target.textContent)"
+                      @input="updateField(record._id!, 'notes', ($event.target as HTMLElement).textContent)"
+                      @blur="updateField(record._id!, 'notes', ($event.target as HTMLElement).textContent)"
                       class="cell-input contenteditable-input"
                       :data-placeholder="record.notes || 'Add notes...'"
                     >
@@ -183,8 +200,8 @@
                       </span>
                       <select
                         @change="
-                          addTag(record._id!, $event.target.value);
-                          $event.target.value = '';
+                          addTag(record._id!, ($event.target as HTMLSelectElement).value);
+                          ($event.target as HTMLSelectElement).value = '';
                         "
                         class="add-tag-select"
                       >
@@ -198,12 +215,17 @@
 
                   <!-- Actions Column -->
                   <td class="actions-col">
-                    <button @click="revertRecord(record._id!)" :disabled="!isRowChanged(record._id!)" class="action-btn revert-btn" title="Revert changes">
-                      <q-icon name="undo" size="14px" />
+                    <button v-if="isRowDeleted(record._id!)" @click="unmarkForDeletion(record._id!)" class="action-btn restore-btn" title="Restore record">
+                      <q-icon name="restore" size="14px" />
                     </button>
-                    <button @click="deleteRecord(record._id!)" class="action-btn delete-btn" title="Delete record">
-                      <q-icon name="delete" size="14px" />
-                    </button>
+                    <template v-else>
+                      <button @click="revertRecord(record._id!)" :disabled="!isRowChanged(record._id!)" class="action-btn revert-btn" title="Revert changes">
+                        <q-icon name="undo" size="14px" />
+                      </button>
+                      <button @click="markForDeletion(record._id!)" class="action-btn delete-btn" title="Mark for deletion">
+                        <q-icon name="delete" size="14px" />
+                      </button>
+                    </template>
                   </td>
                 </tr>
               </tbody>
@@ -229,7 +251,7 @@ import { Tag } from "src/models/tag";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { recordService } from "src/services/record-service";
 import { dialogService } from "src/services/dialog-service";
-import { prettifyDate, guessFontColorCode, deepClone, sleep } from "src/utils/misc-utils";
+import { guessFontColorCode, deepClone, sleep } from "src/utils/misc-utils";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { Ref, onMounted, ref, computed } from "vue";
 
@@ -243,6 +265,7 @@ const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 const records: Ref<InferredRecord[]> = ref([]);
 const originalRecords: Ref<Map<string, InferredRecord>> = ref(new Map());
 const changedRecords: Ref<Map<string, InferredRecord>> = ref(new Map());
+const deletedRecords: Ref<Set<string>> = ref(new Set<string>());
 
 // Reference data
 const currencies: Ref<Currency[]> = ref([]);
@@ -253,8 +276,7 @@ const parties: Ref<Party[]> = ref([]);
 const tags: Ref<Tag[]> = ref([]);
 
 // ----- Computed
-const hasUnsavedChanges = computed(() => changedRecords.value.size > 0);
-const unsavedChangesCount = computed(() => changedRecords.value.size);
+const hasUnsavedChanges = computed(() => changedRecords.value.size > 0 || deletedRecords.value.size > 0);
 
 // ----- Functions
 async function loadData() {
@@ -303,6 +325,7 @@ async function loadData() {
     // Store original copies for change tracking
     originalRecords.value.clear();
     changedRecords.value.clear();
+    deletedRecords.value.clear();
 
     loadingIndicator.value?.startPhase({ phase: 4, weight: 10, label: "Finalizing records" });
 
@@ -337,11 +360,12 @@ function updateNestedField(recordId: string, parentField: string, field: string,
   const record = records.value.find((r) => r._id === recordId);
   if (!record) return;
 
-  if (!(record as any)[parentField]) {
-    (record as any)[parentField] = {};
+  const recordAny = record as any;
+  if (!recordAny[parentField]) {
+    recordAny[parentField] = {};
   }
 
-  (record as any)[parentField][field] = value;
+  recordAny[parentField][field] = value;
 
   markRecordChanged(recordId);
 }
@@ -576,11 +600,18 @@ function markRecordChanged(recordId: string) {
   const record = records.value.find((r) => r._id === recordId);
   if (!record) return;
 
+  // Don't track changes for records marked for deletion
+  if (deletedRecords.value.has(recordId)) return;
+
   changedRecords.value.set(recordId, deepClone(record));
 }
 
 function isRowChanged(recordId: string): boolean {
   return changedRecords.value.has(recordId);
+}
+
+function isRowDeleted(recordId: string): boolean {
+  return deletedRecords.value.has(recordId);
 }
 
 function revertRecord(recordId: string) {
@@ -595,6 +626,16 @@ function revertRecord(recordId: string) {
   changedRecords.value.delete(recordId);
 }
 
+function markForDeletion(recordId: string) {
+  deletedRecords.value.add(recordId);
+  // Remove from changed records since deletion takes precedence
+  changedRecords.value.delete(recordId);
+}
+
+function unmarkForDeletion(recordId: string) {
+  deletedRecords.value.delete(recordId);
+}
+
 // ----- Save Functions
 async function saveAllChanges() {
   if (!hasUnsavedChanges.value) return;
@@ -603,26 +644,50 @@ async function saveAllChanges() {
 
   try {
     const recordsToSave = Array.from(changedRecords.value.values());
+    const recordsToDelete = Array.from(deletedRecords.value);
 
+    // Save updated records
     for (const record of recordsToSave) {
       // Strip the inference data before saving
       const cleanRecord = stripInferenceData(record);
       await pouchdbService.upsertDoc(cleanRecord);
     }
 
+    // Delete marked records
+    for (const recordId of recordsToDelete) {
+      const record = records.value.find((r) => r._id === recordId);
+      if (record) {
+        await pouchdbService.removeDoc(record);
+      }
+    }
+
+    // Remove deleted records from local state
+    records.value = records.value.filter((record) => !deletedRecords.value.has(record._id || ""));
+
     // Clear change tracking
     changedRecords.value.clear();
+    deletedRecords.value.clear();
 
-    // Update original records
+    // Update original records for remaining records
+    originalRecords.value.clear();
     records.value.forEach((record) => {
       if (record._id) {
         originalRecords.value.set(record._id, deepClone(record));
       }
     });
 
+    let message = "";
+    if (recordsToSave.length > 0 && recordsToDelete.length > 0) {
+      message = `Successfully saved ${recordsToSave.length} record(s) and deleted ${recordsToDelete.length} record(s)`;
+    } else if (recordsToSave.length > 0) {
+      message = `Successfully saved ${recordsToSave.length} record(s)`;
+    } else if (recordsToDelete.length > 0) {
+      message = `Successfully deleted ${recordsToDelete.length} record(s)`;
+    }
+
     $q.notify({
       type: "positive",
-      message: `Successfully saved ${recordsToSave.length} record(s)`,
+      message,
       position: "top",
     });
   } catch (error) {
@@ -687,36 +752,7 @@ function stripInferenceData(inferredRecord: InferredRecord): Record {
   return cleanRecord as Record;
 }
 
-async function deleteRecord(recordId: string) {
-  const confirmed = await dialogService.confirm("Delete Record", "Are you sure you want to delete this record? This action cannot be undone.");
-
-  if (!confirmed) return;
-
-  try {
-    const record = records.value.find((r) => r._id === recordId);
-    if (!record) return;
-
-    await pouchdbService.removeDoc(record);
-
-    // Remove from local state
-    const index = records.value.findIndex((r) => r._id === recordId);
-    if (index > -1) {
-      records.value.splice(index, 1);
-    }
-
-    originalRecords.value.delete(recordId);
-    changedRecords.value.delete(recordId);
-
-    $q.notify({
-      type: "positive",
-      message: "Record deleted successfully",
-      position: "top",
-    });
-  } catch (error) {
-    console.error("Error deleting record:", error);
-    await dialogService.alert("Error", "Failed to delete the record. Please try again.");
-  }
-}
+// Note: deleteRecord function removed as we now use markForDeletion
 
 // ----- Lifecycle
 onMounted(() => {
@@ -828,6 +864,13 @@ onMounted(() => {
     background-color: #fff3cd !important;
     border-left: 3px solid #ffc107;
   }
+
+  .row-deleted {
+    background-color: #f8d7da !important;
+    border-left: 3px solid #dc3545;
+    opacity: 0.7;
+    text-decoration: line-through;
+  }
 }
 
 .cell-input {
@@ -932,6 +975,11 @@ onMounted(() => {
   &.revert-btn:hover:not(:disabled) {
     background-color: #e3f2fd;
     border-color: #2196f3;
+  }
+
+  &.restore-btn:hover:not(:disabled) {
+    background-color: #e8f5e8;
+    border-color: #4caf50;
   }
 }
 </style>
