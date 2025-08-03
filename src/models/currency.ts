@@ -4,4 +4,6 @@ export type Currency = {
   $collection: string;
   name: string;
   sign: string;
+  precisionMinimum?: number;
+  precisionMaximum?: number;
 };

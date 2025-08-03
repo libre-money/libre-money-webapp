@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-const LOCAL_STORAGE_KEY = "--record-pagination-size";
+const LOCAL_STORAGE_KEY = "--ck-record-pagination-size";
 
 const initialRecordPaginationSize: number = ((): number => {
   const recordPaginationSize = localStorage.getItem(LOCAL_STORAGE_KEY) || "10";

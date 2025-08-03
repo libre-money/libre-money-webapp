@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Collection } from "src/constants/constants";
 import { Currency } from "src/models/currency";
-import { Party } from "src/models/party";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref } from "vue";
 
@@ -71,7 +70,22 @@ function filterCurrencyFn(val: string, update: any, abort: any) {
     <q-spinner color="primary" size="40px" :thickness="4" />
   </div>
 
-  <q-select filled v-model="value" :options="walletCurrencyList" :label="label || 'Currency'" emit-value map-options
-    fill-input use-input input-debounce="0" @filter="filterCurrencyFn" class="std-margin-bottom-32" option-value="_id"
-    option-label="name" hide-selected v-if="!isLoading" :clearable="!mandatory" />
+  <q-select
+    filled
+    v-model="value"
+    :options="walletCurrencyList"
+    :label="label || 'Currency'"
+    emit-value
+    map-options
+    fill-input
+    use-input
+    input-debounce="0"
+    @filter="filterCurrencyFn"
+    class="std-margin-bottom-32"
+    option-value="_id"
+    option-label="name"
+    hide-selected
+    v-if="!isLoading"
+    :clearable="!mandatory"
+  />
 </template>

@@ -1,4 +1,5 @@
 import { Collection, RecordType } from "src/constants/constants";
+import { UNBUDGETED_RECORDS_BUDGET_NAME } from "src/constants/config-constants";
 import { Asset } from "src/models/asset";
 import { Currency } from "src/models/currency";
 import { ExpenseAvenue } from "src/models/expense-avenue";
@@ -10,15 +11,12 @@ import { Record } from "src/models/record";
 import { Tag } from "src/models/tag";
 import { Wallet } from "src/models/wallet";
 import { normalizeEpochRange } from "src/utils/date-utils";
-import { deepClone } from "src/utils/misc-utils";
+import { deepClone, sleep } from "src/utils/misc-utils";
 import { entityService } from "./entity-service";
 import { pouchdbService } from "./pouchdb-service";
-import { UNBUDGETED_RECORDS_BUDGET_NAME } from "src/constants/config-constants";
-import { Budget } from "src/models/budget";
-import { budgetService } from "./budget-service";
+import { rollingBudgetService } from "./rolling-budget-service";
 
 class RecordService {
-
   async inferRecord(record: Record): Promise<InferredRecord> {
     const inferredRecord = deepClone(record) as InferredRecord;
 
@@ -206,12 +204,15 @@ class RecordService {
     return map;
   }
 
-  public async inferInBatch(recordList: Record[], entityMap?: Map<string, ExpenseAvenue | IncomeSource | Party | Wallet | Asset | Currency | Tag>): Promise<InferredRecord[]> {
+  public async inferInBatch(
+    recordList: Record[],
+    entityMap?: Map<string, ExpenseAvenue | IncomeSource | Party | Wallet | Asset | Currency | Tag>
+  ): Promise<InferredRecord[]> {
     const inferredRecordList = deepClone(recordList) as InferredRecord[];
 
-    const map = entityMap || await this.buildEntityMap();
+    const map = entityMap || (await this.buildEntityMap());
 
-    for (const inferredRecord of inferredRecordList) {
+    for (const [index, inferredRecord] of inferredRecordList.entries()) {
       if (inferredRecord.type === RecordType.EXPENSE && inferredRecord.expense) {
         inferredRecord.expense.expenseAvenue = map.get(Collection.EXPENSE_AVENUE + "-" + inferredRecord.expense.expenseAvenueId) as ExpenseAvenue;
         if (inferredRecord.expense.expenseAvenue) {
@@ -292,9 +293,10 @@ class RecordService {
       }
 
       inferredRecord.typePrettified = inferredRecord.type.replace(/\-/g, " ");
-      inferredRecord.tagList = inferredRecord.tagIdList
-        .map(tagId => map.get(Collection.TAG + "-" + tagId) as Tag)
-        .filter(Boolean);
+      inferredRecord.tagList = inferredRecord.tagIdList.map((tagId) => map.get(Collection.TAG + "-" + tagId) as Tag).filter(Boolean);
+      if (index % 100 === 0) {
+        await sleep(0);
+      }
     }
 
     return inferredRecordList;
@@ -372,12 +374,15 @@ class RecordService {
   }
 
   private async filterUnbudgetedRecords(recordList: Record[]) {
-    const budgetList = (await pouchdbService.listByCollection(Collection.BUDGET)).docs as Budget[];
+    const rollingBudgetList = await rollingBudgetService.listAll();
 
-    for (const budget of budgetList) {
-      const recordFilters = budgetService.createRecordFiltersForBudget(budget);
-      const filteredRecordList = await this.applyRecordFilters(recordList, recordFilters);
-      recordList = recordList.filter((record) => !filteredRecordList.includes(record));
+    for (const rollingBudget of rollingBudgetList) {
+      // Check each period of the rolling budget
+      for (let periodIndex = 0; periodIndex < rollingBudget.budgetedPeriodList.length; periodIndex++) {
+        const recordFilters = rollingBudgetService.createRecordFiltersForRollingBudget(rollingBudget, periodIndex);
+        const filteredRecordList = await this.applyRecordFilters(recordList, recordFilters);
+        recordList = recordList.filter((record) => !filteredRecordList.includes(record));
+      }
     }
 
     return recordList;

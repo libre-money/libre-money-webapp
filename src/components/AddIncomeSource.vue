@@ -18,75 +18,62 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
-import { validators } from "src/utils/validators";
+import { Collection } from "src/constants/constants";
 import { IncomeSource } from "src/models/income-source";
 import { pouchdbService } from "src/services/pouchdb-service";
-import { Collection } from "src/constants/constants";
+import { validators } from "src/utils/validators";
+import { onMounted, ref } from "vue";
 
-export default {
-  props: {
-    existingIncomeSourceId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  existingIncomeSourceId?: string | null;
+}>();
 
-  emits: [...useDialogPluginComponent.emits],
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  setup(props) {
-    let initialDoc: IncomeSource | null = null;
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-    const isLoading = ref(false);
+// State
+let initialDoc: IncomeSource | null = null;
+const isLoading = ref(false);
+const incomeSourceForm = ref<QForm | null>(null);
+const incomeSourceName = ref<string | null>(null);
 
-    const incomeSourceForm: Ref<QForm | null> = ref(null);
+// Load existing income source if editing
+onMounted(async () => {
+  if (props.existingIncomeSourceId) {
+    isLoading.value = true;
+    const res = (await pouchdbService.getDocById(props.existingIncomeSourceId)) as IncomeSource;
+    initialDoc = res;
+    incomeSourceName.value = res.name;
+    isLoading.value = false;
+  }
+});
 
-    const incomeSourceName: Ref<string | null> = ref(null);
+async function okClicked() {
+  if (!(await incomeSourceForm.value?.validate())) {
+    return;
+  }
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+  let incomeSource: IncomeSource = {
+    $collection: Collection.INCOME_SOURCE,
+    name: incomeSourceName.value!,
+  };
 
-    if (props.existingIncomeSourceId) {
-      isLoading.value = true;
-      (async function () {
-        let res = (await pouchdbService.getDocById(props.existingIncomeSourceId)) as IncomeSource;
-        initialDoc = res;
-        incomeSourceName.value = res.name;
-        isLoading.value = false;
-      })();
-    }
-    async function okClicked() {
-      if (!(await incomeSourceForm.value?.validate())) {
-        return;
-      }
+  if (initialDoc) {
+    incomeSource = Object.assign({}, initialDoc, incomeSource);
+  }
 
-      let incomeSource: IncomeSource = {
-        $collection: Collection.INCOME_SOURCE,
-        name: incomeSourceName.value!,
-      };
+  pouchdbService.upsertDoc(incomeSource);
 
-      if (initialDoc) {
-        incomeSource = Object.assign({}, initialDoc, incomeSource);
-      }
+  onDialogOK();
+}
 
-      pouchdbService.upsertDoc(incomeSource);
-
-      onDialogOK();
-    }
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      incomeSourceName,
-      validators,
-      incomeSourceForm,
-    };
-  },
-};
+// Cancel
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>

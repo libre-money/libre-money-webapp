@@ -8,17 +8,12 @@
           <span>Income Statement</span>
           <div class="sub-title" v-if="filters">
             <span v-if="filters.startEpoch === 0">
-              <span>
-                Up to {{ prettifyDate(filters.endEpoch) }}
-              </span>
+              <span> Up to {{ prettifyDate(filters.endEpoch) }} </span>
             </span>
-            <span v-else>
-              {{ prettifyDate(filters.startEpoch) }} to {{ prettifyDate(filters.endEpoch) }}
-            </span>
+            <span v-else> {{ prettifyDate(filters.startEpoch) }} to {{ prettifyDate(filters.endEpoch) }} </span>
           </div>
         </div>
       </div>
-
     </q-card>
     <!-- Filter - End -->
 
@@ -33,36 +28,35 @@
           <div class="fin-presentation">
             <div class="fin-presentation-head-container row">
               <div class="fin-presentation-head-textual particulars-head">{{ aType }} Account</div>
-              <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList"
-                v-bind:key="trialBalanceWithCurrency.currencyId">
-                <div class="fin-presentation-head-numeric debit-head">{{ trialBalanceWithCurrency._currency!.sign }}
-                </div>
+              <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
+                <div class="fin-presentation-head-numeric debit-head">{{ trialBalanceWithCurrency._currency!.sign }}</div>
               </template>
             </div>
             <template
-              v-for="balanceEntry, balanceEntryIndex in trialBalance.trialBalanceWithCurrencyList[0].trialBalanceOfTypeMap[aType].balanceList"
-              v-bind:key="balanceEntry.account.code">
+              v-for="(balanceEntry, balanceEntryIndex) in trialBalance.trialBalanceWithCurrencyList[0].trialBalanceOfTypeMap[aType].balanceList"
+              v-bind:key="balanceEntry.account.code"
+            >
               <div class="fin-presentation-row row">
                 <div class="fin-presentation-item-textual">
                   {{ balanceEntry.account.name }}
                 </div>
-                <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList"
-                  v-bind:key="trialBalanceWithCurrency.currencyId">
-                  <div class="fin-presentation-item-numeric debit-sum">{{
-                    trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].balanceList[balanceEntryIndex]?.balance || 0
-                  }}&nbsp;{{
-                      trialBalanceWithCurrency._currency!.sign }}
+                <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
+                  <div class="fin-presentation-item-numeric debit-sum">
+                    {{
+                      printAmount(
+                        trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].balanceList[balanceEntryIndex]?.balance || 0,
+                        trialBalanceWithCurrency._currency!._id
+                      )
+                    }}
                   </div>
                 </template>
               </div>
             </template>
             <div class="fin-presentation-head-container row">
               <div class="fin-presentation-head-textual">Total {{ aType }}</div>
-              <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList"
-                v-bind:key="trialBalanceWithCurrency.currencyId">
+              <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
                 <div class="fin-presentation-head-numeric debit-total">
-                  {{ trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance }}&nbsp;{{
-                    trialBalanceWithCurrency._currency!.sign }}
+                  {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
                 </div>
               </template>
             </div>
@@ -70,13 +64,16 @@
         </div>
         <div class="fin-presentation-head-container row">
           <div class="fin-presentation-head-textual">Total Profit</div>
-          <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList"
-            v-bind:key="trialBalanceWithCurrency.currencyId">
+          <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
             <div class="fin-presentation-head-numeric debit-total">
-              {{ trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"]
-                .balanceList.find(balance => balance.account.code ===
-                  AccDefaultAccounts.EQUITY__RETAINED_EARNINGS.code)?.balance }}&nbsp;{{
-                trialBalanceWithCurrency._currency!.sign }}
+              {{
+                printAmount(
+                  trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].balanceList.find(
+                    (balance) => balance.account.code === AccDefaultAccounts.EQUITY__RETAINED_EARNINGS.code
+                  )?.balance,
+                  trialBalanceWithCurrency._currency!._id
+                )
+              }}
             </div>
           </template>
         </div>
@@ -89,22 +86,22 @@
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
 import FilterAccStatementDialog from "src/components/FilterAccStatementDialog.vue";
-import { AccDefaultAccounts, AccTypeList } from "src/constants/accounting-constants";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
+import { AccDefaultAccounts } from "src/constants/accounting-constants";
 import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
 import { AccLedgerFilters } from "src/models/accounting/acc-ledger-filters";
 import { AccStatementFilters } from "src/models/accounting/acc-statement-filters";
 import { AccTrialBalance } from "src/models/accounting/acc-trial-balance";
-import { Record } from "src/models/record";
 import { accountingService } from "src/services/accounting-service";
+import { printAmount } from "src/utils/de-facto-utils";
 import { deepClone, prettifyDate } from "src/utils/misc-utils";
 import { Ref, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import LoadingIndicator from "src/components/LoadingIndicator.vue";
 
 const getDefaultFilters = () => {
   return {
     startEpoch: 0,
-    endEpoch: Date.now()
+    endEpoch: Date.now(),
   };
 };
 
@@ -126,16 +123,12 @@ async function loadData() {
   const progressNotifierFn = (progressFraction: number) => {
     loadingIndicator.value?.setProgress(progressFraction);
   };
-  const {
-    accountMap,
-    accountList,
-    journalEntryList,
-  } = await accountingService.initiateAccounting(progressNotifierFn);
+  const { accountMap, accountList, journalEntryList } = await accountingService.initiateAccounting(progressNotifierFn);
 
   const { startEpoch, endEpoch } = filters.value;
   const journalFilters: AccJournalFilters = {
     startEpoch,
-    endEpoch
+    endEpoch,
   };
   await loadingIndicator.value?.waitMinimalDuration(400);
   loadingIndicator.value?.startPhase({ phase: 2, weight: 20, label: "Applying filters" });
@@ -163,7 +156,6 @@ async function setFiltersClicked() {
 // ----- Computed and Embedded
 
 // ----- Watchers
-
 
 // ----- Execution
 

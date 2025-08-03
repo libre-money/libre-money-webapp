@@ -30,145 +30,120 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref, watch } from "vue";
-import { validators } from "src/utils/validators";
 import { Collection, RecordType } from "src/constants/constants";
 import { Record } from "src/models/record";
+import { entityService } from "src/services/entity-service";
 import { pouchdbService } from "src/services/pouchdb-service";
-import SelectWallet from "./SelectWallet.vue";
+import { asAmount } from "src/utils/de-facto-utils";
+import { validators } from "src/utils/validators";
+import { onMounted, ref, watch } from "vue";
+import DateTimeInput from "./lib/DateTimeInput.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
-import { asAmount } from "src/utils/misc-utils";
-import { entityService } from "src/services/entity-service";
-import DateTimeInput from "./lib/DateTimeInput.vue";
+import SelectWallet from "./SelectWallet.vue";
 
-export default {
-  props: {
-    existingRecordId: {
-      type: String,
-      required: false,
-      default: null,
+const props = defineProps<{
+  existingRecordId?: string | null;
+}>();
+
+const emit = defineEmits([...useDialogPluginComponent.emits]);
+
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+
+let initialDoc: Record | null = null;
+const isLoading = ref(false);
+
+const recordForm = ref<QForm | null>(null);
+
+const paymentType = ref<string | null>("full");
+const recordType = RecordType.LENDING;
+
+const recordAmount = ref<number>(0);
+const recordCurrencyId = ref<string | null>(null);
+const recordCurrencySign = ref<string | null>(null);
+const recordPartyId = ref<string | null>(null);
+const recordWalletId = ref<string | null>(null);
+const recordTagIdList = ref<string[]>([]);
+const recordNotes = ref<string | null>(null);
+
+const transactionEpoch = ref<number>(Date.now());
+
+onMounted(async () => {
+  if (props.existingRecordId) {
+    isLoading.value = true;
+    let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
+    initialDoc = res;
+    if (!initialDoc.lending) {
+      // TODO show error message
+      isLoading.value = false;
+      return;
+    }
+    recordAmount.value = asAmount(initialDoc.lending.amount);
+    recordCurrencyId.value = initialDoc.lending.currencyId;
+    recordPartyId.value = initialDoc.lending.partyId;
+    recordWalletId.value = initialDoc.lending.walletId!;
+
+    recordTagIdList.value = initialDoc.tagIdList;
+    recordNotes.value = initialDoc.notes;
+
+    isLoading.value = false;
+  }
+});
+
+async function performManualValidation() {
+  return true;
+}
+
+async function okClicked() {
+  if (!(await recordForm.value?.validate())) {
+    return;
+  }
+
+  if (!(await performManualValidation())) {
+    return;
+  }
+
+  let record: Record = {
+    $collection: Collection.RECORD,
+    notes: recordNotes.value!,
+    type: recordType,
+    tagIdList: recordTagIdList.value,
+    transactionEpoch: transactionEpoch.value,
+    lending: {
+      amount: asAmount(recordAmount.value),
+      walletId: recordWalletId.value!,
+      currencyId: recordCurrencyId.value!,
+      partyId: recordPartyId.value!,
     },
-  },
+  };
 
-  components: {
-    SelectWallet,
-    SelectParty,
-    SelectTag,
-    DateTimeInput,
-  },
+  if (initialDoc) {
+    record = Object.assign({}, initialDoc, record);
+  }
 
-  emits: [...useDialogPluginComponent.emits],
+  console.debug("Saving record: ", JSON.stringify(record, null, 2));
 
-  setup(props) {
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+  pouchdbService.upsertDoc(record);
 
-    let initialDoc: Record | null = null;
-    const isLoading = ref(false);
+  onDialogOK();
+}
 
-    const recordForm: Ref<QForm | null> = ref(null);
+function cancelClicked() {
+  onDialogCancel();
+}
 
-    const paymentType: Ref<string | null> = ref("full");
-    const recordType = RecordType.LENDING;
-
-    const recordAmount: Ref<number> = ref(0);
-    const recordCurrencyId: Ref<string | null> = ref(null);
-    const recordCurrencySign: Ref<string | null> = ref(null);
-    const recordPartyId: Ref<string | null> = ref(null);
-    const recordWalletId: Ref<string | null> = ref(null);
-    const recordTagIdList: Ref<string[]> = ref([]);
-    const recordNotes: Ref<string | null> = ref(null);
-
-    const transactionEpoch: Ref<number> = ref(Date.now());
-
-    if (props.existingRecordId) {
-      isLoading.value = true;
-      (async function () {
-        isLoading.value = true;
-        let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
-        initialDoc = res;
-        if (!initialDoc.lending) {
-          // TODO show error message
-          return;
-        }
-        recordAmount.value = asAmount(initialDoc.lending.amount);
-        recordCurrencyId.value = initialDoc.lending.currencyId;
-        recordPartyId.value = initialDoc.lending.partyId;
-        recordWalletId.value = initialDoc.lending.walletId!;
-
-        recordTagIdList.value = initialDoc.tagIdList;
-        recordNotes.value = initialDoc.notes;
-
-        isLoading.value = false;
-      })();
-    }
-
-    async function performManualValidation() {
-      return true;
-    }
-
-    async function okClicked() {
-      if (!(await recordForm.value?.validate())) {
-        return;
-      }
-
-      if (!(await performManualValidation())) {
-        return;
-      }
-
-      let record: Record = {
-        $collection: Collection.RECORD,
-        notes: recordNotes.value!,
-        type: recordType,
-        tagIdList: recordTagIdList.value,
-        transactionEpoch: transactionEpoch.value,
-        lending: {
-          amount: asAmount(recordAmount.value),
-          walletId: recordWalletId.value!,
-          currencyId: recordCurrencyId.value!,
-          partyId: recordPartyId.value!,
-        },
-      };
-
-      if (initialDoc) {
-        record = Object.assign({}, initialDoc, record);
-      }
-
-      console.debug("Saving record: ", JSON.stringify(record, null, 2));
-
-      pouchdbService.upsertDoc(record);
-
-      onDialogOK();
-    }
-
-    watch(recordWalletId, async (newWalletId: any) => {
-      let wallet = await entityService.getWallet(newWalletId as string);
-      let currency = await entityService.getCurrency(wallet.currencyId);
-      recordCurrencyId.value = currency._id!;
-      recordCurrencySign.value = currency.sign;
-    });
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      validators,
-      transactionEpoch,
-      recordForm,
-      paymentType,
-      recordAmount,
-      recordCurrencyId,
-      recordPartyId,
-      recordWalletId,
-      recordCurrencySign,
-      recordTagIdList,
-      recordNotes,
-    };
-  },
-};
+watch(recordWalletId, async (newWalletId: any) => {
+  if (!newWalletId) {
+    recordCurrencyId.value = null;
+    recordCurrencySign.value = null;
+    return;
+  }
+  let wallet = await entityService.getWallet(newWalletId as string);
+  let currency = await entityService.getCurrency(wallet.currencyId);
+  recordCurrencyId.value = currency._id!;
+  recordCurrencySign.value = currency.sign;
+});
 </script>
 <style scoped lang="scss"></style>

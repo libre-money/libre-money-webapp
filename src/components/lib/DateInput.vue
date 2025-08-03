@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { Collection } from "src/constants/constants";
-import { Party } from "src/models/party";
-import { pouchdbService } from "src/services/pouchdb-service";
-import { Ref, computed, ref, watch } from "vue";
 import { date } from "quasar";
+import { computed } from "vue";
 
 const props = defineProps({
   modelValue: {

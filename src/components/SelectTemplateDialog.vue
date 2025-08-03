@@ -10,8 +10,7 @@
               <div class="template-container">
                 <div>{{ template.templateName }}</div>
                 <div class="spacer"></div>
-                <q-btn-dropdown size="md" color="primary" label="Use" split @click="useTemplateClicked(template)"
-                  style="margin-left: 8px;">
+                <q-btn-dropdown size="md" color="primary" label="Use" split @click="useTemplateClicked(template)" style="margin-left: 8px">
                   <q-list>
                     <q-item clickable v-close-popup @click="deleteTemplateClicked(template)">
                       <q-item-section>
@@ -35,81 +34,62 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-import { QForm, useDialogPluginComponent, useQuasar } from "quasar";
-import { Ref, ref } from "vue";
-import { validators } from "src/utils/validators";
-import { Collection, defaultPartyType, partyTypeList } from "src/constants/constants";
-import { Party } from "src/models/party";
-import { pouchdbService } from "src/services/pouchdb-service";
+<script setup lang="ts">
+import { useDialogPluginComponent, useQuasar } from "quasar";
+import { Collection } from "src/constants/constants";
 import { Record } from "src/models/record";
 import { dialogService } from "src/services/dialog-service";
+import { pouchdbService } from "src/services/pouchdb-service";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 
-export default {
-  props: {
-    templateType: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+defineProps<{
+  templateType?: string | null;
+}>();
 
-  emits: [...useDialogPluginComponent.emits],
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  setup(props) {
-    const $q = useQuasar();
-    const router = useRouter();
+const $q = useQuasar();
+const router = useRouter();
 
-    const isLoading = ref(false);
+const isLoading = ref(false);
+const templateList = ref<Record[]>([]);
 
-    const templateList: Ref<Record[]> = ref([]);
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+async function loadData() {
+  let rawDataRows = (await pouchdbService.listByCollection(Collection.RECORD_TEMPLATE)).docs as Record[];
+  rawDataRows.sort((a, b) => a.templateName?.localeCompare(b.templateName || "") || 0);
+  templateList.value = rawDataRows;
+}
 
-    async function loadData() {
-      let rawDataRows = (await pouchdbService.listByCollection(Collection.RECORD_TEMPLATE)).docs as Record[];
-      rawDataRows.sort((a, b) => a.templateName?.localeCompare(b.templateName || "") || 0);
+loadData();
 
-      templateList.value = rawDataRows;
-    }
+async function useTemplateClicked(template: Record) {
+  onDialogOK(template);
+}
 
-    loadData();
+function manageClicked() {
+  router.push({ name: "templates" });
+}
 
-    async function useTemplateClicked(template: Record) {
-      onDialogOK(template);
-    }
+async function deleteTemplateClicked(template: Record) {
+  let answer = await dialogService.confirm("Delete Template", `Are you sure you want to permanently delete the template "${template.templateName}"`);
+  if (!answer) return;
 
-    function manageClicked() {
-      router.push({ name: "templates" });
-    }
+  let res = await pouchdbService.removeDoc(template);
+  if (!res.ok) {
+    await dialogService.alert("Error", "There was an error trying to remove the template.");
+  }
 
-    async function deleteTemplateClicked(template: Record) {
-      let answer = await dialogService.confirm("Delete Template", `Are you sure you want to permanently delete the template "${template.templateName}"`);
-      if (!answer) return;
+  loadData();
+}
 
-      let res = await pouchdbService.removeDoc(template);
-      if (!res.ok) {
-        await dialogService.alert("Error", "There was an error trying to remove the template.");
-      }
-
-      loadData();
-    }
-
-    return {
-      dialogRef,
-      onDialogHide,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      partyTypeList,
-      templateList,
-      validators,
-      useTemplateClicked,
-      deleteTemplateClicked,
-      manageClicked
-    };
-  },
-};
+function cancelClicked() {
+  onDialogCancel();
+}
 </script>
 <style scoped lang="scss">
 .template-container {

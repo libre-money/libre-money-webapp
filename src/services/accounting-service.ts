@@ -1,27 +1,20 @@
-import { AccDefaultAccounts, AccTypeList } from "src/constants/accounting-constants";
+import { AccDefaultAccounts } from "src/constants/accounting-constants";
 import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD } from "src/constants/config-constants";
 import { Collection, RecordType } from "src/constants/constants";
 import { AccAccount } from "src/models/accounting/acc-account";
 import { AccDebitOrCredit, AccJournalEntry } from "src/models/accounting/acc-journal-entry";
 import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
-import { AccLedger } from "src/models/accounting/acc-ledger";
-import { AccLedgerEntry } from "src/models/accounting/acc-ledger-entry";
-import { AccTrialBalance, AccTrialBalanceWithCurrency } from "src/models/accounting/acc-trial-balance";
 import { Asset } from "src/models/asset";
 import { Currency } from "src/models/currency";
 import { InferredRecord } from "src/models/inferred/inferred-record";
 import { Record as SourceRecord } from "src/models/record";
 import { Wallet } from "src/models/wallet";
-import { asFinancialAmount } from "src/utils/misc-utils";
+import { asAmount, printAmount } from "src/utils/de-facto-utils";
 import PromisePool from "src/utils/promise-pool";
-import { dialogService } from "./dialog-service";
-import { formatService } from "./format-service";
+import { accountingLedgerService } from "./accounting-ledger-service";
+import { accountingTrialBalanceService } from "./accounting-trial-balance-service";
 import { pouchdbService } from "./pouchdb-service";
 import { recordService } from "./record-service";
-
-type TrialBalanceInterimContainer = {
-  accountVsDebitBalanceMap: Record<string, number>;
-};
 
 export type AccAccountingReturnable = {
   accountMap: Record<string, AccAccount>;
@@ -127,15 +120,15 @@ class AccountingService {
         debitList.push({
           account: accountMap[liquidityLookup[asset.liquidity]],
           currencyId: asset.currencyId,
-          amount: asFinancialAmount(asset.initialBalance),
+          amount: asAmount(asset.initialBalance),
         });
 
-        assetEquity += asFinancialAmount(asset.initialBalance);
+        assetEquity += asAmount(asset.initialBalance);
       }
       creditList.push({
         account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
         currencyId: currency._id!,
-        amount: asFinancialAmount(assetEquity),
+        amount: asAmount(assetEquity),
       });
 
       // wallets
@@ -148,24 +141,24 @@ class AccountingService {
             creditList.push({
               account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
               currencyId: wallet.currencyId,
-              amount: asFinancialAmount(wallet.initialBalance) * -1,
+              amount: asAmount(wallet.initialBalance) * -1,
             });
             debitList.push({
               account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
               currencyId: currency._id!,
-              amount: asFinancialAmount(wallet.initialBalance) * -1,
+              amount: asAmount(wallet.initialBalance) * -1,
             });
           } else {
             // Credit Card had advance payment. We have to treat it like an asset OR a contra-liability
             debitList.push({
               account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
               currencyId: wallet.currencyId,
-              amount: asFinancialAmount(wallet.initialBalance),
+              amount: asAmount(wallet.initialBalance),
             });
             creditList.push({
               account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
               currencyId: currency._id!,
-              amount: asFinancialAmount(wallet.initialBalance),
+              amount: asAmount(wallet.initialBalance),
             });
           }
         } else if (wallet.type === "cash") {
@@ -174,23 +167,23 @@ class AccountingService {
             creditList.push({
               account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
               currencyId: wallet.currencyId,
-              amount: asFinancialAmount(wallet.initialBalance) * -1,
+              amount: asAmount(wallet.initialBalance) * -1,
             });
             debitList.push({
               account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
               currencyId: currency._id!,
-              amount: asFinancialAmount(wallet.initialBalance) * -1,
+              amount: asAmount(wallet.initialBalance) * -1,
             });
           } else {
             debitList.push({
               account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
               currencyId: wallet.currencyId,
-              amount: asFinancialAmount(wallet.initialBalance),
+              amount: asAmount(wallet.initialBalance),
             });
             creditList.push({
               account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
               currencyId: currency._id!,
-              amount: asFinancialAmount(wallet.initialBalance),
+              amount: asAmount(wallet.initialBalance),
             });
           }
         } else {
@@ -199,23 +192,23 @@ class AccountingService {
             creditList.push({
               account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
               currencyId: wallet.currencyId,
-              amount: asFinancialAmount(wallet.initialBalance) * -1,
+              amount: asAmount(wallet.initialBalance) * -1,
             });
             debitList.push({
               account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
               currencyId: currency._id!,
-              amount: asFinancialAmount(wallet.initialBalance) * -1,
+              amount: asAmount(wallet.initialBalance) * -1,
             });
           } else {
             debitList.push({
               account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
               currencyId: wallet.currencyId,
-              amount: asFinancialAmount(wallet.initialBalance),
+              amount: asAmount(wallet.initialBalance),
             });
             creditList.push({
               account: accountMap[AccDefaultAccounts.EQUITY__OPENING_BALANCE.code],
               currencyId: currency._id!,
-              amount: asFinancialAmount(wallet.initialBalance),
+              amount: asAmount(wallet.initialBalance),
             });
           }
         }
@@ -256,28 +249,28 @@ class AccountingService {
     debitList.push({
       account: accountMap[AccDefaultAccounts.EXPENSE__COMBINED_EXPENSE.code],
       currencyId: expense.currencyId,
-      amount: asFinancialAmount(expense.amount),
+      amount: asAmount(expense.amount),
     });
-    description += `Spent ${formatService.getPrintableAmount(expense.amount, expense.currencyId)} as "${expense.expenseAvenue.name}". `;
+    description += `Spent ${printAmount(expense.amount, expense.currencyId)} as "${expense.expenseAvenue.name}". `;
 
     if (expense.amountPaid > 0) {
       if (expense.wallet.type === "credit-card") {
         creditList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
           currencyId: expense.currencyId,
-          amount: asFinancialAmount(expense.amountPaid),
+          amount: asAmount(expense.amountPaid),
         });
       } else if (expense.wallet.type === "cash") {
         creditList.push({
           account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
           currencyId: expense.currencyId,
-          amount: asFinancialAmount(expense.amountPaid),
+          amount: asAmount(expense.amountPaid),
         });
       } else {
         creditList.push({
           account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
           currencyId: expense.currencyId,
-          amount: asFinancialAmount(expense.amountPaid),
+          amount: asAmount(expense.amountPaid),
         });
       }
       if (expense.amount === expense.amountPaid) {
@@ -286,7 +279,7 @@ class AccountingService {
         creditList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
           currencyId: expense.currencyId,
-          amount: asFinancialAmount(expense.amount) - asFinancialAmount(expense.amountPaid),
+          amount: asAmount(expense.amount) - asAmount(expense.amountPaid),
         });
         description += `Partially paid from "${expense.wallet.name}" (${expense.wallet.type}). `;
       }
@@ -294,7 +287,7 @@ class AccountingService {
       creditList.push({
         account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
         currencyId: expense.currencyId,
-        amount: asFinancialAmount(expense.amount),
+        amount: asAmount(expense.amount),
       });
       description += "Unpaid. ";
     }
@@ -312,28 +305,28 @@ class AccountingService {
     creditList.push({
       account: accountMap[AccDefaultAccounts.INCOME__COMBINED_INCOME.code],
       currencyId: income.currencyId,
-      amount: asFinancialAmount(income.amount),
+      amount: asAmount(income.amount),
     });
-    description += `Earned ${formatService.getPrintableAmount(income.amount, income.currencyId)} as "${income.incomeSource.name}". `;
+    description += `Earned ${printAmount(income.amount, income.currencyId)} as "${income.incomeSource.name}". `;
 
     if (income.amountPaid > 0) {
       if (income.wallet.type === "credit-card") {
         debitList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
           currencyId: income.currencyId,
-          amount: asFinancialAmount(income.amountPaid),
+          amount: asAmount(income.amountPaid),
         });
       } else if (income.wallet.type === "cash") {
         debitList.push({
           account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
           currencyId: income.currencyId,
-          amount: asFinancialAmount(income.amountPaid),
+          amount: asAmount(income.amountPaid),
         });
       } else {
         debitList.push({
           account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
           currencyId: income.currencyId,
-          amount: asFinancialAmount(income.amountPaid),
+          amount: asAmount(income.amountPaid),
         });
       }
       if (income.amount === income.amountPaid) {
@@ -342,7 +335,7 @@ class AccountingService {
         creditList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
           currencyId: income.currencyId,
-          amount: asFinancialAmount(income.amount) - asFinancialAmount(income.amountPaid),
+          amount: asAmount(income.amount) - asAmount(income.amountPaid),
         });
         description += `Partially received payment in "${income.wallet.name}" (${income.wallet.type}). `;
       }
@@ -350,7 +343,7 @@ class AccountingService {
       debitList.push({
         account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
         currencyId: income.currencyId,
-        amount: asFinancialAmount(income.amount),
+        amount: asAmount(income.amount),
       });
       description += "Unpaid. ";
     }
@@ -370,19 +363,19 @@ class AccountingService {
       creditList.push({
         account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
         currencyId: moneyTransfer.fromCurrencyId,
-        amount: asFinancialAmount(moneyTransfer.fromAmount),
+        amount: asAmount(moneyTransfer.fromAmount),
       });
     } else if (moneyTransfer.fromWallet.type === "cash") {
       creditList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
         currencyId: moneyTransfer.fromCurrencyId,
-        amount: asFinancialAmount(moneyTransfer.fromAmount),
+        amount: asAmount(moneyTransfer.fromAmount),
       });
     } else {
       creditList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
         currencyId: moneyTransfer.fromCurrencyId,
-        amount: asFinancialAmount(moneyTransfer.fromAmount),
+        amount: asAmount(moneyTransfer.fromAmount),
       });
     }
 
@@ -391,48 +384,48 @@ class AccountingService {
       debitList.push({
         account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
         currencyId: moneyTransfer.toCurrencyId,
-        amount: asFinancialAmount(moneyTransfer.toAmount),
+        amount: asAmount(moneyTransfer.toAmount),
       });
     } else if (moneyTransfer.toWallet.type === "cash") {
       debitList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
         currencyId: moneyTransfer.toCurrencyId,
-        amount: asFinancialAmount(moneyTransfer.toAmount),
+        amount: asAmount(moneyTransfer.toAmount),
       });
     } else {
       debitList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
         currencyId: moneyTransfer.toCurrencyId,
-        amount: asFinancialAmount(moneyTransfer.toAmount),
+        amount: asAmount(moneyTransfer.toAmount),
       });
     }
 
     if (moneyTransfer.fromAmount === moneyTransfer.toAmount && moneyTransfer.fromCurrencyId === moneyTransfer.toCurrencyId) {
-      description += `Transfered ${formatService.getPrintableAmount(moneyTransfer.fromAmount, moneyTransfer.fromCurrencyId)} from
+      description += `Transfered ${printAmount(moneyTransfer.fromAmount, moneyTransfer.fromCurrencyId)} from
       "${moneyTransfer.fromWallet.name}" to "${moneyTransfer.toWallet.name}". `;
     } else {
-      description += `Transfered ${formatService.getPrintableAmount(moneyTransfer.fromAmount, moneyTransfer.fromCurrencyId)} from
-      "${moneyTransfer.fromWallet.name}" into ${formatService.getPrintableAmount(moneyTransfer.toAmount, moneyTransfer.toCurrencyId)}
+      description += `Transfered ${printAmount(moneyTransfer.fromAmount, moneyTransfer.fromCurrencyId)} from
+      "${moneyTransfer.fromWallet.name}" into ${printAmount(moneyTransfer.toAmount, moneyTransfer.toCurrencyId)}
        on "${moneyTransfer.toWallet.name}". `;
     }
 
     if (moneyTransfer.toCurrencyId === moneyTransfer.fromCurrencyId) {
-      if (asFinancialAmount(moneyTransfer.fromAmount) > asFinancialAmount(moneyTransfer.toAmount)) {
-        const diff = asFinancialAmount(moneyTransfer.fromAmount) - asFinancialAmount(moneyTransfer.toAmount);
+      if (asAmount(moneyTransfer.fromAmount) > asAmount(moneyTransfer.toAmount)) {
+        const diff = asAmount(moneyTransfer.fromAmount) - asAmount(moneyTransfer.toAmount);
         debitList.push({
           account: accountMap[AccDefaultAccounts.EXPENSE__MINOR_ADJUSTMENT.code],
           currencyId: moneyTransfer.toCurrencyId,
           amount: diff,
         });
-        description += `Transfer fee: ${formatService.getPrintableAmount(diff, moneyTransfer.toCurrencyId)}. `;
-      } else if (asFinancialAmount(moneyTransfer.fromAmount) < asFinancialAmount(moneyTransfer.toAmount)) {
-        const diff = asFinancialAmount(moneyTransfer.toAmount) - asFinancialAmount(moneyTransfer.fromAmount);
+        description += `Transfer fee: ${printAmount(diff, moneyTransfer.toCurrencyId)}. `;
+      } else if (asAmount(moneyTransfer.fromAmount) < asAmount(moneyTransfer.toAmount)) {
+        const diff = asAmount(moneyTransfer.toAmount) - asAmount(moneyTransfer.fromAmount);
         debitList.push({
           account: accountMap[AccDefaultAccounts.INCOME__MINOR_ADJUSTMENT.code],
           currencyId: moneyTransfer.toCurrencyId,
           amount: diff,
         });
-        description += `Gained during transfer: ${formatService.getPrintableAmount(diff, moneyTransfer.toCurrencyId)}. `;
+        description += `Gained during transfer: ${printAmount(diff, moneyTransfer.toCurrencyId)}. `;
       }
     }
 
@@ -441,13 +434,13 @@ class AccountingService {
       debitList.push({
         account: accountMap[AccDefaultAccounts.EQUITY__INTERCURRENCY.code],
         currencyId: moneyTransfer.fromCurrencyId,
-        amount: asFinancialAmount(moneyTransfer.fromAmount),
+        amount: asAmount(moneyTransfer.fromAmount),
       });
 
       creditList.push({
         account: accountMap[AccDefaultAccounts.EQUITY__INTERCURRENCY.code],
         currencyId: moneyTransfer.toCurrencyId,
-        amount: asFinancialAmount(moneyTransfer.toAmount),
+        amount: asAmount(moneyTransfer.toAmount),
       });
     }
 
@@ -470,31 +463,28 @@ class AccountingService {
     debitList.push({
       account: accountMap[liquidityLookup[assetPurchase.asset.liquidity]],
       currencyId: assetPurchase.currencyId,
-      amount: asFinancialAmount(assetPurchase.amount),
+      amount: asAmount(assetPurchase.amount),
     });
-    description += `Purchased asset "${assetPurchase.asset.name}" for ${formatService.getPrintableAmount(
-      assetPurchase.amount,
-      assetPurchase.currencyId
-    )}. `;
+    description += `Purchased asset "${assetPurchase.asset.name}" for ${printAmount(assetPurchase.amount, assetPurchase.currencyId)}. `;
 
     if (assetPurchase.amountPaid > 0 && assetPurchase.wallet) {
       if (assetPurchase.wallet.type === "credit-card") {
         creditList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
           currencyId: assetPurchase.currencyId,
-          amount: asFinancialAmount(assetPurchase.amountPaid),
+          amount: asAmount(assetPurchase.amountPaid),
         });
       } else if (assetPurchase.wallet.type === "cash") {
         creditList.push({
           account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
           currencyId: assetPurchase.currencyId,
-          amount: asFinancialAmount(assetPurchase.amountPaid),
+          amount: asAmount(assetPurchase.amountPaid),
         });
       } else {
         creditList.push({
           account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
           currencyId: assetPurchase.currencyId,
-          amount: asFinancialAmount(assetPurchase.amountPaid),
+          amount: asAmount(assetPurchase.amountPaid),
         });
       }
       if (assetPurchase.amount === assetPurchase.amountPaid) {
@@ -503,7 +493,7 @@ class AccountingService {
         creditList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
           currencyId: assetPurchase.currencyId,
-          amount: asFinancialAmount(assetPurchase.amount) - asFinancialAmount(assetPurchase.amountPaid),
+          amount: asAmount(assetPurchase.amount) - asAmount(assetPurchase.amountPaid),
         });
         description += `Partially paid from "${assetPurchase.wallet.name}" (${assetPurchase.wallet.type}). `;
       }
@@ -511,7 +501,7 @@ class AccountingService {
       creditList.push({
         account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
         currencyId: assetPurchase.currencyId,
-        amount: asFinancialAmount(assetPurchase.amount),
+        amount: asAmount(assetPurchase.amount),
       });
       description += "Unpaid. ";
     }
@@ -536,28 +526,28 @@ class AccountingService {
     creditList.push({
       account: accountMap[liquidityLookup[assetSale.asset.liquidity]],
       currencyId: assetSale.currencyId,
-      amount: asFinancialAmount(assetSale.amount),
+      amount: asAmount(assetSale.amount),
     });
-    description += `Sold asset "${assetSale.asset.name}" for ${formatService.getPrintableAmount(assetSale.amount, assetSale.currencyId)}. `;
+    description += `Sold asset "${assetSale.asset.name}" for ${printAmount(assetSale.amount, assetSale.currencyId)}. `;
 
     if (assetSale.amountPaid > 0) {
       if (assetSale.wallet.type === "credit-card") {
         debitList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
           currencyId: assetSale.currencyId,
-          amount: asFinancialAmount(assetSale.amountPaid),
+          amount: asAmount(assetSale.amountPaid),
         });
       } else if (assetSale.wallet.type === "cash") {
         debitList.push({
           account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
           currencyId: assetSale.currencyId,
-          amount: asFinancialAmount(assetSale.amountPaid),
+          amount: asAmount(assetSale.amountPaid),
         });
       } else {
         debitList.push({
           account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
           currencyId: assetSale.currencyId,
-          amount: asFinancialAmount(assetSale.amountPaid),
+          amount: asAmount(assetSale.amountPaid),
         });
       }
       if (assetSale.amount === assetSale.amountPaid) {
@@ -566,7 +556,7 @@ class AccountingService {
         creditList.push({
           account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
           currencyId: assetSale.currencyId,
-          amount: asFinancialAmount(assetSale.amount) - asFinancialAmount(assetSale.amountPaid),
+          amount: asAmount(assetSale.amount) - asAmount(assetSale.amountPaid),
         });
         description += `Partially received payment in "${assetSale.wallet.name}" (${assetSale.wallet.type}). `;
       }
@@ -574,7 +564,7 @@ class AccountingService {
       debitList.push({
         account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
         currencyId: assetSale.currencyId,
-        amount: asFinancialAmount(assetSale.amount),
+        amount: asAmount(assetSale.amount),
       });
       description += "Unpaid. ";
     }
@@ -600,14 +590,14 @@ class AccountingService {
       debitList.push({
         account: accountMap[liquidityLookup[assetAppreciationDepreciation.asset.liquidity]],
         currencyId: assetAppreciationDepreciation.currencyId,
-        amount: asFinancialAmount(assetAppreciationDepreciation.amount),
+        amount: asAmount(assetAppreciationDepreciation.amount),
       });
       creditList.push({
         account: accountMap[AccDefaultAccounts.INCOME__ASSET_APPRECIATION.code],
         currencyId: assetAppreciationDepreciation.currencyId,
-        amount: asFinancialAmount(assetAppreciationDepreciation.amount),
+        amount: asAmount(assetAppreciationDepreciation.amount),
       });
-      description += `Asset "${assetAppreciationDepreciation.asset.name}" appreciated by ${formatService.getPrintableAmount(
+      description += `Asset "${assetAppreciationDepreciation.asset.name}" appreciated by ${printAmount(
         assetAppreciationDepreciation.amount,
         assetAppreciationDepreciation.currencyId
       )}. `;
@@ -615,15 +605,15 @@ class AccountingService {
       creditList.push({
         account: accountMap[liquidityLookup[assetAppreciationDepreciation.asset.liquidity]],
         currencyId: assetAppreciationDepreciation.currencyId,
-        amount: asFinancialAmount(assetAppreciationDepreciation.amount),
+        amount: asAmount(assetAppreciationDepreciation.amount),
       });
       debitList.push({
         account: accountMap[AccDefaultAccounts.EXPENSE__ASSET_DEPRECIATION.code],
         currencyId: assetAppreciationDepreciation.currencyId,
-        amount: asFinancialAmount(assetAppreciationDepreciation.amount),
+        amount: asAmount(assetAppreciationDepreciation.amount),
       });
 
-      description += `Asset "${assetAppreciationDepreciation.asset.name}" depreciated by ${formatService.getPrintableAmount(
+      description += `Asset "${assetAppreciationDepreciation.asset.name}" depreciated by ${printAmount(
         assetAppreciationDepreciation.amount,
         assetAppreciationDepreciation.currencyId
       )}. `;
@@ -642,28 +632,28 @@ class AccountingService {
     debitList.push({
       account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
       currencyId: lending.currencyId,
-      amount: asFinancialAmount(lending.amount),
+      amount: asAmount(lending.amount),
     });
-    description += `Lent ${formatService.getPrintableAmount(lending.amount, lending.currencyId)} to "${lending.party.name}"
+    description += `Lent ${printAmount(lending.amount, lending.currencyId)} to "${lending.party.name}"
      from "${lending.wallet.name}". `;
 
     if (lending.wallet.type === "credit-card") {
       creditList.push({
         account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
         currencyId: lending.currencyId,
-        amount: asFinancialAmount(lending.amount),
+        amount: asAmount(lending.amount),
       });
     } else if (lending.wallet.type === "cash") {
       creditList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
         currencyId: lending.currencyId,
-        amount: asFinancialAmount(lending.amount),
+        amount: asAmount(lending.amount),
       });
     } else {
       creditList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
         currencyId: lending.currencyId,
-        amount: asFinancialAmount(lending.amount),
+        amount: asAmount(lending.amount),
       });
     }
 
@@ -680,28 +670,28 @@ class AccountingService {
     creditList.push({
       account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
       currencyId: borrowing.currencyId,
-      amount: asFinancialAmount(borrowing.amount),
+      amount: asAmount(borrowing.amount),
     });
-    description += `Borrowed ${formatService.getPrintableAmount(borrowing.amount, borrowing.currencyId)} from "${borrowing.party.name}"
+    description += `Borrowed ${printAmount(borrowing.amount, borrowing.currencyId)} from "${borrowing.party.name}"
      into "${borrowing.wallet.name}". `;
 
     if (borrowing.wallet.type === "credit-card") {
       debitList.push({
         account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
         currencyId: borrowing.currencyId,
-        amount: asFinancialAmount(borrowing.amount),
+        amount: asAmount(borrowing.amount),
       });
     } else if (borrowing.wallet.type === "cash") {
       debitList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
         currencyId: borrowing.currencyId,
-        amount: asFinancialAmount(borrowing.amount),
+        amount: asAmount(borrowing.amount),
       });
     } else {
       debitList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
         currencyId: borrowing.currencyId,
-        amount: asFinancialAmount(borrowing.amount),
+        amount: asAmount(borrowing.amount),
       });
     }
 
@@ -718,9 +708,9 @@ class AccountingService {
     creditList.push({
       account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
       currencyId: repaymentReceived.currencyId,
-      amount: asFinancialAmount(repaymentReceived.amount),
+      amount: asAmount(repaymentReceived.amount),
     });
-    description += `Repayment received of ${formatService.getPrintableAmount(repaymentReceived.amount, repaymentReceived.currencyId)}
+    description += `Repayment received of ${printAmount(repaymentReceived.amount, repaymentReceived.currencyId)}
           from "${repaymentReceived.party.name}"
           into "${repaymentReceived.wallet.name}". `;
 
@@ -728,19 +718,19 @@ class AccountingService {
       debitList.push({
         account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
         currencyId: repaymentReceived.currencyId,
-        amount: asFinancialAmount(repaymentReceived.amount),
+        amount: asAmount(repaymentReceived.amount),
       });
     } else if (repaymentReceived.wallet.type === "cash") {
       debitList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
         currencyId: repaymentReceived.currencyId,
-        amount: asFinancialAmount(repaymentReceived.amount),
+        amount: asAmount(repaymentReceived.amount),
       });
     } else {
       debitList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
         currencyId: repaymentReceived.currencyId,
-        amount: asFinancialAmount(repaymentReceived.amount),
+        amount: asAmount(repaymentReceived.amount),
       });
     }
 
@@ -757,9 +747,9 @@ class AccountingService {
     debitList.push({
       account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
       currencyId: repaymentGiven.currencyId,
-      amount: asFinancialAmount(repaymentGiven.amount),
+      amount: asAmount(repaymentGiven.amount),
     });
-    description += `Repayment given of ${formatService.getPrintableAmount(repaymentGiven.amount, repaymentGiven.currencyId)}
+    description += `Repayment given of ${printAmount(repaymentGiven.amount, repaymentGiven.currencyId)}
           to "${repaymentGiven.party.name}"
           from "${repaymentGiven.wallet.name}". `;
 
@@ -767,19 +757,19 @@ class AccountingService {
       creditList.push({
         account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
         currencyId: repaymentGiven.currencyId,
-        amount: asFinancialAmount(repaymentGiven.amount),
+        amount: asAmount(repaymentGiven.amount),
       });
     } else if (repaymentGiven.wallet.type === "cash") {
       creditList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
         currencyId: repaymentGiven.currencyId,
-        amount: asFinancialAmount(repaymentGiven.amount),
+        amount: asAmount(repaymentGiven.amount),
       });
     } else {
       creditList.push({
         account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
         currencyId: repaymentGiven.currencyId,
-        amount: asFinancialAmount(repaymentGiven.amount),
+        amount: asAmount(repaymentGiven.amount),
       });
     }
 
@@ -978,13 +968,13 @@ class AccountingService {
         if (balance >= 0) {
           debitList.push({
             account,
-            amount: asFinancialAmount(balance),
+            amount: asAmount(balance),
             currencyId: currency._id!,
           });
         } else {
           creditList.push({
             account,
-            amount: asFinancialAmount(balance) * -1,
+            amount: asAmount(balance) * -1,
             currencyId: currency._id!,
           });
         }
@@ -1058,259 +1048,15 @@ class AccountingService {
     return filteredEntryList;
   }
 
-  private async injectCurencyAndOtherMetaDataToLedgerEntries(ledger: AccLedger) {
-    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-    const currencyMap: Record<string, Currency> = {};
-    currencyList.forEach((currency) => {
-      currencyMap[currency._id!] = currency;
-    });
-
-    for (const journalEntry of ledger.ledgerEntryList) {
-      journalEntry._currencySign = currencyMap[journalEntry.currencyId].sign;
-    }
-
-    for (const balance of ledger.balanceList) {
-      balance._currency = currencyMap[balance.currencyId];
-    }
-  }
-
+  // ----- Ledger
   async generateLedgerFromJournal(journalEntryList: AccJournalEntry[], accountMap: Record<string, AccAccount>, accountCode: string) {
-    const ledgerEntryList: AccLedgerEntry[] = [];
-
-    const account = accountMap[accountCode];
-    const isBalanceDebit = ["Asset", "Expense"].includes(account.type);
-
-    const currencyIdVsBalanceMap: Record<string, number> = {};
-    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-    currencyList.forEach((currency) => {
-      currencyIdVsBalanceMap[currency._id!] = 0;
-    });
-
-    let serialSeed = 0;
-    for (const journalEntry of journalEntryList) {
-      const debitEntryList = journalEntry.debitList.filter((item) => item.account.code === accountCode);
-      const creditEntryList = journalEntry.creditList.filter((item) => item.account.code === accountCode);
-      if (debitEntryList.length === 0 && creditEntryList.length === 0) continue;
-
-      for (const debitEntry of debitEntryList) {
-        const creditAmount = 0;
-        const debitAmount = debitEntry.amount;
-        const currencyId = debitEntry.currencyId;
-
-        if (isBalanceDebit) {
-          currencyIdVsBalanceMap[debitEntry.currencyId] += debitAmount;
-        } else {
-          currencyIdVsBalanceMap[debitEntry.currencyId] -= debitAmount;
-        }
-
-        const ledgerEntry: AccLedgerEntry = {
-          serial: serialSeed++,
-          account,
-          entryEpoch: journalEntry.entryEpoch,
-          isBalanceDebit,
-          currencyId,
-          debitAmount: asFinancialAmount(debitAmount),
-          creditAmount: asFinancialAmount(creditAmount),
-          balance: asFinancialAmount(currencyIdVsBalanceMap[currencyId]),
-          description: journalEntry.description,
-          notes: journalEntry.notes,
-          journalEntryRef: journalEntry,
-        };
-
-        ledgerEntryList.push(ledgerEntry);
-      }
-
-      for (const creditEntry of creditEntryList) {
-        const debitAmount = 0;
-        const creditAmount = creditEntry.amount;
-        const currencyId = creditEntry.currencyId;
-
-        if (!isBalanceDebit) {
-          currencyIdVsBalanceMap[creditEntry.currencyId] += creditAmount;
-        } else {
-          currencyIdVsBalanceMap[creditEntry.currencyId] -= creditAmount;
-        }
-
-        const ledgerEntry: AccLedgerEntry = {
-          serial: serialSeed++,
-          account,
-          entryEpoch: journalEntry.entryEpoch,
-          isBalanceDebit,
-          currencyId,
-          debitAmount: asFinancialAmount(debitAmount),
-          creditAmount: asFinancialAmount(creditAmount),
-          balance: asFinancialAmount(currencyIdVsBalanceMap[currencyId]),
-          description: journalEntry.description,
-          notes: journalEntry.notes,
-          journalEntryRef: journalEntry,
-        };
-
-        ledgerEntryList.push(ledgerEntry);
-      }
-    }
-
-    const balanceList = Object.keys(currencyIdVsBalanceMap).map((currencyId) => {
-      return { currencyId, balance: asFinancialAmount(currencyIdVsBalanceMap[currencyId]) };
-    });
-
-    const ledger: AccLedger = {
-      ledgerEntryList,
-      account,
-      isBalanceDebit,
-      balanceList,
-    };
-
-    await this.injectCurencyAndOtherMetaDataToLedgerEntries(ledger);
-
+    const ledger = await accountingLedgerService.generateLedgerFromJournal(journalEntryList, accountMap, accountCode);
     return ledger;
   }
 
-  private async closeTrialBalanceWithCurrency(
-    currency: Currency,
-    trialBalanceWithCurrency: AccTrialBalanceWithCurrency,
-    accountMap: Record<string, AccAccount>
-  ) {
-    const retainedEarnings = asFinancialAmount(
-      trialBalanceWithCurrency.trialBalanceOfTypeMap["Income"].totalBalance - trialBalanceWithCurrency.trialBalanceOfTypeMap["Expense"].totalBalance
-    );
-
-    const gapInPermanentBalance = asFinancialAmount(
-      trialBalanceWithCurrency.trialBalanceOfTypeMap["Asset"].totalBalance -
-      (trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].totalBalance + trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].totalBalance)
-    );
-
-    if (retainedEarnings !== gapInPermanentBalance) {
-      const message = "The Trial Balance has been generated. However, a mismatch was found regarding Retained Earnings.";
-      await dialogService.alert("Error", message);
-      return;
-    }
-
-    const equity = trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"];
-    equity.balanceList.push({
-      account: accountMap[AccDefaultAccounts.EQUITY__RETAINED_EARNINGS.code],
-      balance: retainedEarnings,
-      isBalanceDebit: false,
-    });
-    equity.totalBalance += retainedEarnings;
-  }
-
-  private async prepareTrialBalanceWithCurrency(
-    currency: Currency,
-    currencyVsInterimMap: Record<string, TrialBalanceInterimContainer>,
-    accountMap: Record<string, AccAccount>
-  ) {
-    const currencyId = currency._id!;
-    const trialBalanceWithCurrency: AccTrialBalanceWithCurrency = {
-      currencyId,
-      _currency: currency,
-      trialBalanceOfTypeMap: {},
-    };
-    AccTypeList.forEach((type) => {
-      trialBalanceWithCurrency.trialBalanceOfTypeMap[type] = {
-        isBalanceDebit: true,
-        balanceList: [],
-        totalBalance: 0,
-      };
-    });
-
-    const map = currencyVsInterimMap[currencyId].accountVsDebitBalanceMap;
-    for (const accountCode of Object.keys(map)) {
-      const account = accountMap[accountCode];
-      const debitBalance = map[accountCode];
-
-      if (account.type === "Asset") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Asset"].isBalanceDebit = true;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Asset"].totalBalance += asFinancialAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Asset"].balanceList.push({
-          account,
-          balance: asFinancialAmount(debitBalance),
-          isBalanceDebit: true,
-        });
-      } else if (account.type === "Expense") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Expense"].isBalanceDebit = true;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Expense"].totalBalance += asFinancialAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Expense"].balanceList.push({
-          account,
-          balance: asFinancialAmount(debitBalance),
-          isBalanceDebit: true,
-        });
-      } else if (account.type === "Income") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Income"].isBalanceDebit = false;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Income"].totalBalance -= asFinancialAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Income"].balanceList.push({
-          account,
-          balance: asFinancialAmount(debitBalance) * -1,
-          isBalanceDebit: false,
-        });
-      } else if (account.type === "Liability") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].isBalanceDebit = false;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].totalBalance -= asFinancialAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Liability"].balanceList.push({
-          account,
-          balance: asFinancialAmount(debitBalance) * -1,
-          isBalanceDebit: false,
-        });
-      } else if (account.type === "Equity") {
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].isBalanceDebit = false;
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].totalBalance -= asFinancialAmount(debitBalance);
-        trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].balanceList.push({
-          account,
-          balance: asFinancialAmount(debitBalance) * -1,
-          isBalanceDebit: false,
-        });
-      }
-    }
-
-    await this.closeTrialBalanceWithCurrency(currency, trialBalanceWithCurrency, accountMap);
-
-    Object.keys(trialBalanceWithCurrency.trialBalanceOfTypeMap).forEach((key) => {
-      const tbType = trialBalanceWithCurrency.trialBalanceOfTypeMap[key];
-      tbType.totalBalance = asFinancialAmount(tbType.totalBalance);
-    });
-
-    return trialBalanceWithCurrency;
-  }
-
+  // ----- Trial Balance
   async generateTrialBalanceFromJournal(journalEntryList: AccJournalEntry[], accountMap: Record<string, AccAccount>) {
-    const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-    const currencyMap: Record<string, Currency> = {};
-
-    const currencyVsInterimMap: Record<string, TrialBalanceInterimContainer> = {};
-    currencyList.forEach((currency) => {
-      currencyMap[currency._id!] = currency;
-      const interim: TrialBalanceInterimContainer = {
-        accountVsDebitBalanceMap: {},
-      };
-      currencyVsInterimMap[currency._id!] = interim;
-    });
-
-    for (const journalEntry of journalEntryList) {
-      for (const debit of journalEntry.debitList) {
-        const map = currencyVsInterimMap[debit.currencyId].accountVsDebitBalanceMap;
-        if (!(debit.account.code in map)) {
-          map[debit.account.code] = 0;
-        }
-        map[debit.account.code] += debit.amount;
-      }
-
-      for (const credit of journalEntry.creditList) {
-        const map = currencyVsInterimMap[credit.currencyId].accountVsDebitBalanceMap;
-        if (!(credit.account.code in map)) {
-          map[credit.account.code] = 0;
-        }
-        map[credit.account.code] -= credit.amount;
-      }
-    }
-
-    const trialBalance: AccTrialBalance = {
-      trialBalanceWithCurrencyList: [],
-    };
-
-    for (const currency of currencyList) {
-      const trialBalanceWithCurrency = await this.prepareTrialBalanceWithCurrency(currency, currencyVsInterimMap, accountMap);
-      trialBalance.trialBalanceWithCurrencyList.push(trialBalanceWithCurrency);
-    }
-
+    const trialBalance = await accountingTrialBalanceService.generateTrialBalanceFromJournal(journalEntryList, accountMap);
     return trialBalance;
   }
 }

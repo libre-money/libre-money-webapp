@@ -1,18 +1,25 @@
 import { User } from "src/models/user";
 import { useUserStore } from "src/stores/user";
+import { previousSessionService } from "./previous-session-service";
 
 const userStore = useUserStore();
 
 import axios, { AxiosError } from "axios";
 import { credentialService } from "./credential-service";
 import { configService } from "./config-service";
+import { localDataService } from "./local-data-service";
 
-export const loginService = {
+export const authService = {
   async logout() {
     try {
+      // Store previous session before clearing user data
+      const currentUser = userStore.currentUser;
+      if (currentUser) {
+        previousSessionService.storePreviousSession(currentUser);
+      }
+
       await credentialService.clearCredentials();
       userStore.setUser(null);
-
       return [true, null];
     } catch (error) {
       console.error(error);
@@ -25,17 +32,27 @@ export const loginService = {
     }
   },
 
-  async login(username: string, password: string, shouldRememberPassword: boolean) {
+  async login(serverUrl: string, domain: string, username: string, password: string, shouldRememberPassword: boolean) {
     try {
-      await credentialService.storeCredentials(username, password, shouldRememberPassword);
-
-      const validateUrl = `${configService.getRemoteServerUrl()}/${configService.getDomainName()}/_all_docs`;
+      const validateUrl = `${serverUrl}/${domain}/_all_docs`;
       const validateResponse = await axios.get(validateUrl, {
-        auth: credentialService.getCredentials(),
+        auth: {
+          username,
+          password,
+        },
       });
 
+      if (validateResponse.status !== 200) {
+        return [false, "Invalid login credentials provided."];
+      }
+
+      configService.setRemoteServerUrl(serverUrl);
+      configService.setDomainName(domain);
+      await credentialService.storeCredentials(username, password, shouldRememberPassword);
+
       const user = {
-        domain: configService.getDomainName()!,
+        domain,
+        serverUrl,
         username,
         loginAt: Date.now(),
       };
@@ -57,11 +74,16 @@ export const loginService = {
   async updateAndTestCredentials(username: string, password: string) {
     try {
       await credentialService.storeCredentials(username, password, false);
+      const { domain, serverUrl } = configService.getServerUrlAndDomainNameOrFail();
 
-      const validateUrl = `${configService.getRemoteServerUrl()}/${configService.getDomainName()}/_all_docs`;
+      const validateUrl = `${serverUrl}/${domain}/_all_docs`;
       const validateResponse = await axios.get(validateUrl, {
         auth: credentialService.getCredentials(),
       });
+
+      if (validateResponse.status !== 200) {
+        return [false, "Invalid login credentials provided."];
+      }
 
       return [true, null];
     } catch (error) {

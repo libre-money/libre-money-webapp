@@ -55,12 +55,14 @@ export function normalizeEpochRange(startEpoch: number, endEpoch: number) {
   date1.setHours(0);
   date1.setMinutes(0);
   date1.setSeconds(0);
+  date1.setMilliseconds(0);
   startEpoch = date1.getTime();
 
   const date2 = new Date(endEpoch);
   date2.setHours(23);
   date2.setMinutes(59);
   date2.setSeconds(59);
+  date2.setMilliseconds(999);
   endEpoch = date2.getTime();
   return [startEpoch, endEpoch];
 }
@@ -70,5 +72,14 @@ export function normalizeEpochAsDate(epoch: number) {
   date1.setMinutes(0);
   date1.setSeconds(0);
   date1.setMilliseconds(0);
+  return date1.getTime();
+}
+
+export function normalizeEpochAsDateAtTheEndOfDay(epoch: number) {
+  const date1 = new Date(epoch);
+  date1.setHours(23);
+  date1.setMinutes(59);
+  date1.setSeconds(59);
+  date1.setMilliseconds(999);
   return date1.getTime();
 }

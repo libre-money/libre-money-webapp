@@ -16,6 +16,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import("pages/LoginPage.vue"),
         meta: { requiresAuthentication: false, title: null },
       },
+      {
+        path: "post-logout",
+        name: "post-logout",
+        component: () => import("pages/PostLogoutPage.vue"),
+        meta: { requiresAuthentication: false, title: null },
+      },
+      {
+        path: "offline-onboarding",
+        name: "offline-onboarding",
+        component: () => import("pages/OfflineOnboardingPage.vue"),
+        meta: { requiresAuthentication: false, title: null },
+      },
+      {
+        path: "go-online",
+        name: "go-online",
+        component: () => import("pages/GoOnlinePage.vue"),
+        meta: { requiresAuthentication: true, title: "Go Online" },
+      },
       // --- Core:
       {
         path: "overview",
@@ -36,6 +54,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuthentication: true, title: "Templates", rememberable: true },
       },
       {
+        path: "pro-mode",
+        name: "pro-mode",
+        component: () => import("pages/ProModePage.vue"),
+        meta: { requiresAuthentication: true, title: "Pro Mode", rememberable: true, preferLeftDrawerClosed: true },
+      },
+      {
         path: "wallets",
         name: "wallets",
         component: () => import("pages/WalletsPage.vue"),
@@ -52,12 +76,6 @@ const routes: RouteRecordRaw[] = [
         name: "loans-and-debts",
         component: () => import("pages/LoansAndDebtsPage.vue"),
         meta: { requiresAuthentication: true, title: "Loans & Debts", rememberable: true },
-      },
-      {
-        path: "budgets",
-        name: "budgets",
-        component: () => import("pages/BudgetsPage.vue"),
-        meta: { requiresAuthentication: true, title: "Budgets", rememberable: true },
       },
       {
         path: "rolling-budgets",
@@ -95,6 +113,12 @@ const routes: RouteRecordRaw[] = [
         name: "currencies",
         component: () => import("pages/CurrenciesPage.vue"),
         meta: { requiresAuthentication: true, title: "Currencies", rememberable: true },
+      },
+      {
+        path: "text-import-rules",
+        name: "text-import-rules",
+        component: () => import("pages/TextImportRulesPage.vue"),
+        meta: { requiresAuthentication: true, title: "Text Import Rules", rememberable: true },
       },
       // --- Reports:
       {
@@ -163,7 +187,7 @@ const routes: RouteRecordRaw[] = [
         path: "about",
         name: "about",
         component: () => import("pages/AboutPage.vue"),
-        meta: { requiresAuthentication: true, title: "About", rememberable: true },
+        meta: { requiresAuthentication: false, title: "About", rememberable: false },
       },
     ],
   },

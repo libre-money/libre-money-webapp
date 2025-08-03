@@ -329,17 +329,16 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import SelectCurrency from "src/components/SelectCurrency.vue";
 import DateInput from "src/components/lib/DateInput.vue";
 import { Overview } from "src/models/inferred/overview";
-import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
-import { asAmount, prettifyAmount, prettifyCount } from "src/utils/misc-utils";
 import { entityService } from "src/services/entity-service";
-import LoadingIndicator from "src/components/LoadingIndicator.vue";
-import { Ref, onMounted, ref, watch } from "vue";
-import { useSettingsStore } from "src/stores/settings";
 import { lockService } from "src/services/lock-service";
+import { useSettingsStore } from "src/stores/settings";
+import { printAmount as printAmountUtil, printCount as printCountUtil } from "src/utils/de-facto-utils";
+import { Ref, onMounted, ref, watch } from "vue";
 
 const $q = useQuasar();
 const settingsStore = useSettingsStore();
@@ -411,11 +410,11 @@ async function presetClicked(rangeIdentifier: string) {
 // ----- Computed and Embedded
 
 function printAmount(amount: number) {
-  return `${overview.value?.currency.sign} ${prettifyAmount(amount)}`;
+  return printAmountUtil(amount, overview.value?.currency._id);
 }
 
 function printCount(count: number) {
-  return `${prettifyCount(count)}`;
+  return printCountUtil(count);
 }
 
 // ----- Watchers

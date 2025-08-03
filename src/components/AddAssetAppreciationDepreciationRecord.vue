@@ -34,162 +34,134 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref, watch } from "vue";
-import { validators } from "src/utils/validators";
 import { Collection, RecordType } from "src/constants/constants";
 import { Record } from "src/models/record";
-import { pouchdbService } from "src/services/pouchdb-service";
-import SelectCurrency from "./SelectCurrency.vue";
-import SelectAsset from "./SelectAsset.vue";
-import SelectWallet from "./SelectWallet.vue";
-import SelectParty from "./SelectParty.vue";
-import SelectTag from "./SelectTag.vue";
-import { dialogService } from "src/services/dialog-service";
-import { asAmount } from "src/utils/misc-utils";
-import DateTimeInput from "./lib/DateTimeInput.vue";
 import { entityService } from "src/services/entity-service";
+import { pouchdbService } from "src/services/pouchdb-service";
+import { asAmount } from "src/utils/de-facto-utils";
+import { validators } from "src/utils/validators";
+import { onMounted, ref, watch } from "vue";
+import SelectAsset from "./SelectAsset.vue";
+import SelectTag from "./SelectTag.vue";
+import DateTimeInput from "./lib/DateTimeInput.vue";
 
-export default {
-  props: {
-    existingRecordId: {
-      type: String,
-      required: false,
-      default: null,
+// Props
+const props = defineProps<{
+  existingRecordId?: string | null;
+  existingAssetId?: string | null;
+}>();
+
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
+
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+
+// State
+let initialDoc: Record | null = null;
+const isLoading = ref(false);
+
+const recordForm = ref<QForm | null>(null);
+
+const type = ref<string>("appreciation");
+const recordType = RecordType.ASSET_APPRECIATION_DEPRECIATION;
+
+const recordCurrencySign = ref<string | null>(null);
+const recordAssetId = ref<string | null>(null);
+const recordAmount = ref<number>(0);
+const recordCurrencyId = ref<string | null>(null);
+
+const recordTagIdList = ref<string[]>([]);
+const recordNotes = ref<string | null>(null);
+
+const transactionEpoch = ref<number>(Date.now());
+
+// Load existing record if editing
+onMounted(async () => {
+  if (props.existingRecordId) {
+    isLoading.value = true;
+    let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
+    initialDoc = res;
+    if (!initialDoc.assetAppreciationDepreciation) {
+      // TODO show error message
+      isLoading.value = false;
+      return;
+    }
+
+    recordAssetId.value = initialDoc.assetAppreciationDepreciation.assetId;
+    recordAmount.value = asAmount(initialDoc.assetAppreciationDepreciation.amount);
+
+    recordCurrencyId.value = initialDoc.assetAppreciationDepreciation.currencyId;
+
+    recordTagIdList.value = initialDoc.tagIdList;
+    recordNotes.value = initialDoc.notes;
+
+    type.value = initialDoc.assetAppreciationDepreciation?.type;
+
+    transactionEpoch.value = initialDoc.transactionEpoch || Date.now();
+
+    isLoading.value = false;
+  } else if (props.existingAssetId) {
+    setTimeout(() => {
+      recordAssetId.value = props.existingAssetId!;
+    }, 10);
+  }
+});
+
+async function performManualValidation() {
+  return true;
+}
+
+async function okClicked() {
+  if (!(await recordForm.value?.validate())) {
+    return;
+  }
+
+  if (!(await performManualValidation())) {
+    return;
+  }
+
+  let record: Record = {
+    $collection: Collection.RECORD,
+    notes: recordNotes.value!,
+    type: recordType,
+    tagIdList: recordTagIdList.value,
+    transactionEpoch: transactionEpoch.value,
+    assetAppreciationDepreciation: {
+      assetId: recordAssetId.value!,
+      amount: asAmount(recordAmount.value),
+      currencyId: recordCurrencyId.value!,
+      type: type.value!,
     },
-    existingAssetId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+  };
 
-  components: {
-    SelectAsset,
-    SelectTag,
-    DateTimeInput,
-  },
+  if (initialDoc) {
+    record = Object.assign({}, initialDoc, record);
+  }
 
-  emits: [...useDialogPluginComponent.emits],
+  console.debug("Saving record: ", JSON.stringify(record, null, 2));
 
-  setup(props) {
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+  pouchdbService.upsertDoc(record);
 
-    let initialDoc: Record | null = null;
-    const isLoading = ref(false);
+  onDialogOK();
+}
 
-    const recordForm: Ref<QForm | null> = ref(null);
+function cancelClicked() {
+  onDialogCancel();
+}
 
-    const type: Ref<string | null> = ref("appreciation");
-    const recordType = RecordType.ASSET_APPRECIATION_DEPRECIATION;
-
-    const recordCurrencySign: Ref<string | null> = ref(null);
-    const recordAssetId: Ref<string | null> = ref(null);
-    const recordAmount: Ref<number> = ref(0);
-    const recordCurrencyId: Ref<string | null> = ref(null);
-
-    const recordTagIdList: Ref<string[]> = ref([]);
-    const recordNotes: Ref<string | null> = ref(null);
-
-    const transactionEpoch: Ref<number> = ref(Date.now());
-
-    if (props.existingRecordId) {
-      isLoading.value = true;
-      (async function () {
-        isLoading.value = true;
-        let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
-        initialDoc = res;
-        if (!initialDoc.assetAppreciationDepreciation) {
-          // TODO show error message
-          return;
-        }
-
-        recordAssetId.value = initialDoc.assetAppreciationDepreciation.assetId;
-        recordAmount.value = asAmount(initialDoc.assetAppreciationDepreciation.amount);
-
-        recordCurrencyId.value = initialDoc.assetAppreciationDepreciation.currencyId;
-
-        recordTagIdList.value = initialDoc.tagIdList;
-        recordNotes.value = initialDoc.notes;
-
-        type.value = initialDoc.assetAppreciationDepreciation?.type;
-
-        transactionEpoch.value = initialDoc.transactionEpoch || Date.now();
-
-        isLoading.value = false;
-      })();
-    } else {
-      if (props.existingAssetId) {
-        setTimeout(() => {
-          recordAssetId.value = props.existingAssetId;
-        }, 10);
-      }
-    }
-
-    async function performManualValidation() {
-      return true;
-    }
-
-    async function okClicked() {
-      if (!(await recordForm.value?.validate())) {
-        return;
-      }
-
-      if (!(await performManualValidation())) {
-        return;
-      }
-
-      let record: Record = {
-        $collection: Collection.RECORD,
-        notes: recordNotes.value!,
-        type: recordType,
-        tagIdList: recordTagIdList.value,
-        transactionEpoch: transactionEpoch.value,
-        assetAppreciationDepreciation: {
-          assetId: recordAssetId.value!,
-          amount: asAmount(recordAmount.value),
-          currencyId: recordCurrencyId.value!,
-          type: type.value!,
-        },
-      };
-
-      if (initialDoc) {
-        record = Object.assign({}, initialDoc, record);
-      }
-
-      console.debug("Saving record: ", JSON.stringify(record, null, 2));
-
-      pouchdbService.upsertDoc(record);
-
-      onDialogOK();
-    }
-
-    watch(recordAssetId, async (newAssetId: any) => {
-      let asset = await entityService.getAsset(newAssetId);
-      let currency = await entityService.getCurrency(asset.currencyId);
-      recordCurrencyId.value = currency._id!;
-      recordCurrencySign.value = currency.sign;
-    });
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      validators,
-      transactionEpoch,
-      recordForm,
-      type,
-      recordAssetId,
-      recordAmount,
-      recordCurrencyId,
-      recordTagIdList,
-      recordNotes,
-      recordCurrencySign,
-    };
-  },
-};
+watch(recordAssetId, async (newAssetId: any) => {
+  if (!newAssetId) {
+    recordCurrencyId.value = null;
+    recordCurrencySign.value = null;
+    return;
+  }
+  let asset = await entityService.getAsset(newAssetId);
+  let currency = await entityService.getCurrency(asset.currencyId);
+  recordCurrencyId.value = currency._id!;
+  recordCurrencySign.value = currency.sign;
+});
 </script>
 <style scoped lang="scss"></style>

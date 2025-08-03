@@ -44,9 +44,9 @@
               {{ ledgerEntry.description }}
               <div v-if="ledgerEntry.notes">{{ ledgerEntry.notes }}</div>
             </div>
-            <div class="fin-presentation-item-numeric debit-sum">{{ ledgerEntry.debitAmount }}&nbsp;{{ ledgerEntry._currencySign }}</div>
-            <div class="fin-presentation-item-numeric credit-sum">{{ ledgerEntry.creditAmount }}&nbsp;{{ ledgerEntry._currencySign }}</div>
-            <div class="fin-presentation-item-numeric balance-sum">{{ ledgerEntry.balance }}&nbsp;{{ ledgerEntry._currencySign }}</div>
+            <div class="fin-presentation-item-numeric debit-sum">{{ printAmount(ledgerEntry.debitAmount, ledgerEntry.currencyId) }}</div>
+            <div class="fin-presentation-item-numeric credit-sum">{{ printAmount(ledgerEntry.creditAmount, ledgerEntry.currencyId) }}</div>
+            <div class="fin-presentation-item-numeric balance-sum">{{ printAmount(ledgerEntry.balance, ledgerEntry.currencyId) }}</div>
           </div>
         </template>
       </div>
@@ -65,7 +65,7 @@
             <div class="fin-presentation-item-textual currency">
               {{ balanceEntry._currency!.name }}
             </div>
-            <div class="fin-presentation-item-numeric balance">{{ balanceEntry.balance }}&nbsp;{{ balanceEntry._currency?.sign }}</div>
+            <div class="fin-presentation-item-numeric balance">{{ printAmount(balanceEntry.balance, balanceEntry.currencyId) }}</div>
           </div>
         </template>
       </div>
@@ -76,23 +76,18 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { AccLedgerEntry } from "src/models/accounting/acc-ledger-entry";
-import { Record } from "src/models/record";
-import { accountingService } from "src/services/accounting-service";
-import { Ref, onMounted, ref, watch } from "vue";
-import { deepClone, prettifyDate, prettifyDateTime, sleep } from "src/utils/misc-utils";
-import { Collection, dateRangePresetList, defaultPartyType, partyTypeList } from "src/constants/constants";
-import DateInput from "src/components/lib/DateInput.vue";
-import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
-import { AccLedgerFilters } from "src/models/accounting/acc-ledger-filters";
 import FilterAccLedgerDialog from "src/components/FilterAccLedgerDialog.vue";
-import { useRoute, useRouter } from "vue-router";
-import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
-import { dialogService } from "src/services/dialog-service";
-import { AccAccount } from "src/models/accounting/acc-account";
-import { AccLedger } from "src/models/accounting/acc-ledger";
-import { entityService } from "src/services/entity-service";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
+import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
+import { AccLedger } from "src/models/accounting/acc-ledger";
+import { AccLedgerFilters } from "src/models/accounting/acc-ledger-filters";
+import { accountingService } from "src/services/accounting-service";
+import { dialogService } from "src/services/dialog-service";
+import { entityService } from "src/services/entity-service";
+import { printAmount } from "src/utils/de-facto-utils";
+import { deepClone, prettifyDate } from "src/utils/misc-utils";
+import { Ref, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const getDefaultFilters = (): AccLedgerFilters => {
   return {

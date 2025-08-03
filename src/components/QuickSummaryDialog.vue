@@ -4,8 +4,7 @@
       <q-card-section v-if="quickSummaryList.length">
         <div class="std-dialog-title" style="margin-bottom: 12px">Summary</div>
         <div class="quick-summary-container">
-          <div v-for="quickSummary in quickSummaryList" v-bind:key="quickSummary.currency._id!"
-            style="padding-bottom: 12px">
+          <div v-for="quickSummary in quickSummaryList" v-bind:key="quickSummary.currency._id!" style="padding-bottom: 12px">
             <table class="overview-table quick-summary-table">
               <tbody>
                 <tr>
@@ -13,27 +12,21 @@
                 </tr>
                 <tr>
                   <td>Total Income</td>
-                  <td class="amount-in">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalIncome) }}
-                  </td>
+                  <td class="amount-in">{{ printAmount(quickSummary.totalIncome, quickSummary.currency._id) }}</td>
                   <td>Total In-flow</td>
-                  <td class="amount-in">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalInFlow) }}
-                  </td>
+                  <td class="amount-in">{{ printAmount(quickSummary.totalInFlow, quickSummary.currency._id) }}</td>
                 </tr>
                 <tr>
                   <td>Total Expense</td>
-                  <td class="amount-out">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalExpense)
-                    }}
-                  </td>
+                  <td class="amount-out">{{ printAmount(quickSummary.totalExpense, quickSummary.currency._id) }}</td>
                   <td>Total Out-flow</td>
-                  <td class="amount-out">{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalOutFlow)
-                    }}
-                  </td>
+                  <td class="amount-out">{{ printAmount(quickSummary.totalOutFlow, quickSummary.currency._id) }}</td>
                 </tr>
                 <tr>
                   <td></td>
                   <td></td>
                   <td>Cash Flow Balance</td>
-                  <td>{{ quickSummary.currency.sign }} {{ prettifyAmount(quickSummary.totalFlowBalance) }}</td>
+                  <td>{{ printAmount(quickSummary.totalFlowBalance, quickSummary.currency._id) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -48,48 +41,24 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { useDialogPluginComponent } from "quasar";
-import { prettifyAmount } from "src/utils/misc-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import { ref } from "vue";
 
-export default {
-  props: {
-    quickSummaryList: {
-      type: Object,
-      required: true,
-    },
-  },
+const props = defineProps<{
+  quickSummaryList: any;
+}>();
 
-  components: {},
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  emits: [...useDialogPluginComponent.emits],
+const isLoading = ref(false);
 
-  setup(props) {
-    const isLoading = ref(false);
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
-
-    isLoading.value = true;
-
-    isLoading.value = false;
-
-    async function okClicked() {
-      onDialogOK();
-    }
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      prettifyAmount
-
-    };
-  },
-};
+async function okClicked() {
+  onDialogOK();
+}
 </script>
 <style scoped lang="scss">
 @import url(./../css/table.scss);

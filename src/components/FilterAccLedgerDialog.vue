@@ -3,111 +3,90 @@
     <q-card class="q-dialog-plugin">
       <q-card-section v-if="filters">
         <div class="std-dialog-title q-pa-md">Filters</div>
-        <q-select filled v-model="selectedPreset" :options="dateRangePresetList" label="Preset" emit-value
-          map-options />
-        <div class="row no-wrap" style="margin-top: 8px; margin-bottom: 8px;">
-          <date-input v-model="filters.startEpoch" label="Start Date"
-            @update:model-value="startEpochChanged"></date-input>
-          <date-input v-model="filters.endEpoch" label="End Date" @update:model-value="endEpochChanged"
-            style="margin-left: 4px"></date-input>
+        <q-select filled v-model="selectedPreset" :options="dateRangePresetList" label="Preset" emit-value map-options />
+        <div class="row no-wrap" style="margin-top: 8px; margin-bottom: 8px">
+          <date-input v-model="filters.startEpoch" label="Start Date" @update:model-value="startEpochChanged"></date-input>
+          <date-input v-model="filters.endEpoch" label="End Date" @update:model-value="endEpochChanged" style="margin-left: 4px"></date-input>
         </div>
-        <select-currency v-model="filters.filterByCurrencyId" label="Currency (Optional)"
-          :mandatory="false"></select-currency>
+        <select-currency v-model="filters.filterByCurrencyId" label="Currency (Optional)" :mandatory="false"></select-currency>
       </q-card-section>
 
       <q-card-actions class="row justify-end">
-        <q-btn color="blue-grey" label="Cancel" @click="cancelClicked" />
+        <q-btn color="blue-grey" label="Cancel" @click="onDialogCancel" />
         <q-btn color="primary" label="OK" @click="okClicked" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { useDialogPluginComponent } from "quasar";
 import DateInput from "src/components/lib/DateInput.vue";
-import { dateRangePresetList, partyTypeList } from "src/constants/constants";
+import { dateRangePresetList } from "src/constants/constants";
 import { AccLedgerFilters } from "src/models/accounting/acc-ledger-filters";
 import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
-import { validators } from "src/utils/validators";
-import { Ref, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import SelectCurrency from "./SelectCurrency.vue";
 
-export default {
-  props: {
-    inputFilters: {
-      type: Object,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  inputFilters?: AccLedgerFilters | null;
+}>();
 
-  components: { DateInput, SelectCurrency },
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  emits: [...useDialogPluginComponent.emits],
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-  setup(props) {
-    const isLoading = ref(false);
+// State
+const isLoading = ref(false);
+const filters = ref<AccLedgerFilters | null>(null);
+const selectedPreset = ref<string | null>("current-year");
 
-    const filters: Ref<AccLedgerFilters | null> = ref(null);
+// Initialize filters
+isLoading.value = true;
+if (props.inputFilters) {
+  filters.value = props.inputFilters as AccLedgerFilters;
+} else {
+  filters.value = {
+    startEpoch: Date.now(),
+    endEpoch: Date.now(),
+    filterByCurrencyId: null,
+  };
+}
+isLoading.value = false;
 
-    const selectedPreset: Ref<string | null> = ref("current-year");
+// Methods
+function okClicked() {
+  onDialogOK(filters.value);
+}
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+function startEpochChanged() {
+  selectedPreset.value = "custom";
+}
 
-    isLoading.value = true;
-    if (props.inputFilters) {
-      filters.value = props.inputFilters as AccLedgerFilters;
-    } else {
-      filters.value = {
-        startEpoch: Date.now(),
-        endEpoch: Date.now(),
-        filterByCurrencyId: null
-      };
-    }
-    isLoading.value = false;
+function endEpochChanged() {
+  selectedPreset.value = "custom";
+}
 
-    async function okClicked() {
-      onDialogOK(filters.value);
-    }
+function applyPreset(newPreset: string) {
+  const range = getStartAndEndEpochFromPreset(newPreset);
+  if (range && filters.value) {
+    const { startEpoch, endEpoch } = range;
+    filters.value.startEpoch = startEpoch;
+    filters.value.endEpoch = endEpoch;
+  }
+}
 
-    async function startEpochChanged() {
-      selectedPreset.value = "custom";
-    }
+// Watchers
+watch(selectedPreset, (newPreset) => {
+  if (newPreset) {
+    applyPreset(newPreset);
+  }
+});
 
-    async function endEpochChanged() {
-      selectedPreset.value = "custom";
-    }
-
-    function applyPreset(newPreset: string) {
-      const range = getStartAndEndEpochFromPreset(newPreset);
-      if (range) {
-        const { startEpoch, endEpoch } = range;
-        [filters.value!.startEpoch, filters.value!.endEpoch] = [startEpoch, endEpoch];
-      }
-    }
-
-    watch(selectedPreset, async (newPreset: any) => {
-      applyPreset(newPreset);
-    });
-
-    applyPreset(selectedPreset.value!);
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      partyTypeList,
-      validators,
-      filters,
-      dateRangePresetList,
-      selectedPreset,
-      startEpochChanged,
-      endEpochChanged,
-    };
-  },
-};
+// Apply initial preset
+applyPreset(selectedPreset.value!);
 </script>
 <style scoped lang="scss"></style>

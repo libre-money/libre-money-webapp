@@ -43,7 +43,6 @@ export const defaultViewOptionList = [
   { value: "overview", label: "Overview" },
   { value: "records", label: "Records" },
   { value: "templates", label: "Templates" },
-  { value: "budgets", label: "Budgets" },
 ];
 
 export const rollOverRuleList = [
@@ -67,9 +66,9 @@ export const Collection = {
   ASSET: "asset",
   RECORD: "record",
   RECORD_TEMPLATE: "record-template",
-  BUDGET: "budget",
   ROLLING_BUDGET: "rolling-budget",
   MEMO: "memo",
+  TEXT_IMPORT_RULES: "text-import-rules",
 };
 
 export const RecordType = {
@@ -96,3 +95,8 @@ export const dateRangePresetList = [
   { value: "all-time", label: "All time" },
   { value: "custom", label: "Custom" },
 ];
+
+export const fixtureCode = {
+  AUTO_CALIBRATED_EXPENSE: "auto-calibrated-expense",
+  AUTO_CALIBRATED_INCOME: "auto-calibrated-income",
+};

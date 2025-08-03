@@ -1,82 +1,14 @@
 <template>
   <q-page class="column items-center justify-evenly">
-    <!-- Featured Rolling Budgets -->
-    <q-card class="std-card featured-rolling-budgets-card" style="margin-bottom: 4px" v-show="featuredRollingBudgetList.length > 0">
-      <div class="featured-rolling-budget-list q-pa-md q-gutter-sm">
-        <q-btn
-          v-if="featuredRollingBudgetList.length > 1"
-          style="position: absolute; left: -4px; top: 52px"
-          color="secondary"
-          :icon="showAllRollingBudgets ? 'expand_less' : 'expand_more'"
-          flat
-          round
-          @click="toggleShowAllRollingBudgets"
-        />
-        <template v-for="rollingBudget in featuredRollingBudgetList" :key="rollingBudget._id">
-          <div class="featured-rolling-budget" v-if="rollingBudget.isFeatured || showAllRollingBudgets">
-            <div class="featured-rolling-budget-name" style="margin-bottom: 8px">
-              {{ rollingBudget.name }} ({{ prettifyDate(rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].startEpoch) }} to
-              {{ prettifyDate(rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].endEpoch) }})
-            </div>
-            <div>
-              <div class="row no-wrap" style="height: 10px; border-radius: 5px; overflow: hidden">
-                <div
-                  :style="{
-                    width: (rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount / rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount * 100) + '%',
-                    backgroundColor: rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount + rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount > rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount ? 'var(--q-negative)' : 'var(--q-positive)',
-                    height: '100%',
-                  }"
-                ></div>
-                <div
-                  :style="{
-                    width: (rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount / rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount * 100) + '%',
-                    backgroundColor: 'var(--q-warning)',
-                    height: '100%',
-                  }"
-                ></div>
-                <div
-                  :style="{
-                    flex: 1,
-                    backgroundColor: '#e0e0e0',
-                    height: '100%',
-                  }"
-                ></div>
-              </div>
-              <div class="text-caption text-right">
-                {{
-                  formatService.getPrintableAmount(
-                    rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].usedAmount,
-                    rollingBudget.currencyId
-                  )
-                }}
-                +
-                {{
-                  formatService.getPrintableAmount(
-                    rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].heldAmount,
-                    rollingBudget.currencyId
-                  )
-                }}
-                /
-                {{
-                  formatService.getPrintableAmount(
-                    rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].totalAllocatedAmount,
-                    rollingBudget.currencyId
-                  )
-                }}
-                <br />{{ rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].remainingAmount >= 0 ? "Remaining: " : "Over budget by: "
-                }}{{
-                  formatService.getPrintableAmount(
-                    Math.abs(rollingBudget.budgetedPeriodList[rollingBudget._budgetedPeriodIndexInRange!].remainingAmount),
-                    rollingBudget.currencyId
-                  )
-                }}
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
-    </q-card>
-    <!-- End of Featured Rolling Budgets -->
+    <!-- Budget Highlights -->
+    <BudgetHighlights
+      ref="budgetHighlightsRef"
+      :record-filters="recordFilters"
+      :filter-month="filterMonth"
+      :filter-year="filterYear"
+      @reloadRecords="loadData"
+    />
+    <!-- End of Budget Highlights -->
 
     <!-- Records -->
     <q-card class="std-card">
@@ -84,7 +16,6 @@
         <q-btn color="secondary" icon="filter_list" flat round @click="setFiltersClicked" />
         <q-btn color="blue-6" icon="bar_chart" flat round @click="showQuickExpenseSummaryClicked" />
         <q-btn color="green-6" icon="wallet" flat round @click="showQuickBalanceClicked" />
-
         <div class="title">
           <div class="month-and-year-input-wrapper" v-if="!recordFilters && $q.screen.gt.xs">
             <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear" @selection="monthAndYearSelected()"></month-and-year-input>
@@ -109,9 +40,15 @@
               </q-item-section>
             </q-item>
             <q-separator inset />
-            <q-item clickable v-close-popup @click="addBulkExpensesClicked">
+            <q-item clickable v-close-popup @click="importTextClicked">
               <q-item-section>
-                <q-item-label>Add Expenses (Bulk)</q-item-label>
+                <q-item-label>Import Text</q-item-label>
+              </q-item-section>
+            </q-item>
+
+            <q-item clickable v-close-popup @click="showQuickBalanceCalibrationClicked">
+              <q-item-section>
+                <q-item-label>Calibrate Balances</q-item-label>
               </q-item-section>
             </q-item>
             <q-separator inset />
@@ -130,7 +67,9 @@
             <span v-if="recordFilters.type === 'standard'">These results are filtered.</span>
             <span v-else-if="recordFilters.type === 'budget' && recordFilters._budgetName === UNBUDGETED_RECORDS_BUDGET_NAME">Viewing unbudgeted records.</span>
             <span v-else-if="recordFilters.type === 'budget'">Viewing records under budget: {{ recordFilters._budgetName }}.</span>
-            <span v-else-if="recordFilters.type === 'loansAndDebts'">Viewing dealings with party: {{ recordFilters._partyName }}.</span>
+            <span v-else-if="recordFilters.type === 'loansAndDebts' || recordFilters.type === 'parties'">
+              Viewing dealings with party: {{ recordFilters._partyName }}.
+            </span>
           </div>
           <q-btn size="sm" color="secondary" outline rounded label="Clear" @click="clearFiltersClicked" />
         </div>
@@ -157,7 +96,12 @@
             <!-- Unified Single Amount Record - start -->
             <div class="single-amount-row row" v-if="isSingleAmountType(record)" :data-index="index">
               <div class="details-section">
-                <div class="record-date">{{ prettifyDate(record.transactionEpoch) }}</div>
+                <div class="record-date">
+                  {{ prettifyDate(record.transactionEpoch) }}
+                  <template v-if="isPotentialDuplicate(record)">
+                    <q-icon name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
+                  </template>
+                </div>
 
                 <div class="primary-line" v-if="record.type === RecordType.EXPENSE">
                   {{ record.expense?.expenseAvenue.name }}
@@ -193,12 +137,12 @@
 
               <div class="amounts-section">
                 <div class="amount" :class="{ 'amount-out': isRecordOutFlow(record), 'amount-in': isRecordInFlow(record) }">
-                  {{ formatService.getPrintableAmount(getNumber(record, "amount")!, getString(record, "currencyId")!) }}
+                  {{ printAmount(getNumber(record, "amount")!, getString(record, "currencyId")!) }}
                 </div>
                 <div class="wallet" v-if="getWallet(record)">({{ getWallet(record)!.name }})</div>
                 <div class="unpaid-amount" v-if="getNumber(record, 'amountUnpaid')! > 0">
                   Unpaid:
-                  {{ formatService.getPrintableAmount(getNumber(record, "amountUnpaid")!, getString(record, "currencyId")!) }}
+                  {{ printAmount(getNumber(record, "amountUnpaid")!, getString(record, "currencyId")!) }}
                 </div>
                 <div class="controls">
                   <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editSingleAmountRecordClicked(record)" />
@@ -215,7 +159,12 @@
             <!-- Money Transfer - start -->
             <div class="money-transfer-row row" v-else-if="record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer" :data-index="index">
               <div class="details-section">
-                <div class="record-date">{{ prettifyDate(record.transactionEpoch) }}</div>
+                <div class="record-date">
+                  {{ prettifyDate(record.transactionEpoch) }}
+                  <template v-if="isPotentialDuplicate(record)">
+                    <q-icon name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
+                  </template>
+                </div>
 
                 <div class="primary-line">Transfer {{ record.moneyTransfer.fromWallet.name }} to {{ record.moneyTransfer.toWallet.name }}</div>
 
@@ -239,15 +188,11 @@
               <div class="amounts-section">
                 <div class="row amounts-section-row">
                   <div class="amount-col amount-left-col">
-                    <div class="amount amount-out">
-                      Out {{ formatService.getPrintableAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}
-                    </div>
+                    <div class="amount amount-out">Out {{ printAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}</div>
                     <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
                   </div>
                   <div class="amount-col amount-right-col">
-                    <div class="amount amount-in">
-                      In {{ formatService.getPrintableAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}
-                    </div>
+                    <div class="amount amount-in">In {{ printAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}</div>
                     <div class="wallet">({{ record.moneyTransfer.toWallet.name }})</div>
                   </div>
                 </div>
@@ -282,19 +227,21 @@
 </template>
 
 <script lang="ts" setup>
-import { debounce, useQuasar } from "quasar";
+import { useQuasar } from "quasar";
 import AddAssetAppreciationDepreciationRecord from "src/components/AddAssetAppreciationDepreciationRecord.vue";
 import AddAssetPurchaseRecord from "src/components/AddAssetPurchaseRecord.vue";
 import AddAssetSaleRecord from "src/components/AddAssetSaleRecord.vue";
 import AddBorrowingRecord from "src/components/AddBorrowingRecord.vue";
+
 import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
-import AddExpenseBulk from "src/components/AddExpenseBulk.vue";
 import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
 import AddLendingRecord from "src/components/AddLendingRecord.vue";
 import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
 import AddRepaymentGivenRecord from "src/components/AddRepaymentGivenRecord.vue";
 import AddRepaymentReceivedRecord from "src/components/AddRepaymentReceivedRecord.vue";
+import BudgetHighlights from "src/components/BudgetHighlights.vue";
 import FilterRecordsDialog from "src/components/FilterRecordsDialog.vue";
+import ImportTextDialog from "src/components/ImportTextDialog.vue";
 import MonthAndYearInput from "src/components/lib/MonthAndYearInput.vue";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import QuickBalanceDialog from "src/components/QuickBalanceDialog.vue";
@@ -309,17 +256,16 @@ import { QuickSummary } from "src/models/inferred/quick-summary";
 import { RecordFilters } from "src/models/inferred/record-filters";
 import { Party } from "src/models/party";
 import { Record } from "src/models/record";
-import { RollingBudget } from "src/models/rolling-budget";
 import { Wallet } from "src/models/wallet";
 import { computationService } from "src/services/computation-service";
 import { dialogService } from "src/services/dialog-service";
-import { formatService } from "src/services/format-service";
+import { duplicateFinderService } from "src/services/duplicate-finder-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { recordService } from "src/services/record-service";
-import { rollingBudgetService } from "src/services/rolling-budget-service";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
 import { useRecordPaginationSizeStore } from "src/stores/record-pagination";
 import { normalizeEpochRange } from "src/utils/date-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 import { deepClone, guessFontColorCode, prettifyDate } from "src/utils/misc-utils";
 import PromisePool from "src/utils/promise-pool";
 import { Ref, onMounted, ref, watch } from "vue";
@@ -328,9 +274,14 @@ const $q = useQuasar();
 const recordPaginationStore = useRecordPaginationSizeStore();
 const recordFiltersStore = useRecordFiltersStore();
 
+recordFiltersStore.$subscribe((mutation, state) => {
+  recordFilters.value = state.recordFilters;
+});
+
 // ----- Refs
 const isLoading = ref(false);
 const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
+const budgetHighlightsRef = ref<InstanceType<typeof BudgetHighlights>>();
 
 const rows: Ref<InferredRecord[]> = ref([]);
 
@@ -347,8 +298,8 @@ const quickSummaryList: Ref<QuickSummary[]> = ref([]);
 
 let cachedInferredRecordList: InferredRecord[] = [];
 
-const featuredRollingBudgetList: Ref<RollingBudget[]> = ref([]);
-const showAllRollingBudgets = ref(false);
+// Duplicate detection
+const duplicateIds: Ref<Set<string>> = ref(new Set<string>());
 
 // ----- Functions
 async function applyFilters(recordList: Record[]) {
@@ -360,7 +311,7 @@ async function loadData(origin = "unspecified") {
 
   // Need to update cache if the cache is empty or the request is not from pagination interaction
   if (cachedInferredRecordList.length === 0 || origin !== "pagination") {
-    hideRollingBudgets();
+    budgetHighlightsRef.value?.hideRollingBudgets();
 
     loadingIndicator.value?.startPhase({ phase: 1, weight: 10, label: "Updating cache" });
 
@@ -415,34 +366,19 @@ async function loadData(origin = "unspecified") {
   let startIndex = (paginationCurrentPage.value - 1) * recordCountPerPage;
   rows.value = cachedInferredRecordList.slice(startIndex, startIndex + recordCountPerPage);
 
+  // Detect duplicates if the feature is enabled
+  if (recordFilters.value?.highlightDuplicates) {
+    duplicateIds.value = duplicateFinderService.findPotentialDuplicates(cachedInferredRecordList);
+  } else {
+    duplicateIds.value = new Set<string>();
+  }
+
   if (cachedInferredRecordList.length === 0 || origin !== "pagination") {
-    loadFeaturedRollingBudgetsDebounced();
+    budgetHighlightsRef.value?.loadFeaturedRollingBudgets();
   }
 
   isLoading.value = false;
 }
-
-function hideRollingBudgets() {
-  featuredRollingBudgetList.value = [];
-}
-
-async function loadFeaturedRollingBudgets() {
-  let startEpoch,
-    endEpoch = 0;
-  if (recordFilters.value) {
-    [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.value.startEpoch, recordFilters.value.endEpoch);
-  } else {
-    let rangeStart = new Date(filterYear.value, filterMonth.value, 1);
-    let rangeEnd = new Date(filterYear.value, filterMonth.value, 1);
-    rangeEnd.setMonth(rangeEnd.getMonth() + 1);
-    rangeEnd.setDate(rangeEnd.getDate() - 1);
-    [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
-  }
-  featuredRollingBudgetList.value = await rollingBudgetService.listAllFeaturedInRange(startEpoch, endEpoch);
-  console.debug({ featuredRollingBudgetList: deepClone(featuredRollingBudgetList.value) });
-}
-
-const loadFeaturedRollingBudgetsDebounced = debounce(loadFeaturedRollingBudgets, 100, true);
 
 // ----- Event Handlers
 
@@ -458,19 +394,6 @@ async function addExpenseClicked() {
       }
     : {};
   $q.dialog({ component: AddExpenseRecord, componentProps }).onOk(() => {
-    paginationCurrentPage.value = 1;
-    loadData();
-  });
-}
-
-async function addBulkExpensesClicked() {
-  const componentProps = recordFilters.value?.walletId
-    ? {
-        suggestedWalletId: recordFilters.value.walletId,
-        suggestedCurrencyId: ((await pouchdbService.getDocById(recordFilters.value.walletId)) as Wallet)?.currencyId,
-      }
-    : {};
-  $q.dialog({ component: AddExpenseBulk, componentProps }).onOk(() => {
     paginationCurrentPage.value = 1;
     loadData();
   });
@@ -565,7 +488,15 @@ async function deleteClicked(record: InferredRecord) {
 }
 
 async function showQuickBalanceClicked() {
-  $q.dialog({ component: QuickBalanceDialog, componentProps: {} });
+  $q.dialog({ component: QuickBalanceDialog, componentProps: { intent: "balances" } }).onOk(() => {
+    loadData();
+  });
+}
+
+async function showQuickBalanceCalibrationClicked() {
+  $q.dialog({ component: QuickBalanceDialog, componentProps: { intent: "calibration" } }).onOk(() => {
+    loadData();
+  });
 }
 
 async function showQuickExpenseSummaryClicked() {
@@ -602,6 +533,13 @@ async function clearFiltersClicked() {
   recordFilters.value = null;
   recordFiltersStore.setRecordFilters(null);
   loadData();
+}
+
+async function importTextClicked() {
+  $q.dialog({ component: ImportTextDialog }).onOk(() => {
+    paginationCurrentPage.value = 1;
+    loadData();
+  });
 }
 
 // ----- Computed and Embedded
@@ -670,13 +608,13 @@ function getString(record: InferredRecord, key: string): string | null {
   return value;
 }
 
-function toggleShowAllRollingBudgets() {
-  showAllRollingBudgets.value = !showAllRollingBudgets.value;
+function isPotentialDuplicate(record: InferredRecord): boolean {
+  return duplicateIds.value.has(record._id || "");
 }
 
 // ----- Watchers
 
-watch(paginationCurrentPage, (currentPage, previousPage) => {
+watch(paginationCurrentPage, (_currentPage, _previousPage) => {
   console.debug("paginationCurrentPage", paginationCurrentPage);
   loadData("pagination");
 });
@@ -704,6 +642,13 @@ onMounted(() => {
   .record-date {
     font-size: 10px;
     display: inline-block;
+
+    .duplicate-flag {
+      color: #a61c1c;
+      margin-left: 4px;
+      font-size: 12px;
+      animation: pulse 2s infinite;
+    }
   }
 
   .details-section {
@@ -822,6 +767,18 @@ onMounted(() => {
 .username {
   font-size: 8px;
   text-transform: capitalize;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .divider-line-date {

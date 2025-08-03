@@ -5,15 +5,27 @@
         <div class="std-dialog-title q-pa-md">{{ existingWalletId ? "Editing a Wallet" : "Adding a Wallet" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="walletForm">
           <q-input filled v-model="walletName" label="Name of the Wallet" lazy-rules :rules="validators.name" />
-          <q-select filled v-model="walletType" :options="walletTypeList" label="Type" emit-value map-options
-            class="std-margin-bottom-32 std-margin-top-12" />
+          <q-select filled v-model="walletType" :options="walletTypeList" label="Type" emit-value map-options class="std-margin-bottom-32 std-margin-top-12" />
           <select-currency v-model="walletCurrencyId"></select-currency>
-          <q-toggle class="std-toggle" v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options"
-            left-label v-if="existingWalletId" />
-          <q-input type="number" filled v-model="walletInitialBalance" label="Initial Balance" lazy-rules
-            :rules="validators.balance" v-if="!existingWalletId || shouldShowAdvancedOptions" />
-          <q-input type="number" filled v-model="walletMinimumBalance" label="Minimum Balance" lazy-rules
-            :rules="validators.balanceOptional" v-if="!existingWalletId || shouldShowAdvancedOptions" />
+          <q-toggle class="std-toggle" v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options" left-label v-if="existingWalletId" />
+          <q-input
+            type="number"
+            filled
+            v-model="walletInitialBalance"
+            label="Initial Balance"
+            lazy-rules
+            :rules="validators.balance"
+            v-if="!existingWalletId || shouldShowAdvancedOptions"
+          />
+          <q-input
+            type="number"
+            filled
+            v-model="walletMinimumBalance"
+            label="Minimum Balance"
+            lazy-rules
+            :rules="validators.balanceOptional"
+            v-if="!existingWalletId || shouldShowAdvancedOptions"
+          />
         </q-form>
       </q-card-section>
 
@@ -27,12 +39,11 @@
 
 <script lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
-import { validators } from "src/utils/validators";
 import { Collection, defaultWalletType, walletTypeList } from "src/constants/constants";
 import { Wallet } from "src/models/wallet";
 import { pouchdbService } from "src/services/pouchdb-service";
-import { Party } from "src/models/party";
+import { validators } from "src/utils/validators";
+import { Ref, ref } from "vue";
 import SelectCurrency from "./SelectCurrency.vue";
 
 export default {
@@ -91,7 +102,7 @@ export default {
         type: walletType.value!,
         initialBalance: walletInitialBalance.value!,
         currencyId: walletCurrencyId.value!,
-        minimumBalance: walletMinimumBalance.value
+        minimumBalance: walletMinimumBalance.value,
       };
 
       if (initialDoc) {
@@ -117,7 +128,7 @@ export default {
       validators,
       walletForm,
       walletMinimumBalance,
-      shouldShowAdvancedOptions
+      shouldShowAdvancedOptions,
     };
   },
 };

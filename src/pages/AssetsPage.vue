@@ -64,222 +64,191 @@
   </q-page>
 </template>
 
-<script lang="ts">
-import { Ref, defineComponent, ref, watch } from "vue";
-import { Collection, RecordType, assetLiquidityList, assetTypeList, rowsPerPageOptions } from "./../constants/constants";
+<script lang="ts" setup>
 import { useQuasar } from "quasar";
-import AddAsset from "./../components/AddAsset.vue";
-import AddAssetPurchaseRecord from "./../components/AddAssetPurchaseRecord.vue";
-import AddAssetSaleRecord from "./../components/AddAssetSaleRecord.vue";
-import AddAssetAppreciationDepreciationRecord from "./../components/AddAssetAppreciationDepreciationRecord.vue";
-import { Record } from "src/models/record";
-
-import { pouchdbService } from "src/services/pouchdb-service";
 import { Asset } from "src/models/asset";
-import { dialogService } from "src/services/dialog-service";
-import { prettifyAmount, sleep } from "src/utils/misc-utils";
 import { Currency } from "src/models/currency";
 import { computationService } from "src/services/computation-service";
+import { dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
+import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
+import { printAmount } from "src/utils/de-facto-utils";
+import { Ref, ref, watch } from "vue";
+import AddAsset from "./../components/AddAsset.vue";
+import AddAssetAppreciationDepreciationRecord from "./../components/AddAssetAppreciationDepreciationRecord.vue";
+import AddAssetPurchaseRecord from "./../components/AddAssetPurchaseRecord.vue";
+import AddAssetSaleRecord from "./../components/AddAssetSaleRecord.vue";
+import { Collection, rowsPerPageOptions } from "./../constants/constants";
 
-export default defineComponent({
-  name: "AssetsPage",
-  components: {},
-  setup() {
-    const $q = useQuasar();
+const $q = useQuasar();
 
-    // -----
+const searchFilter: Ref<string | null> = ref(null);
+const isLoading = ref(false);
 
-    const searchFilter: Ref<string | null> = ref(null);
-
-    const isLoading = ref(false);
-
-    const columns = [
-      {
-        name: "name",
-        required: true,
-        label: "Name",
-        align: "left",
-        field: "name",
-        sortable: true,
-      },
-      {
-        name: "type",
-        align: "left",
-        label: "Type",
-        sortable: true,
-        field: entityService.toProperAssetType,
-      },
-      {
-        name: "liquidity",
-        align: "left",
-        label: "Liquidity",
-        sortable: true,
-        field: entityService.toProperAssetLiquidity,
-      },
-      {
-        name: "balance",
-        align: "left",
-        label: "Current Value",
-        sortable: true,
-        field: (asset: Asset) => {
-          return `${asset._currencySign!} ${prettifyAmount(asset._balance)}`;
-        },
-      },
-      {
-        name: "actions",
-        label: "Actions",
-      },
-    ];
-
-    let rows: Ref<any[]> = ref([]);
-
-    const paginationSizeStore = usePaginationSizeStore();
-    const pagination = ref({
-      sortBy: "name",
-      descending: false,
-      page: 1,
-      rowsPerPage: paginationSizeStore.paginationSize,
-      rowsNumber: 0,
-    });
-
-    // -----
-
-    function applyOrdering(docList: Asset[], sortBy: string, descending: boolean) {
-      if (sortBy === "name") {
-        docList.sort((a, b) => {
-          return a.name.localeCompare(b.name) * (descending ? -1 : 1);
-        });
-      } else if (sortBy === "type") {
-        docList.sort((a, b) => {
-          return a.type.localeCompare(b.type) * (descending ? -1 : 1);
-        });
-      } else if (sortBy === "liquidity") {
-        docList.sort((a, b) => {
-          return a.liquidity.localeCompare(b.liquidity) * (descending ? -1 : 1);
-        });
-      } else if (sortBy === "balance") {
-        docList.sort((a, b) => {
-          return (b._balance! - a._balance!) * (descending ? -1 : 1);
-        });
-      }
-    }
-
-    async function dataForTableRequested(props: any) {
-      let inputPagination = props?.pagination || pagination.value;
-
-      const { page, rowsPerPage, sortBy, descending } = inputPagination;
-      paginationSizeStore.setPaginationSize(rowsPerPage);
-
-      isLoading.value = true;
-
-      const skip = (page - 1) * rowsPerPage;
-      const limit = rowsPerPage;
-
-      let res = await pouchdbService.listByCollection(Collection.ASSET);
-      let docList = res.docs as Asset[];
-      if (searchFilter.value) {
-        let regex = new RegExp(`.*${searchFilter.value}.*`, "i");
-        docList = docList.filter((doc) => regex.test(doc.name));
-      }
-
-      applyOrdering(docList, sortBy, descending);
-
-      await computationService.computeBalancesForAssets(docList);
-
-      let totalRowCount = docList.length;
-      let currentRows = docList.slice(skip, skip + limit);
-
-      let currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-      currentRows.forEach((row) => {
-        row._currencySign = currencyList.find((currency) => currency._id === row.currencyId)?.sign;
-      });
-
-      console.debug({ currentRows });
-      rows.value = currentRows;
-
-      pagination.value.rowsNumber = totalRowCount;
-      pagination.value.page = page;
-      pagination.value.rowsPerPage = rowsPerPage;
-      pagination.value.sortBy = sortBy;
-      pagination.value.descending = descending;
-
-      isLoading.value = false;
-    }
-
-    async function addAssetClicked() {
-      $q.dialog({ component: AddAsset }).onOk((res) => {
-        loadData();
-      });
-    }
-
-    async function loadData() {
-      dataForTableRequested(null);
-    }
-
-    async function addAssetPurchaseRecordClicked(asset: Asset) {
-      $q.dialog({ component: AddAssetPurchaseRecord, componentProps: { existingAssetId: asset._id } }).onOk((res) => {
-        loadData();
-      });
-    }
-
-    async function addAssetSaleRecordClicked(asset: Asset) {
-      $q.dialog({ component: AddAssetSaleRecord, componentProps: { existingAssetId: asset._id } }).onOk((res) => {
-        loadData();
-      });
-    }
-
-    async function addAssetAppreciationDepreciationRecordClicked(asset: Asset) {
-      $q.dialog({ component: AddAssetAppreciationDepreciationRecord, componentProps: { existingAssetId: asset._id } }).onOk((res) => {
-        loadData();
-      });
-    }
-
-    async function editClicked(asset: Asset) {
-      $q.dialog({ component: AddAsset, componentProps: { existingAssetId: asset._id } }).onOk((res) => {
-        loadData();
-      });
-    }
-
-    async function deleteClicked(asset: Asset) {
-      let answer = await dialogService.confirm("Remove asset", `Are you sure you want to remove the asset "${asset.name}"?`);
-      if (!answer) return;
-
-      let res = await pouchdbService.removeDoc(asset);
-      if (!res.ok) {
-        await dialogService.alert("Error", "There was an error trying to remove the asset.");
-      }
-
-      loadData();
-    }
-
-    // -----
-
-    loadData();
-
-    // -----
-
-    watch(searchFilter, (_, __) => {
-      loadData();
-    });
-
-    return {
-      addAssetClicked,
-      searchFilter,
-      rowsPerPageOptions,
-      columns,
-      rows,
-      isLoading,
-      editClicked,
-      deleteClicked,
-      pagination,
-      dataForTableRequested,
-      addAssetPurchaseRecordClicked,
-      addAssetSaleRecordClicked,
-      addAssetAppreciationDepreciationRecordClicked,
-    };
+const columns = [
+  {
+    name: "name",
+    required: true,
+    label: "Name",
+    align: "left",
+    field: "name",
+    sortable: true,
   },
+  {
+    name: "type",
+    align: "left",
+    label: "Type",
+    sortable: true,
+    field: entityService.toProperAssetType,
+  },
+  {
+    name: "liquidity",
+    align: "left",
+    label: "Liquidity",
+    sortable: true,
+    field: entityService.toProperAssetLiquidity,
+  },
+  {
+    name: "balance",
+    align: "left",
+    label: "Current Value",
+    sortable: true,
+    field: (asset: Asset) => {
+      return printAmount(asset._balance, asset.currencyId);
+    },
+  },
+  {
+    name: "actions",
+    label: "Actions",
+  },
+];
+
+const rows: Ref<any[]> = ref([]);
+
+const paginationSizeStore = usePaginationSizeStore();
+const pagination = ref({
+  sortBy: "name",
+  descending: false,
+  page: 1,
+  rowsPerPage: paginationSizeStore.paginationSize,
+  rowsNumber: 0,
+});
+
+function applyOrdering(docList: Asset[], sortBy: string, descending: boolean) {
+  if (sortBy === "name") {
+    docList.sort((a, b) => {
+      return a.name.localeCompare(b.name) * (descending ? -1 : 1);
+    });
+  } else if (sortBy === "type") {
+    docList.sort((a, b) => {
+      return a.type.localeCompare(b.type) * (descending ? -1 : 1);
+    });
+  } else if (sortBy === "liquidity") {
+    docList.sort((a, b) => {
+      return a.liquidity.localeCompare(b.liquidity) * (descending ? -1 : 1);
+    });
+  } else if (sortBy === "balance") {
+    docList.sort((a, b) => {
+      return (b._balance! - a._balance!) * (descending ? -1 : 1);
+    });
+  }
+}
+
+async function dataForTableRequested(props: any) {
+  let inputPagination = props?.pagination || pagination.value;
+
+  const { page, rowsPerPage, sortBy, descending } = inputPagination;
+  paginationSizeStore.setPaginationSize(rowsPerPage);
+
+  isLoading.value = true;
+
+  const skip = (page - 1) * rowsPerPage;
+  const limit = rowsPerPage;
+
+  let res = await pouchdbService.listByCollection(Collection.ASSET);
+  let docList = res.docs as Asset[];
+  if (searchFilter.value) {
+    let regex = new RegExp(`.*${searchFilter.value}.*`, "i");
+    docList = docList.filter((doc) => regex.test(doc.name));
+  }
+
+  applyOrdering(docList, sortBy, descending);
+
+  await computationService.computeBalancesForAssets(docList);
+
+  let totalRowCount = docList.length;
+  let currentRows = docList.slice(skip, skip + limit);
+
+  let currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
+  currentRows.forEach((row) => {
+    row._currencySign = currencyList.find((currency) => currency._id === row.currencyId)?.sign;
+  });
+
+  console.debug({ currentRows });
+  rows.value = currentRows;
+
+  pagination.value.rowsNumber = totalRowCount;
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy;
+  pagination.value.descending = descending;
+
+  isLoading.value = false;
+}
+
+async function addAssetClicked() {
+  $q.dialog({ component: AddAsset }).onOk((res) => {
+    loadData();
+  });
+}
+
+async function loadData() {
+  dataForTableRequested(null);
+}
+
+async function addAssetPurchaseRecordClicked(asset: Asset) {
+  $q.dialog({ component: AddAssetPurchaseRecord, componentProps: { existingAssetId: asset._id } }).onOk((res) => {
+    loadData();
+  });
+}
+
+async function addAssetSaleRecordClicked(asset: Asset) {
+  $q.dialog({ component: AddAssetSaleRecord, componentProps: { existingAssetId: asset._id } }).onOk((res) => {
+    loadData();
+  });
+}
+
+async function addAssetAppreciationDepreciationRecordClicked(asset: Asset) {
+  $q.dialog({ component: AddAssetAppreciationDepreciationRecord, componentProps: { existingAssetId: asset._id } }).onOk((res) => {
+    loadData();
+  });
+}
+
+async function editClicked(asset: Asset) {
+  $q.dialog({ component: AddAsset, componentProps: { existingAssetId: asset._id } }).onOk((res) => {
+    loadData();
+  });
+}
+
+async function deleteClicked(asset: Asset) {
+  let answer = await dialogService.confirm("Remove asset", `Are you sure you want to remove the asset "${asset.name}"?`);
+  if (!answer) return;
+
+  let res = await pouchdbService.removeDoc(asset);
+  if (!res.ok) {
+    await dialogService.alert("Error", "There was an error trying to remove the asset.");
+  }
+
+  loadData();
+}
+
+// -----
+
+loadData();
+
+watch(searchFilter, (_, __) => {
+  loadData();
 });
 </script>
 

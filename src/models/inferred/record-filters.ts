@@ -9,8 +9,9 @@ export type RecordFilters = {
   searchString: string;
   deepSearchString: string;
   sortBy: "transactionEpochDesc" | "lastModifiedEpochDesc";
-  type: "standard" | "budget" | "loansAndDebts";
+  type: "standard" | "budget" | "loansAndDebts" | "parties";
   _budgetName?: string;
   _partyName?: string;
   _preset?: string;
+  highlightDuplicates?: boolean;
 };

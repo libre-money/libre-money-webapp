@@ -44,210 +44,186 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref, watch } from "vue";
-import { validators } from "src/utils/validators";
 import { Collection, RecordType } from "src/constants/constants";
 import { Record } from "src/models/record";
+import { dialogService } from "src/services/dialog-service";
+import { entityService } from "src/services/entity-service";
 import { pouchdbService } from "src/services/pouchdb-service";
-import SelectCurrency from "./SelectCurrency.vue";
+import { asAmount } from "src/utils/de-facto-utils";
+import { validators } from "src/utils/validators";
+import { onMounted, ref, watch } from "vue";
+import DateTimeInput from "./lib/DateTimeInput.vue";
 import SelectAsset from "./SelectAsset.vue";
-import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
-import { dialogService } from "src/services/dialog-service";
-import { asAmount } from "src/utils/misc-utils";
-import DateTimeInput from "./lib/DateTimeInput.vue";
-import { entityService } from "src/services/entity-service";
+import SelectWallet from "./SelectWallet.vue";
 
-export default {
-  props: {
-    existingRecordId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-    existingAssetId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  existingRecordId?: string | null;
+  existingAssetId?: string | null;
+}>();
 
-  components: {
-    SelectAsset,
-    SelectWallet,
-    SelectParty,
-    SelectTag,
-    DateTimeInput,
-  },
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  emits: [...useDialogPluginComponent.emits],
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-  setup(props) {
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+// State
+let initialDoc: Record | null = null;
+const isLoading = ref(false);
 
-    let initialDoc: Record | null = null;
-    const isLoading = ref(false);
+const recordForm = ref<QForm | null>(null);
 
-    const recordForm: Ref<QForm | null> = ref(null);
+const paymentType = ref<string>("full");
+const recordType = RecordType.ASSET_SALE;
 
-    const paymentType: Ref<string | null> = ref("full");
-    const recordType = RecordType.ASSET_SALE;
+const recordCurrencySign = ref<string | null>(null);
+const recordAssetId = ref<string | null>(null);
+const recordAmount = ref<number>(0);
+const recordCurrencyId = ref<string | null>(null);
+const recordPartyId = ref<string | null>(null);
+const recordWalletId = ref<string | null>(null);
+const recordAmountPaid = ref<number>(0);
+const recordAmountUnpaid = ref<number>(0);
+const recordTagIdList = ref<string[]>([]);
+const recordNotes = ref<string | null>(null);
 
-    const recordCurrencySign: Ref<string | null> = ref(null);
-    const recordAssetId: Ref<string | null> = ref(null);
-    const recordAmount: Ref<number> = ref(0);
-    const recordCurrencyId: Ref<string | null> = ref(null);
-    const recordPartyId: Ref<string | null> = ref(null);
-    const recordWalletId: Ref<string | null> = ref(null);
-    const recordAmountPaid: Ref<number> = ref(0);
-    const recordAmountUnpaid: Ref<number> = ref(0);
-    const recordTagIdList: Ref<string[]> = ref([]);
-    const recordNotes: Ref<string | null> = ref(null);
+const transactionEpoch = ref<number>(Date.now());
 
-    const transactionEpoch: Ref<number> = ref(Date.now());
-
-    if (props.existingRecordId) {
+// Load existing record if editing
+onMounted(() => {
+  if (props.existingRecordId) {
+    isLoading.value = true;
+    (async function () {
       isLoading.value = true;
-      (async function () {
-        isLoading.value = true;
-        let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
-        initialDoc = res;
-        if (!initialDoc.assetSale) {
-          // TODO show error message
-          return;
-        }
-
-        recordAssetId.value = initialDoc.assetSale.assetId;
-        recordAmount.value = asAmount(initialDoc.assetSale.amount);
-
-        recordCurrencyId.value = initialDoc.assetSale.currencyId;
-        recordPartyId.value = initialDoc.assetSale.partyId;
-        recordWalletId.value = initialDoc.assetSale.walletId;
-        recordAmountPaid.value = initialDoc.assetSale.amountPaid;
-        recordAmountUnpaid.value = initialDoc.assetSale.amountUnpaid;
-        recordTagIdList.value = initialDoc.tagIdList;
-        recordNotes.value = initialDoc.notes;
-
-        if (initialDoc.assetSale.amount === initialDoc.assetSale.amountPaid) {
-          paymentType.value = "full";
-        } else if (initialDoc.assetSale.amountPaid === 0) {
-          paymentType.value = "unpaid";
-        } else {
-          paymentType.value = "partial";
-        }
-
-        transactionEpoch.value = initialDoc.transactionEpoch || Date.now();
-
+      let res = (await pouchdbService.getDocById(props.existingRecordId!)) as Record;
+      initialDoc = res;
+      if (!initialDoc.assetSale) {
+        // TODO show error message
         isLoading.value = false;
-      })();
-    } else {
-      if (props.existingAssetId) {
-        setTimeout(() => {
-          recordAssetId.value = props.existingAssetId;
-        }, 10);
-      }
-    }
-
-    async function performManualValidation() {
-      if (paymentType.value === "full" || paymentType.value === "partial") {
-        if (!recordWalletId.value) {
-          await dialogService.alert("Error", "For fully or partially paid asset sales, Wallet is required.");
-          return false;
-        }
-      }
-
-      if (paymentType.value === "partial" || paymentType.value === "unpaid") {
-        if (!recordPartyId.value) {
-          await dialogService.alert("Error", "For partially paid and unpaid asset sales, Party is required.");
-          return false;
-        }
-      }
-
-      if (paymentType.value === "unpaid") {
-        recordWalletId.value = null;
-      }
-
-      if (paymentType.value === "full") {
-        recordAmountPaid.value = recordAmount.value;
-        recordAmountUnpaid.value = 0;
-      }
-
-      recordAmountPaid.value = Math.min(recordAmountPaid.value, recordAmount.value);
-
-      recordAmountUnpaid.value = recordAmount.value - recordAmountPaid.value;
-
-      return true;
-    }
-
-    async function okClicked() {
-      if (!(await recordForm.value?.validate())) {
         return;
       }
 
-      if (!(await performManualValidation())) {
-        return;
+      recordAssetId.value = initialDoc.assetSale.assetId;
+      recordAmount.value = asAmount(initialDoc.assetSale.amount);
+
+      recordCurrencyId.value = initialDoc.assetSale.currencyId;
+      recordPartyId.value = initialDoc.assetSale.partyId;
+      recordWalletId.value = initialDoc.assetSale.walletId;
+      recordAmountPaid.value = initialDoc.assetSale.amountPaid;
+      recordAmountUnpaid.value = initialDoc.assetSale.amountUnpaid;
+      recordTagIdList.value = initialDoc.tagIdList;
+      recordNotes.value = initialDoc.notes;
+
+      if (initialDoc.assetSale.amount === initialDoc.assetSale.amountPaid) {
+        paymentType.value = "full";
+      } else if (initialDoc.assetSale.amountPaid === 0) {
+        paymentType.value = "unpaid";
+      } else {
+        paymentType.value = "partial";
       }
 
-      let record: Record = {
-        $collection: Collection.RECORD,
-        notes: recordNotes.value!,
-        type: recordType,
-        tagIdList: recordTagIdList.value,
-        transactionEpoch: transactionEpoch.value,
-        assetSale: {
-          assetId: recordAssetId.value!,
-          amount: asAmount(recordAmount.value),
-          currencyId: recordCurrencyId.value!,
-          partyId: recordPartyId.value,
-          walletId: recordWalletId.value!,
-          amountPaid: asAmount(recordAmountPaid.value),
-          amountUnpaid: asAmount(recordAmountUnpaid.value),
-        },
-      };
+      transactionEpoch.value = initialDoc.transactionEpoch || Date.now();
 
-      if (initialDoc) {
-        record = Object.assign({}, initialDoc, record);
-      }
-
-      console.debug("Saving record: ", JSON.stringify(record, null, 2));
-
-      pouchdbService.upsertDoc(record);
-
-      onDialogOK();
+      isLoading.value = false;
+    })();
+  } else {
+    if (props.existingAssetId) {
+      setTimeout(() => {
+        recordAssetId.value = props.existingAssetId!;
+      }, 10);
     }
+  }
+});
 
-    watch(recordAssetId, async (newAssetId: any) => {
-      let asset = await entityService.getAsset(newAssetId);
-      let currency = await entityService.getCurrency(asset.currencyId);
-      recordCurrencyId.value = currency._id!;
-      recordCurrencySign.value = currency.sign;
-    });
+// Manual validation
+async function performManualValidation() {
+  if (paymentType.value === "full" || paymentType.value === "partial") {
+    if (!recordWalletId.value) {
+      await dialogService.alert("Error", "For fully or partially paid asset sales, Wallet is required.");
+      return false;
+    }
+  }
 
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      validators,
-      transactionEpoch,
-      recordForm,
-      paymentType,
-      recordAssetId,
-      recordAmount,
-      recordCurrencyId,
-      recordPartyId,
-      recordWalletId,
-      recordAmountPaid,
-      recordAmountUnpaid,
-      recordTagIdList,
-      recordNotes,
-      recordCurrencySign,
-    };
-  },
-};
+  if (paymentType.value === "partial" || paymentType.value === "unpaid") {
+    if (!recordPartyId.value) {
+      await dialogService.alert("Error", "For partially paid and unpaid asset sales, Party is required.");
+      return false;
+    }
+  }
+
+  if (paymentType.value === "unpaid") {
+    recordWalletId.value = null;
+  }
+
+  if (paymentType.value === "full") {
+    recordAmountPaid.value = recordAmount.value;
+    recordAmountUnpaid.value = 0;
+  }
+
+  recordAmountPaid.value = Math.min(recordAmountPaid.value, recordAmount.value);
+
+  recordAmountUnpaid.value = recordAmount.value - recordAmountPaid.value;
+
+  return true;
+}
+
+// OK click handler
+async function okClicked() {
+  if (!(await recordForm.value?.validate())) {
+    return;
+  }
+
+  if (!(await performManualValidation())) {
+    return;
+  }
+
+  let record: Record = {
+    $collection: Collection.RECORD,
+    notes: recordNotes.value!,
+    type: recordType,
+    tagIdList: recordTagIdList.value,
+    transactionEpoch: transactionEpoch.value,
+    assetSale: {
+      assetId: recordAssetId.value!,
+      amount: asAmount(recordAmount.value),
+      currencyId: recordCurrencyId.value!,
+      partyId: recordPartyId.value,
+      walletId: recordWalletId.value!,
+      amountPaid: asAmount(recordAmountPaid.value),
+      amountUnpaid: asAmount(recordAmountUnpaid.value),
+    },
+  };
+
+  if (initialDoc) {
+    record = Object.assign({}, initialDoc, record);
+  }
+
+  console.debug("Saving record: ", JSON.stringify(record, null, 2));
+
+  pouchdbService.upsertDoc(record);
+
+  onDialogOK();
+}
+
+// Watch asset selection to update currency
+watch(recordAssetId, async (newAssetId: any) => {
+  if (!newAssetId) {
+    recordCurrencyId.value = null;
+    recordCurrencySign.value = null;
+    return;
+  }
+  let asset = await entityService.getAsset(newAssetId);
+  let currency = await entityService.getCurrency(asset.currencyId);
+  recordCurrencyId.value = currency._id!;
+  recordCurrencySign.value = currency.sign;
+});
+
+// Cancel handler
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>

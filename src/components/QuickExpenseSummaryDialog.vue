@@ -20,11 +20,11 @@
                     {{ summaryItem.description }}
                     <span v-if="summaryItem.type === 'Purchase'"> (Asset)</span>
                   </td>
-                  <td>{{ prettifyAmount(summaryItem.amount) }}</td>
+                  <td>{{ printCount(summaryItem.amount) }}</td>
                 </tr>
                 <tr>
                   <th>Total</th>
-                  <th>{{ prettifyAmount(summary.sum) }}</th>
+                  <th>{{ printCount(summary.sum) }}</th>
                 </tr>
               </tbody>
             </table>
@@ -39,67 +39,48 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { useDialogPluginComponent, useQuasar } from "quasar";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { Currency } from "src/models/currency";
 import { QuickExpenseSummary } from "src/models/inferred/quick-expense-summary";
 import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
-import { asFinancialAmount, prettifyAmount } from "src/utils/misc-utils";
+import { printCount } from "src/utils/de-facto-utils";
 import { Ref, onMounted, ref } from "vue";
 
-export default {
-  props: {
-    recordList: {
-      type: Array,
-      required: true,
-    },
-  },
+// defineProps and defineEmits for script setup
+const props = defineProps<{
+  recordList: unknown[];
+}>();
 
-  components: { LoadingIndicator },
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  emits: [...useDialogPluginComponent.emits],
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-  setup(props) {
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+const $q = useQuasar();
 
-    const $q = useQuasar();
+const isLoading = ref(true);
+const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
-    const isLoading = ref(true);
-    const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
+const summaryList: Ref<{ currency: Currency; sum: number; summary: QuickExpenseSummary[] }[]> = ref([]);
 
-    const summaryList: Ref<{ currency: Currency; sum: number; summary: QuickExpenseSummary[] }[]> = ref([]);
+async function loadOverview() {
+  isLoading.value = true;
 
-    async function loadOverview() {
-      isLoading.value = true;
+  let newOverview = await computationService.computeQuickExpenseSummary(props.recordList as unknown as Record[]);
+  summaryList.value = newOverview;
 
-      let newOverview = await computationService.computeQuickExpenseSummary(props.recordList as unknown as Record[]);
-      summaryList.value = newOverview;
+  isLoading.value = false;
+}
 
-      isLoading.value = false;
-    }
+async function okClicked() {
+  onDialogOK();
+}
 
-    async function okClicked() {
-      onDialogOK();
-    }
-
-    onMounted(() => {
-      loadOverview();
-    });
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      prettifyAmount,
-      summaryList,
-      asFinancialAmount,
-    };
-  },
-};
+onMounted(() => {
+  loadOverview();
+});
 </script>
 <style scoped lang="scss">
 @import url(./../css/table.scss);

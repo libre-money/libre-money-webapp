@@ -20,14 +20,6 @@ export function deepClone(object: any) {
   return JSON.parse(JSON.stringify(object));
 }
 
-export function asAmount(amount: number | string | null | undefined) {
-  return parseFloat(String(amount)) || 0;
-}
-
-export function asFinancialAmount(amount: number | string | null | undefined) {
-  return Math.round(parseFloat(String(amount)) * 1000) / 1000 || 0;
-}
-
 function hexToRgb(hex: any) {
   // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
@@ -39,10 +31,10 @@ function hexToRgb(hex: any) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16),
-    }
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
     : null;
 }
 
@@ -61,14 +53,6 @@ export function guessFontColorCode(colorCode: string) {
   }
 }
 
-export function prettifyAmount(amount: number | string | null | undefined) {
-  return asFinancialAmount(amount).toLocaleString("en-US");
-}
-
-export function prettifyCount(amount: number | string | null | undefined) {
-  return asAmount(amount).toLocaleString("en-US");
-}
-
 export function prettifyDate(timestamp: number) {
   return date.formatDate(timestamp, "YYYY MMM DD");
 }
@@ -83,4 +67,12 @@ export function getCurrentYear() {
 
 export function isNullOrUndefined(value: any) {
   return value == null;
+}
+
+export function tryOrElse<T, U>(fn: () => T, fallback: U): T | U {
+  try {
+    return fn();
+  } catch (ex) {
+    return fallback;
+  }
 }

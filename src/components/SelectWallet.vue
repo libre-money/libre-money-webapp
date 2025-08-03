@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Collection } from "src/constants/constants";
 import { Wallet } from "src/models/wallet";
-import { Party } from "src/models/party";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref, watch } from "vue";
 

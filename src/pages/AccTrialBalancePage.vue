@@ -8,17 +8,12 @@
           <span>Trial Balance</span>
           <div class="sub-title" v-if="filters">
             <span v-if="filters.startEpoch === 0">
-              <span>
-                Up to {{ prettifyDate(filters.endEpoch) }}
-              </span>
+              <span> Up to {{ prettifyDate(filters.endEpoch) }} </span>
             </span>
-            <span v-else>
-              {{ prettifyDate(filters.startEpoch) }} to {{ prettifyDate(filters.endEpoch) }}
-            </span>
+            <span v-else> {{ prettifyDate(filters.startEpoch) }} to {{ prettifyDate(filters.endEpoch) }} </span>
           </div>
         </div>
       </div>
-
     </q-card>
     <!-- Filter - End -->
 
@@ -28,9 +23,7 @@
 
     <!-- Ledger - Start -->
     <template v-if="!isLoading && trialBalance">
-      <q-card class="std-card" v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList"
-        v-bind:key="trialBalanceWithCurrency.currencyId">
-
+      <q-card class="std-card" v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
         <div class="fin-presentation-container q-pa-md" v-for="aType in AccTypeList" v-bind:key="aType">
           <div class="fin-presentation-title">{{ aType }}&nbsp;({{ trialBalanceWithCurrency._currency!.name }})</div>
           <div class="fin-presentation">
@@ -39,41 +32,30 @@
               <div class="fin-presentation-head-numeric debit-head">Debit</div>
               <div class="fin-presentation-head-numeric credit-head">Credit</div>
             </div>
-            <template v-for="balanceEntry in trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].balanceList"
-              v-bind:key="balanceEntry.account.code">
+            <template v-for="balanceEntry in trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].balanceList" v-bind:key="balanceEntry.account.code">
               <div class="fin-presentation-row row">
                 <div class="fin-presentation-item-textual">
                   {{ balanceEntry.account.name }}
                 </div>
-                <div class="fin-presentation-item-numeric debit-sum" v-if="balanceEntry.isBalanceDebit">{{
-                  balanceEntry.balance }}&nbsp;{{
-                    trialBalanceWithCurrency._currency!.sign }}
+                <div class="fin-presentation-item-numeric debit-sum" v-if="balanceEntry.isBalanceDebit">
+                  {{ printAmount(balanceEntry.balance, trialBalanceWithCurrency._currency!._id) }}
                 </div>
                 <div class="fin-presentation-item-numeric credit-sum" v-if="balanceEntry.isBalanceDebit"></div>
                 <div class="fin-presentation-item-numeric debit-sum" v-if="!balanceEntry.isBalanceDebit"></div>
-                <div class="fin-presentation-item-numeric credit-sum" v-if="!balanceEntry.isBalanceDebit">{{
-                  balanceEntry.balance }}&nbsp;{{
-                    trialBalanceWithCurrency._currency!.sign }}
+                <div class="fin-presentation-item-numeric credit-sum" v-if="!balanceEntry.isBalanceDebit">
+                  {{ printAmount(balanceEntry.balance, trialBalanceWithCurrency._currency!._id) }}
                 </div>
               </div>
             </template>
             <div class="fin-presentation-head-container row">
               <div class="fin-presentation-head-textual">Total</div>
-              <div class="fin-presentation-head-numeric debit-total"
-                v-if="trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
-                {{ trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance }}&nbsp;{{
-                  trialBalanceWithCurrency._currency!.sign }}
+              <div class="fin-presentation-head-numeric debit-total" v-if="trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
+                {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
               </div>
-              <div class="fin-presentation-head-numeric credit-total"
-                v-if="trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
-              </div>
-              <div class="fin-presentation-head-numeric debit-total"
-                v-if="!trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
-              </div>
-              <div class="fin-presentation-head-numeric credit-total"
-                v-if="!trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
-                {{ trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance }}&nbsp;{{
-                  trialBalanceWithCurrency._currency!.sign }}
+              <div class="fin-presentation-head-numeric credit-total" v-if="trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit"></div>
+              <div class="fin-presentation-head-numeric debit-total" v-if="!trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit"></div>
+              <div class="fin-presentation-head-numeric credit-total" v-if="!trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
+                {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
               </div>
             </div>
           </div>
@@ -87,22 +69,22 @@
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
 import FilterAccStatementDialog from "src/components/FilterAccStatementDialog.vue";
+import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { AccTypeList } from "src/constants/accounting-constants";
 import { AccJournalFilters } from "src/models/accounting/acc-journal-filters";
 import { AccLedgerFilters } from "src/models/accounting/acc-ledger-filters";
 import { AccStatementFilters } from "src/models/accounting/acc-statement-filters";
 import { AccTrialBalance } from "src/models/accounting/acc-trial-balance";
-import { Record } from "src/models/record";
 import { accountingService } from "src/services/accounting-service";
+import { printAmount } from "src/utils/de-facto-utils";
 import { deepClone, prettifyDate } from "src/utils/misc-utils";
 import { Ref, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import LoadingIndicator from "src/components/LoadingIndicator.vue";
 
 const getDefaultFilters = () => {
   return {
     startEpoch: 0,
-    endEpoch: Date.now()
+    endEpoch: Date.now(),
   };
 };
 
@@ -124,16 +106,12 @@ async function loadData() {
   const progressNotifierFn = (progressFraction: number) => {
     loadingIndicator.value?.setProgress(progressFraction);
   };
-  const {
-    accountMap,
-    accountList,
-    journalEntryList,
-  } = await accountingService.initiateAccounting(progressNotifierFn);
+  const { accountMap, accountList, journalEntryList } = await accountingService.initiateAccounting(progressNotifierFn);
 
   const { startEpoch, endEpoch } = filters.value;
   const journalFilters: AccJournalFilters = {
     startEpoch,
-    endEpoch
+    endEpoch,
   };
 
   await loadingIndicator.value?.waitMinimalDuration(400);
@@ -162,7 +140,6 @@ async function setFiltersClicked() {
 // ----- Computed and Embedded
 
 // ----- Watchers
-
 
 // ----- Execution
 

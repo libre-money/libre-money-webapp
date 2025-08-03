@@ -27,11 +27,30 @@
         <div style="margin-top: -20px">
           <q-input filled v-model="recordFilters.searchString" label="Search in notes" />
         </div>
-        <div style="margin-top: 12px">
-          <q-input filled v-model="recordFilters.deepSearchString" label="Deep search (advanced)" />
-        </div>
-        <div style="margin-top: 12px; margin-bottom: 12px">
-          <q-select filled v-model="recordFilters.sortBy" :options="sortByTypeList" label="Sort by" emit-value map-options />
+
+        <!-- More Options Section -->
+        <div style="margin-top: 16px">
+          <div
+            class="row items-center cursor-pointer"
+            @click="moreOptionsExpanded = !moreOptionsExpanded"
+            style="padding: 8px 0; border-top: 1px solid rgba(0, 0, 0, 0.12)"
+          >
+            <div class="text-subtitle2 text-grey-7">More Options</div>
+            <q-space />
+            <q-icon :name="moreOptionsExpanded ? 'expand_less' : 'expand_more'" class="text-grey-6" />
+          </div>
+
+          <div v-show="moreOptionsExpanded">
+            <div style="margin-top: 12px">
+              <q-input filled v-model="recordFilters.deepSearchString" label="Deep search (advanced)" />
+            </div>
+            <div style="margin-top: 12px; margin-bottom: 12px">
+              <q-select filled v-model="recordFilters.sortBy" :options="sortByTypeList" label="Sort by" emit-value map-options />
+            </div>
+            <div style="margin-top: 12px; margin-bottom: 12px">
+              <q-checkbox v-model="recordFilters.highlightDuplicates" label="Highlight possible duplicates" />
+            </div>
+          </div>
         </div>
       </q-card-section>
 
@@ -44,106 +63,86 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { useDialogPluginComponent } from "quasar";
 import DateInput from "src/components/lib/DateInput.vue";
-import { dateRangePresetList, partyTypeList, sortByTypeList } from "src/constants/constants";
+import { dateRangePresetList, sortByTypeList } from "src/constants/constants";
 import { RecordFilters } from "src/models/inferred/record-filters";
 import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
-import { validators } from "src/utils/validators";
 import { Ref, ref, watch } from "vue";
 import SelectParty from "./SelectParty.vue";
 import SelectRecordType from "./SelectRecordType.vue";
 import SelectTag from "./SelectTag.vue";
 import SelectWallet from "./SelectWallet.vue";
 
-export default {
-  props: {
-    inputFilters: {
-      type: Object,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  inputFilters?: RecordFilters | null;
+}>();
 
-  components: { DateInput, SelectRecordType, SelectParty, SelectTag, SelectWallet },
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  emits: [...useDialogPluginComponent.emits],
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-  setup(props) {
-    const isLoading = ref(false);
+const isLoading = ref(false);
+const moreOptionsExpanded = ref(false);
 
-    const recordFilters: Ref<RecordFilters | null> = ref(null);
+const recordFilters: Ref<RecordFilters | null> = ref(null);
 
-    const defaultPreset = props.inputFilters?._preset || "current-year";
-    const selectedPreset: Ref<string> = ref(defaultPreset);
+const defaultPreset = props.inputFilters?._preset || "current-year";
+const selectedPreset: Ref<string> = ref(defaultPreset);
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+isLoading.value = true;
+if (props.inputFilters) {
+  recordFilters.value = props.inputFilters as RecordFilters;
+} else {
+  recordFilters.value = {
+    startEpoch: Date.now(),
+    endEpoch: Date.now(),
+    recordTypeList: [],
+    tagIdWhiteList: [],
+    tagIdBlackList: [],
+    partyId: null,
+    walletId: null,
+    searchString: "",
+    deepSearchString: "",
+    sortBy: "transactionEpochDesc",
+    highlightDuplicates: false,
+    type: "standard",
+  };
+}
+isLoading.value = false;
 
-    isLoading.value = true;
-    if (props.inputFilters) {
-      recordFilters.value = props.inputFilters as RecordFilters;
-    } else {
-      recordFilters.value = {
-        startEpoch: Date.now(),
-        endEpoch: Date.now(),
-        recordTypeList: [],
-        tagIdWhiteList: [],
-        tagIdBlackList: [],
-        partyId: null,
-        walletId: null,
-        searchString: "",
-        deepSearchString: "",
-        sortBy: "transactionEpochDesc",
-        type: "standard",
-      };
-    }
-    isLoading.value = false;
+async function okClicked() {
+  recordFilters.value!.type = "standard";
+  recordFilters.value!._preset = selectedPreset.value;
+  onDialogOK(recordFilters.value);
+}
 
-    async function okClicked() {
-      recordFilters.value!.type = "standard";
-      recordFilters.value!._preset = selectedPreset.value;
-      onDialogOK(recordFilters.value);
-    }
+async function startEpochChanged() {
+  selectedPreset.value = "custom";
+}
 
-    async function startEpochChanged() {
-      selectedPreset.value = "custom";
-    }
+async function endEpochChanged() {
+  selectedPreset.value = "custom";
+}
 
-    async function endEpochChanged() {
-      selectedPreset.value = "custom";
-    }
+function applyPreset(newPreset: string) {
+  const range = getStartAndEndEpochFromPreset(newPreset);
+  if (range) {
+    const { startEpoch, endEpoch } = range;
+    [recordFilters.value!.startEpoch, recordFilters.value!.endEpoch] = [startEpoch, endEpoch];
+  }
+}
 
-    function applyPreset(newPreset: string) {
-      const range = getStartAndEndEpochFromPreset(newPreset);
-      if (range) {
-        const { startEpoch, endEpoch } = range;
-        [recordFilters.value!.startEpoch, recordFilters.value!.endEpoch] = [startEpoch, endEpoch];
-      }
-    }
+watch(selectedPreset, (newPreset: any) => {
+  applyPreset(newPreset);
+});
 
-    watch(selectedPreset, async (newPreset: any) => {
-      applyPreset(newPreset);
-    });
+applyPreset(selectedPreset.value!);
 
-    applyPreset(selectedPreset.value!);
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      partyTypeList,
-      validators,
-      recordFilters,
-      dateRangePresetList,
-      selectedPreset,
-      startEpochChanged,
-      endEpochChanged,
-      sortByTypeList,
-    };
-  },
-};
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>

@@ -5,6 +5,15 @@ import { deletionService } from "./deletion-service";
 import { dialogService } from "./dialog-service";
 import { configService } from "./config-service";
 
+export interface SyncProgress {
+  phase: "connecting" | "downloading" | "uploading" | "finalizing";
+  totalDocs: number;
+  docsSynced: number;
+  bytesTransferred: number;
+  percentage: number;
+  errorCount: number;
+}
+
 const userStore = useUserStore();
 
 const LOCAL_DB_NAME = "cash-keeper-main";
@@ -124,26 +133,96 @@ export const pouchdbService = {
     return res;
   },
 
-  async sync() {
+  async sync(progressCallback?: (progress: SyncProgress) => void) {
     return await new Promise((accept, reject) => {
-      const remoteDbUrl = `${configService.getRemoteServerUrl()}/${configService.getDomainName()}`;
+      const { domain, serverUrl } = configService.getServerUrlAndDomainNameOrFail();
+      const remoteDbUrl = `${serverUrl}/${domain}`;
       const remoteDB = new PouchDB(remoteDbUrl, {
         auth: credentialService.getCredentials(),
       });
 
       let errorCount = 0;
+      let totalDocsToSync = 0;
+      let docsSynced = 0;
+      let bytesTransferred = 0;
+      let syncPhase: "connecting" | "downloading" | "uploading" | "finalizing" = "connecting";
+
+      const updateProgress = () => {
+        if (progressCallback) {
+          const percentage = totalDocsToSync > 0 ? Math.round((docsSynced / totalDocsToSync) * 100) : 0;
+          progressCallback({
+            phase: syncPhase,
+            totalDocs: totalDocsToSync,
+            docsSynced: docsSynced,
+            bytesTransferred: bytesTransferred,
+            percentage: percentage,
+            errorCount: errorCount,
+          });
+        }
+      };
+
+      // Initialize progress
+      updateProgress();
 
       pouchdb
         .sync(remoteDB)
+        .on("change", (info) => {
+          // Track the first change event to estimate total docs
+          if (totalDocsToSync === 0 && info.change && info.change.docs) {
+            // Start with a reasonable estimate, will be refined as we get more changes
+            totalDocsToSync = Math.max(50, info.change.docs.length * 10);
+          }
+
+          if (info.change && info.change.docs) {
+            const docsInThisBatch = info.change.docs.length;
+            docsSynced += docsInThisBatch;
+
+            // Estimate bytes transferred (rough approximation)
+            info.change.docs.forEach((doc) => {
+              bytesTransferred += JSON.stringify(doc).length;
+            });
+
+            // Update sync phase based on direction
+            if (info.direction === "pull") {
+              syncPhase = "downloading";
+            } else if (info.direction === "push") {
+              syncPhase = "uploading";
+            }
+
+            // Adjust total estimate if we've exceeded it
+            if (docsSynced > totalDocsToSync) {
+              totalDocsToSync = Math.max(totalDocsToSync, docsSynced + 20);
+            }
+
+            updateProgress();
+          }
+        })
+        .on("paused", () => {
+          console.debug("Sync paused");
+          syncPhase = "finalizing";
+          updateProgress();
+        })
+        .on("active", () => {
+          console.debug("Sync resumed");
+          updateProgress();
+        })
         .on("complete", () => {
           console.debug("Sync ended");
-          accept(errorCount);
+          syncPhase = "finalizing";
 
+          // Ensure we show 100% completion
+          if (totalDocsToSync > 0) {
+            docsSynced = totalDocsToSync;
+          }
+          updateProgress();
+
+          accept(errorCount);
           this.notifyChangeListeners("sync", undefined);
         })
         .on("denied", (err) => {
           console.error(err);
           errorCount += 1;
+          updateProgress();
         })
         .on("error", (err) => {
           console.error(err);

@@ -58,61 +58,44 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { useDialogPluginComponent } from "quasar";
-import { partyTypeList } from "src/constants/constants";
 import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
-import { prettifyAmount } from "src/utils/misc-utils";
-import { validators } from "src/utils/validators";
-import { Ref, ref } from "vue";
+import { printAmount as printAmountUtil } from "src/utils/de-facto-utils";
+import { ref, Ref } from "vue";
 
-export default {
-  props: {
-    summary: {
-      type: Object,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  summary?: LoanAndDebtSummary | null;
+}>();
 
-  components: {},
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  emits: [...useDialogPluginComponent.emits],
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-  setup(props) {
-    const isLoading = ref(false);
+// State
+const isLoading = ref(false);
+const recordSummary: Ref<LoanAndDebtSummary | null> = ref(null);
 
-    const recordSummary: Ref<LoanAndDebtSummary | null> = ref(null);
+// Initialize recordSummary
+isLoading.value = true;
+if (props.summary) {
+  recordSummary.value = props.summary as LoanAndDebtSummary;
+}
+isLoading.value = false;
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+// Methods
+function printAmount(amount: number) {
+  return printAmountUtil(amount, recordSummary.value?.currencyId);
+}
 
-    isLoading.value = true;
-    if (props.summary) {
-      recordSummary.value = props.summary as LoanAndDebtSummary;
-    }
-    isLoading.value = false;
+function okClicked() {
+  onDialogOK();
+}
 
-    async function okClicked() {
-      onDialogOK();
-    }
-
-    function printAmount(amount: number) {
-      return `${recordSummary.value?.currencySign} ${prettifyAmount(amount)}`;
-    }
-
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      partyTypeList,
-      validators,
-      recordSummary,
-      printAmount,
-    };
-  },
-};
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss">
 .key {

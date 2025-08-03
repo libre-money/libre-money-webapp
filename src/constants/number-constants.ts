@@ -1,0 +1,8 @@
+export const NUMBER_CONFIG = {
+  FINANCIAL_PRECISION: 3,
+  PERCENTAGE_PRECISION: 2,
+  DEFAULT_LOCALE: "en-US",
+  CURRENCY_POSITION: "after" as const,
+  CURRENCY_SPACING: " ",
+  USE_GROUPING: true,
+};

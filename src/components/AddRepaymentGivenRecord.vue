@@ -27,16 +27,16 @@
       </q-card-section>
 
       <q-card-actions class="row justify-end">
-        <q-btn color="blue-grey" label="Cancel" @click="cancelClicked" />
+        <q-btn color="blue-grey" label="Cancel" @click="onDialogCancel" />
         <q-btn color="primary" label="OK" @click="okClicked" />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { Collection, RecordType } from "src/constants/constants";
 import { Record } from "src/models/record";
@@ -44,157 +44,127 @@ import { pouchdbService } from "src/services/pouchdb-service";
 import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
-import { asAmount } from "src/utils/misc-utils";
+import { asAmount } from "src/utils/de-facto-utils";
 import { entityService } from "src/services/entity-service";
 import DateTimeInput from "./lib/DateTimeInput.vue";
 
-export default {
-  props: {
-    existingRecordId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-    suggestedCurrencyId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-    suggestedPartyId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-    suggestedAmount: {
-      type: Number,
-      required: false,
-      default: null,
-    },
-  },
+// Props
+const props = defineProps<{
+  existingRecordId?: string | null;
+  suggestedCurrencyId?: string | null;
+  suggestedPartyId?: string | null;
+  suggestedAmount?: number | null;
+}>();
 
-  components: {
-    SelectWallet,
-    SelectParty,
-    SelectTag,
-    DateTimeInput,
-  },
+// Emits
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  emits: [...useDialogPluginComponent.emits],
+// Dialog plugin
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-  setup(props) {
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+// State
+let initialDoc: Record | null = null;
+const isLoading = ref(false);
 
-    let initialDoc: Record | null = null;
-    const isLoading = ref(false);
+const recordForm = ref<QForm | null>(null);
 
-    const recordForm: Ref<QForm | null> = ref(null);
+const paymentType = ref<string | null>("full");
+const recordType = RecordType.REPAYMENT_GIVEN;
 
-    const paymentType: Ref<string | null> = ref("full");
-    const recordType = RecordType.REPAYMENT_GIVEN;
+const recordAmount = ref<number>(0);
+const recordCurrencyId = ref<string | null>(null);
+const recordCurrencySign = ref<string | null>(null);
+const recordPartyId = ref<string | null>(null);
+const recordWalletId = ref<string | null>(null);
+const recordTagIdList = ref<string[]>([]);
+const recordNotes = ref<string | null>(null);
 
-    const recordAmount: Ref<number> = ref(0);
-    const recordCurrencyId: Ref<string | null> = ref(null);
-    const recordCurrencySign: Ref<string | null> = ref(null);
-    const recordPartyId: Ref<string | null> = ref(null);
-    const recordWalletId: Ref<string | null> = ref(null);
-    const recordTagIdList: Ref<string[]> = ref([]);
-    const recordNotes: Ref<string | null> = ref(null);
+const transactionEpoch = ref<number>(Date.now());
 
-    const transactionEpoch: Ref<number> = ref(Date.now());
-
-    if (props.existingRecordId) {
-      isLoading.value = true;
-      (async function () {
-        isLoading.value = true;
-        let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
-        initialDoc = res;
-        if (!initialDoc.repaymentGiven) {
-          // TODO show error message
-          return;
-        }
-        recordAmount.value = asAmount(initialDoc.repaymentGiven.amount);
-        recordCurrencyId.value = initialDoc.repaymentGiven.currencyId;
-        recordPartyId.value = initialDoc.repaymentGiven.partyId;
-        recordWalletId.value = initialDoc.repaymentGiven.walletId!;
-
-        recordTagIdList.value = initialDoc.tagIdList;
-        recordNotes.value = initialDoc.notes;
-
-        isLoading.value = false;
-      })();
-    } else {
-      recordCurrencyId.value = props.suggestedCurrencyId!;
-      recordPartyId.value = props.suggestedPartyId!;
-      recordAmount.value = props.suggestedAmount!;
+// Load initial data
+onMounted(async () => {
+  if (props.existingRecordId) {
+    isLoading.value = true;
+    let res = (await pouchdbService.getDocById(props.existingRecordId)) as Record;
+    initialDoc = res;
+    if (!initialDoc.repaymentGiven) {
+      // TODO show error message
+      isLoading.value = false;
+      return;
     }
+    recordAmount.value = asAmount(initialDoc.repaymentGiven.amount);
+    recordCurrencyId.value = initialDoc.repaymentGiven.currencyId;
+    recordPartyId.value = initialDoc.repaymentGiven.partyId;
+    recordWalletId.value = initialDoc.repaymentGiven.walletId!;
 
-    async function performManualValidation() {
-      return true;
-    }
+    recordTagIdList.value = initialDoc.tagIdList;
+    recordNotes.value = initialDoc.notes;
 
-    async function okClicked() {
-      if (!(await recordForm.value?.validate())) {
-        return;
-      }
+    isLoading.value = false;
+  } else {
+    if (props.suggestedCurrencyId) recordCurrencyId.value = props.suggestedCurrencyId;
+    if (props.suggestedPartyId) recordPartyId.value = props.suggestedPartyId;
+    if (props.suggestedAmount !== undefined && props.suggestedAmount !== null) recordAmount.value = props.suggestedAmount;
+  }
+});
 
-      if (!(await performManualValidation())) {
-        return;
-      }
+// Manual validation stub
+async function performManualValidation() {
+  return true;
+}
 
-      let record: Record = {
-        $collection: Collection.RECORD,
-        notes: recordNotes.value!,
-        type: recordType,
-        tagIdList: recordTagIdList.value,
-        transactionEpoch: transactionEpoch.value,
-        repaymentGiven: {
-          amount: asAmount(recordAmount.value),
-          walletId: recordWalletId.value!,
-          currencyId: recordCurrencyId.value!,
-          partyId: recordPartyId.value!,
-        },
-      };
+// OK button handler
+async function okClicked() {
+  if (!(await recordForm.value?.validate())) {
+    return;
+  }
 
-      if (initialDoc) {
-        record = Object.assign({}, initialDoc, record);
-      }
+  if (!(await performManualValidation())) {
+    return;
+  }
 
-      console.debug("Saving record: ", JSON.stringify(record, null, 2));
+  let record: Record = {
+    $collection: Collection.RECORD,
+    notes: recordNotes.value!,
+    type: recordType,
+    tagIdList: recordTagIdList.value,
+    transactionEpoch: transactionEpoch.value,
+    repaymentGiven: {
+      amount: asAmount(recordAmount.value),
+      walletId: recordWalletId.value!,
+      currencyId: recordCurrencyId.value!,
+      partyId: recordPartyId.value!,
+    },
+  };
 
-      pouchdbService.upsertDoc(record);
+  if (initialDoc) {
+    record = Object.assign({}, initialDoc, record);
+  }
 
-      onDialogOK();
-    }
+  console.debug("Saving record: ", JSON.stringify(record, null, 2));
 
-    watch(recordCurrencyId, async (currencyId: any) => {
-      recordCurrencySign.value = (await entityService.getCurrency(currencyId)).sign;
-    });
+  pouchdbService.upsertDoc(record);
 
-    watch(recordWalletId, async (newWalletId: any) => {
-      let wallet = await entityService.getWallet(newWalletId as string);
-      let currency = await entityService.getCurrency(wallet.currencyId);
-      recordCurrencySign.value = currency.sign;
-    });
+  onDialogOK();
+}
 
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      validators,
-      transactionEpoch,
-      recordForm,
-      paymentType,
-      recordAmount,
-      recordCurrencyId,
-      recordPartyId,
-      recordWalletId,
-      recordCurrencySign,
-      recordTagIdList,
-      recordNotes,
-    };
-  },
-};
+// Watchers for currency sign
+watch(recordCurrencyId, async (currencyId: any) => {
+  if (currencyId) {
+    recordCurrencySign.value = (await entityService.getCurrency(currencyId)).sign;
+  } else {
+    recordCurrencySign.value = null;
+  }
+});
+
+watch(recordWalletId, async (newWalletId: any) => {
+  if (newWalletId) {
+    let wallet = await entityService.getWallet(newWalletId as string);
+    let currency = await entityService.getCurrency(wallet.currencyId);
+    recordCurrencySign.value = currency.sign;
+  } else {
+    recordCurrencySign.value = null;
+  }
+});
 </script>
 <style scoped lang="scss"></style>

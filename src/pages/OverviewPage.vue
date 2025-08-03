@@ -20,29 +20,6 @@
       </div>
     </q-card>
 
-    <q-card class="std-card" v-if="!isLoading && budgetList.length > 0">
-      <div class="title-row q-pa-md q-gutter-sm">
-        <div class="title">Budgets</div>
-      </div>
-
-      <div class="q-pa-md">
-        <table class="overview-table">
-          <tbody>
-            <tr>
-              <th>Budget</th>
-              <th>Used</th>
-              <th>Details</th>
-            </tr>
-            <tr v-for="row in budgetList" v-bind:key="row._id">
-              <td>{{ row.name }}</td>
-              <td>{{ printUsedPercentage(row) }}</td>
-              <td>{{ printAmount(row._usedAmount || 0) }} / {{ printAmount(row.overflowLimit) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </q-card>
-
     <q-card class="std-card" v-if="!isLoading && overview">
       <div class="title-row q-pa-md q-gutter-sm">
         <div class="title">Wallet Balances</div>
@@ -90,19 +67,16 @@
 import { useQuasar } from "quasar";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import SelectCurrency from "src/components/SelectCurrency.vue";
-import { Collection } from "src/constants/constants";
-import { Budget } from "src/models/budget";
+
 import { Overview } from "src/models/inferred/overview";
-import { Record } from "src/models/record";
 import { computationService } from "src/services/computation-service";
 import { dialogService } from "src/services/dialog-service";
 import { errorService } from "src/services/error-service";
 import { lockService } from "src/services/lock-service";
-import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
+import { printAmount as printAmountUtil } from "src/utils/de-facto-utils";
 import { CodedError } from "src/utils/error-utils";
-import { prettifyAmount, sleep } from "src/utils/misc-utils";
 import { Ref, onMounted, ref, watch } from "vue";
 
 const $q = useQuasar();
@@ -119,24 +93,12 @@ const recordCurrencyId: Ref<string | null> = ref(settingsStore.defaultCurrencyId
 const startEpoch: Ref<number> = ref(setDateToTheFirstDateOfMonth(Date.now()));
 const endEpoch: Ref<number> = ref(Date.now());
 const overview: Ref<Overview | null> = ref(null);
-const budgetList: Ref<Budget[]> = ref([]);
 
 // ----- Functions
 
 async function loadOverview() {
   let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, recordCurrencyId.value!);
   overview.value = newOverview;
-}
-
-async function loadBudgets() {
-  let res = await pouchdbService.listByCollection(Collection.BUDGET);
-  let newBudgetList = res.docs as Budget[];
-  newBudgetList = newBudgetList
-    .filter((budget) => budget.currencyId === recordCurrencyId.value!)
-    .filter((budget) => budget.startEpoch <= Date.now() && budget.endEpoch >= Date.now());
-  await computationService.computeUsedAmountForBudgetListInPlace(newBudgetList);
-  newBudgetList.sort((a, b) => a.name.localeCompare(b.name));
-  budgetList.value = newBudgetList;
 }
 
 async function loadData() {
@@ -153,9 +115,6 @@ async function loadData() {
         await dialogService.alert("Error", "Please set a default currency in settings.");
       }
     }
-
-    loadingIndicator.value?.startPhase({ phase: 1, weight: 40, label: "Loading budgets" });
-    await loadBudgets();
 
     loadingIndicator.value?.startPhase({ phase: 2, weight: 60, label: "Preparing overview" });
     await loadOverview();
@@ -176,14 +135,7 @@ async function reloadClicked() {
 // ----- Computed and Embedded
 
 function printAmount(amount: number) {
-  return `${overview.value?.currency.sign} ${prettifyAmount(amount)}`;
-}
-
-function printUsedPercentage(budget: Budget) {
-  if (budget.overflowLimit <= 0) {
-    return "-";
-  }
-  return `${Math.round(((budget._usedAmount || 0) / budget.overflowLimit) * 10000) / 100}%`;
+  return printAmountUtil(amount, overview.value?.currency._id);
 }
 
 // ----- Watchers

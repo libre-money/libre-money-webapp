@@ -7,8 +7,7 @@
         </div>
         <q-form class="q-gutter-md q-pa-md" ref="memoForm">
           <q-input filled v-model="memoName" label="Name" lazy-rules :rules="validators.name" />
-          <q-input type="textarea" filled v-model="memoContent" label="Content" lazy-rules :rules="validators.document"
-            input-style="min-height: 50vh" />
+          <q-input type="textarea" filled v-model="memoContent" label="Content" lazy-rules :rules="validators.document" input-style="min-height: 50vh" />
         </q-form>
       </q-card-section>
 
@@ -20,79 +19,63 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { Ref, ref } from "vue";
+import { ref, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { Memo } from "src/models/memo";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Collection } from "src/constants/constants";
 
-export default {
-  props: {
-    existingMemoId: {
-      type: String,
-      required: false,
-      default: null,
-    },
-  },
+// defineProps and defineEmits for script setup
+const props = defineProps<{
+  existingMemoId?: string | null;
+}>();
 
-  emits: [...useDialogPluginComponent.emits],
+const emit = defineEmits([...useDialogPluginComponent.emits]);
 
-  setup(props) {
-    let initialDoc: Memo | null = null;
+let initialDoc: Memo | null = null;
 
-    const isLoading = ref(false);
+const isLoading = ref(false);
 
-    const memoForm: Ref<QForm | null> = ref(null);
+const memoForm = ref<QForm | null>(null);
 
-    const memoName: Ref<string | null> = ref(null);
-    const memoContent: Ref<string | null> = ref(null);
+const memoName = ref<string | null>(null);
+const memoContent = ref<string | null>(null);
 
-    const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
 
-    if (props.existingMemoId) {
-      isLoading.value = true;
-      (async function () {
-        let res = (await pouchdbService.getDocById(props.existingMemoId)) as Memo;
-        initialDoc = res;
-        memoName.value = res.name;
-        memoContent.value = res.content;
-        isLoading.value = false;
-      })();
-    }
-    async function okClicked() {
-      if (!(await memoForm.value?.validate())) {
-        return;
-      }
+onMounted(async () => {
+  if (props.existingMemoId) {
+    isLoading.value = true;
+    const res = (await pouchdbService.getDocById(props.existingMemoId)) as Memo;
+    initialDoc = res;
+    memoName.value = res.name;
+    memoContent.value = res.content;
+    isLoading.value = false;
+  }
+});
 
-      let memo: Memo = {
-        $collection: Collection.MEMO,
-        name: memoName.value!,
-        content: memoContent.value!,
-      };
+async function okClicked() {
+  if (!(await memoForm.value?.validate())) {
+    return;
+  }
 
-      if (initialDoc) {
-        memo = Object.assign({}, initialDoc, memo);
-      }
+  let memo: Memo = {
+    $collection: Collection.MEMO,
+    name: memoName.value!,
+    content: memoContent.value!,
+  };
 
-      pouchdbService.upsertDoc(memo);
+  if (initialDoc) {
+    memo = Object.assign({}, initialDoc, memo);
+  }
 
-      onDialogOK();
-    }
+  pouchdbService.upsertDoc(memo);
 
-    return {
-      dialogRef,
-      onDialogHide,
-      okClicked,
-      cancelClicked: onDialogCancel,
-      isLoading,
-      memoName,
-      validators,
-      memoForm,
-      memoContent,
-    };
-  },
-};
+  onDialogOK();
+}
+
+const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>

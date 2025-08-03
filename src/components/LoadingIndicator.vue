@@ -1,21 +1,20 @@
 <script setup lang="ts">
-
 import { sleep } from "src/utils/misc-utils";
-import { Ref, computed, ref } from "vue";
+import { Ref, ref } from "vue";
 
 const props = defineProps({
   isLoading: {
     type: Boolean,
     default: false,
-    required: true
+    required: true,
   },
   phases: {
     type: Number,
-    default: 1
+    default: 1,
   },
   label: {
     type: String,
-    default: "Loading..."
+    default: "Loading...",
   },
 });
 
@@ -30,7 +29,7 @@ const currentPhase: Ref<number> = ref(1);
 const currentPhaseProgressPercentage: Ref<number> = ref(0);
 const currentLabel: Ref<string> = ref("");
 
-const startPhase = (params: { phase: number, label: string, weight: number; }) => {
+const startPhase = (params: { phase: number; label: string; weight: number }) => {
   if (params.phase === 1) {
     totalPercentage.value = 0;
     startEpoch = Date.now();
@@ -61,16 +60,24 @@ const waitMinimalDuration = async (minimumDelayMillis: number) => {
 defineExpose({
   startPhase,
   setProgress,
-  waitMinimalDuration
+  waitMinimalDuration,
 });
-
 </script>
 
 <template>
   <div v-if="isLoading">
-    <div style="text-align: center;">
-      <q-circular-progress show-value font-size="12px" :value="totalPercentage" size="50px" :thickness="0.22"
-        color="teal" track-color="grey-3" class="q-ma-md" :indeterminate="totalPercentage === 0">
+    <div style="text-align: center">
+      <q-circular-progress
+        show-value
+        font-size="12px"
+        :value="totalPercentage"
+        size="50px"
+        :thickness="0.22"
+        color="teal"
+        track-color="grey-3"
+        class="q-ma-md"
+        :indeterminate="totalPercentage === 0"
+      >
         <span>{{ totalPercentage }}%</span>
       </q-circular-progress>
 

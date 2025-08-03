@@ -1,6 +1,6 @@
 import { Collection, RecordType, assetLiquidityList } from "src/constants/constants";
 import { Asset } from "src/models/asset";
-import { Budget } from "src/models/budget";
+
 import { Currency } from "src/models/currency";
 import { ExpenseAvenue } from "src/models/expense-avenue";
 import { IncomeSource } from "src/models/income-source";
@@ -10,15 +10,15 @@ import { QuickSummary } from "src/models/inferred/quick-summary";
 import { Party } from "src/models/party";
 import { Record } from "src/models/record";
 import { Wallet } from "src/models/wallet";
-import { normalizeEpochRange } from "src/utils/date-utils";
-import { asAmount, isNullOrUndefined } from "src/utils/misc-utils";
+import { normalizeEpochAsDateAtTheEndOfDay, normalizeEpochAsDate, normalizeEpochRange } from "src/utils/date-utils";
+import { isNullOrUndefined } from "src/utils/misc-utils";
+import { asAmount } from "src/utils/de-facto-utils";
 import { pouchdbService } from "./pouchdb-service";
 import { QuickExpenseSummary } from "src/models/inferred/quick-expense-summary";
 import { entityService } from "./entity-service";
 import { RollingBudget } from "src/models/rolling-budget";
 
 class ComputationService {
-
   async computeBalancesForAssets(assetList: Asset[]): Promise<void> {
     const res2 = await pouchdbService.listByCollection(Collection.RECORD);
     const recordList = res2.docs as Record[];
@@ -543,8 +543,6 @@ class ComputationService {
     return overview;
   }
 
-
-
   async computeUsedAmountForRollingBudgetInPlace(rollingBudget: RollingBudget) {
     const res = await pouchdbService.listByCollection(Collection.RECORD);
     const fullRecordList = res.docs as Record[];
@@ -554,7 +552,9 @@ class ComputationService {
     let toRollOverAmount = 0;
 
     for (const budgetedPeriod of rollingBudget.budgetedPeriodList) {
-      let narrowedRecordList = fullRecordList.filter((record) => record.transactionEpoch >= budgetedPeriod.startEpoch && record.transactionEpoch <= budgetedPeriod.endEpoch);
+      const startEpoch = normalizeEpochAsDate(budgetedPeriod.startEpoch);
+      const endEpoch = normalizeEpochAsDateAtTheEndOfDay(budgetedPeriod.endEpoch);
+      let narrowedRecordList = fullRecordList.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
 
       if (rollingBudget.tagIdWhiteList.length > 0) {
         narrowedRecordList = narrowedRecordList.filter((record) => {
@@ -577,7 +577,6 @@ class ComputationService {
         usedAmount += finerRecordList.reduce((sum, record) => sum + record.expense!.amount, 0);
       }
 
-
       if (rollingBudget.includeAssetPurchases) {
         const finerRecordList = narrowedRecordList.filter(
           (record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase && record.assetPurchase.currencyId === rollingBudget.currencyId
@@ -585,55 +584,20 @@ class ComputationService {
         usedAmount += finerRecordList.reduce((sum, record) => sum + record.assetPurchase!.amount, 0);
       }
 
+      budgetedPeriod.allocatedAmount = asAmount(budgetedPeriod.allocatedAmount);
+      budgetedPeriod.heldAmount = asAmount(budgetedPeriod.heldAmount);
       budgetedPeriod.usedAmount = usedAmount;
       budgetedPeriod.rolledOverAmount = toRollOverAmount;
       budgetedPeriod.totalAllocatedAmount = asAmount(budgetedPeriod.allocatedAmount) + asAmount(budgetedPeriod.rolledOverAmount);
       budgetedPeriod.remainingAmount = asAmount(budgetedPeriod.totalAllocatedAmount) - usedAmount - asAmount(budgetedPeriod.heldAmount);
 
-      if (rollingBudget.rollOverRule === "always"
-        || (rollingBudget.rollOverRule === "positive-only" && budgetedPeriod.remainingAmount > 0)
-        || (rollingBudget.rollOverRule === "negative-only" && budgetedPeriod.remainingAmount < 0)) {
+      if (
+        rollingBudget.rollOverRule === "always" ||
+        (rollingBudget.rollOverRule === "positive-only" && budgetedPeriod.remainingAmount > 0) ||
+        (rollingBudget.rollOverRule === "negative-only" && budgetedPeriod.remainingAmount < 0)
+      ) {
         toRollOverAmount = budgetedPeriod.remainingAmount;
       }
-    }
-  }
-
-  async computeUsedAmountForBudgetListInPlace(budgetList: Budget[]) {
-    const res = await pouchdbService.listByCollection(Collection.RECORD);
-    const fullRecordList = res.docs as Record[];
-
-    for (const budget of budgetList) {
-      let narrowedRecordList = fullRecordList.filter((record) => record.transactionEpoch >= budget.startEpoch && record.transactionEpoch <= budget.endEpoch);
-
-      if (budget.tagIdWhiteList.length > 0) {
-        narrowedRecordList = narrowedRecordList.filter((record) => {
-          return record.tagIdList.some((tagId) => budget.tagIdWhiteList.includes(tagId));
-        });
-      }
-
-      if (budget.tagIdBlackList.length > 0) {
-        narrowedRecordList = narrowedRecordList.filter((record) => {
-          return !record.tagIdList.some((tagId) => budget.tagIdBlackList.includes(tagId));
-        });
-      }
-
-      let usedAmount = 0;
-
-      if (budget.includeExpenses) {
-        const finerRecordList = narrowedRecordList.filter(
-          (record) => record.type === RecordType.EXPENSE && record.expense && record.expense.currencyId === budget.currencyId
-        );
-        usedAmount += finerRecordList.reduce((sum, record) => sum + record.expense!.amount, 0);
-      }
-
-      if (budget.includeAssetPurchases) {
-        const finerRecordList = narrowedRecordList.filter(
-          (record) => record.type === RecordType.ASSET_PURCHASE && record.assetPurchase && record.assetPurchase.currencyId === budget.currencyId
-        );
-        usedAmount += finerRecordList.reduce((sum, record) => sum + record.assetPurchase!.amount, 0);
-      }
-
-      budget._usedAmount = usedAmount;
     }
   }
 
@@ -746,10 +710,10 @@ class ComputationService {
     );
   }
 
-  async computeQuickExpenseSummary(recordList: Record[]): Promise<{ currency: Currency, sum: number, summary: QuickExpenseSummary[]; }[]> {
+  async computeQuickExpenseSummary(recordList: Record[]): Promise<{ currency: Currency; sum: number; summary: QuickExpenseSummary[] }[]> {
     const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
 
-    const result: { currency: Currency, sum: number, summary: QuickExpenseSummary[]; }[] = [];
+    const result: { currency: Currency; sum: number; summary: QuickExpenseSummary[] }[] = [];
 
     for (const currency of currencyList) {
       const summary: QuickExpenseSummary[] = [];

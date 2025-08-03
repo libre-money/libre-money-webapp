@@ -16,6 +16,16 @@ class EntityService {
     return doc;
   }
 
+  async getExpenseAvenueByFixtureCode(fixtureCode: string) {
+    const docList = (await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE)).docs as ExpenseAvenue[];
+    return docList.find((expenseAvenue) => expenseAvenue.fixtureCode === fixtureCode);
+  }
+
+  async getIncomeSourceByFixtureCode(fixtureCode: string) {
+    const docList = (await pouchdbService.listByCollection(Collection.INCOME_SOURCE)).docs as IncomeSource[];
+    return docList.find((incomeSource) => incomeSource.fixtureCode === fixtureCode);
+  }
+
   async getIncomeSource(incomeSourceId: string) {
     const doc = (await pouchdbService.getDocById(incomeSourceId)) as IncomeSource;
     return doc;

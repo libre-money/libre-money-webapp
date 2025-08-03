@@ -8,14 +8,27 @@
           {{ $route.meta.title || "Cash Keeper" }}
         </q-toolbar-title>
 
+        <!-- Offline Indicator -->
+        <div v-if="userStore.currentUser?.isOfflineUser" class="offline-indicator-container" @click="goToOnlinePage">
+          <q-icon name="offline_bolt" color="orange" size="20px" />
+          <span class="offline-indicator-text">Offline</span>
+          <q-tooltip>Click to go online and sync across devices</q-tooltip>
+        </div>
+
+        <!-- Sync Spinner -->
+        <div v-if="syncService.status.value.isBackgroundSyncing" class="sync-spinner-container">
+          <q-spinner color="white" size="20px" :thickness="3" />
+          <span class="sync-spinner-text">Syncing...</span>
+        </div>
+
         <div v-if="$route.meta.title && !isDevDatabase && !isDevMachine">Cash Keeper</div>
         <div class="dev-mode-notification" v-if="isDevDatabase">DEV DB</div>
         <div class="dev-mode-warning" v-if="!isDevDatabase && isDevMachine">PROD DB in DEV ENV</div>
 
         <q-btn flat dense round icon="perm_identity">
           <q-menu>
-            <q-list style="min-width: 100px">
-              <q-item clickable v-close-popup @click="syncClicked">
+            <q-list style="min-width: 150px">
+              <q-item clickable v-close-popup @click="fullSyncClicked" :disable="syncService.isSyncing()">
                 <q-item-section>Sync</q-item-section>
               </q-item>
               <q-separator />
@@ -50,6 +63,11 @@
       </q-list>
 
       <q-list>
+        <q-item-label header> ADVANCED </q-item-label>
+        <EssentialLink v-for="link in advancedList" :key="link.title" v-bind="link" />
+      </q-list>
+
+      <q-list>
         <q-item-label header> MISC </q-item-label>
         <EssentialLink v-for="link in miscList" :key="link.title" v-bind="link" />
       </q-list>
@@ -73,17 +91,19 @@
   </q-layout>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from "vue";
-import { useUserStore } from "src/stores/user";
+<script setup lang="ts">
 import EssentialLink from "components/sidebar/EssentialLink.vue";
-import { loginService } from "src/services/login-service";
-import { dialogService } from "src/services/dialog-service";
-import { sleep } from "src/utils/misc-utils";
 import { useQuasar } from "quasar";
-import SyncDialog from "src/components/SyncDialog.vue";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
-import { formatService } from "src/services/format-service";
+import { authService } from "src/services/auth-service";
+import { currencyFormatService } from "src/services/currency-format-service";
+import { dialogService } from "src/services/dialog-service";
+import { syncService } from "src/services/sync-service";
+import { useUserStore } from "src/stores/user";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+
+const route = useRoute();
 
 const operationList = [
   {
@@ -123,15 +143,9 @@ const operationList = [
     link: "#/loans-and-debts",
   },
   {
-    title: "Budgets",
-    caption: "Budget and save more",
-    icon: "energy_savings_leaf",
-    link: "#/budgets",
-  },
-  {
     title: "Rolling Budgets",
     caption: "Monthly recurring budgets",
-    icon: "calendar_month",
+    icon: "energy_savings_leaf",
     link: "#/rolling-budgets",
   },
 ];
@@ -211,6 +225,32 @@ const accountingList = [
   },
 ];
 
+const advancedList = computed(() => {
+  const list = [
+    {
+      title: "Pro Mode",
+      caption: "Edit as a spreadsheet",
+      icon: "grid_view",
+      link: "#/pro-mode",
+    },
+    {
+      title: "Text Import Rules",
+      caption: "Import records from text/SMS",
+      icon: "text_snippet",
+      link: "#/text-import-rules",
+    },
+  ];
+  if (userStore.currentUser?.isOfflineUser) {
+    list.push({
+      title: "Go Online",
+      caption: "",
+      icon: "cloud_sync",
+      link: "#/go-online",
+    });
+  }
+  return list;
+});
+
 const miscList = [
   {
     title: "Memos",
@@ -238,84 +278,115 @@ const miscList = [
   },
 ];
 
-export default defineComponent({
-  name: "MainLayout",
+const leftDrawerOpen = ref(false);
+const isDevDatabase = ref(false);
+const isDevMachine = ref(false);
 
-  components: {
-    EssentialLink,
-  },
+const userStore = useUserStore();
+const $q = useQuasar();
+const router = useRouter();
 
-  setup() {
-    const $q = useQuasar();
+function checkIfInDevMode() {
+  isDevDatabase.value = false;
+  isDevMachine.value = false;
+  if (userStore.user && userStore.user.domain.indexOf("test") > -1) {
+    isDevDatabase.value = true;
+  }
 
-    const isLeftDrawerOpen = ref(false);
-    const isDevDatabase = ref(false);
-    const isDevMachine = ref(false);
+  if (window.location.host.indexOf("localhost") > -1 || window.location.host.indexOf("127.0.0.1") > -1) {
+    isDevMachine.value = true;
+  }
+}
 
-    const userStore = useUserStore();
-
-    function checkIfInDevMode() {
-      isDevDatabase.value = false;
-      isDevMachine.value = false;
-      if (userStore.user && userStore.user.domain.indexOf("test") > -1) {
-        isDevDatabase.value = true;
-      }
-
-      if (window.location.host.indexOf("localhost") > -1 || window.location.host.indexOf("127.0.0.1") > -1) {
-        isDevMachine.value = true;
-      }
-    }
-    userStore.$subscribe(checkIfInDevMode);
-    checkIfInDevMode();
-
-    async function logoutClicked() {
-      let [successful, failureReason] = await loginService.logout();
-      if (!successful) {
-        await dialogService.alert("Logout Error", failureReason as string);
-      }
-      await sleep(100);
-      // @ts-ignore
-      window.location.reload(true);
-    }
-
-    async function syncClicked() {
-      $q.dialog({ component: SyncDialog, componentProps: { bidirectional: true } });
-    }
-
-    async function verionClicked() {
-      const title = `Version ${APP_VERSION}`;
-      const body = `Internal Build: ${APP_BUILD_VERSION}, Release Date: ${APP_BUILD_DATE}`;
-      await dialogService.alert(title, body);
-    }
-
-    formatService.init();
-
-    return {
-      operationList,
-      entityList,
-      reportList,
-      accountingList,
-
-      leftDrawerOpen: isLeftDrawerOpen,
-      toggleLeftDrawer() {
-        isLeftDrawerOpen.value = !isLeftDrawerOpen.value;
-      },
-      APP_VERSION,
-
-      miscList,
-      userStore,
-      logoutClicked,
-      syncClicked,
-      verionClicked,
-
-      isDevDatabase,
-      isDevMachine,
-    };
-  },
+userStore.$subscribe(checkIfInDevMode);
+onMounted(() => {
+  checkIfInDevMode();
+  currencyFormatService.init();
+  syncService.setUpPouchdbListener();
+  handleRouteChange(route.fullPath, null);
 });
+
+async function logoutClicked() {
+  let [successful, failureReason] = await authService.logout();
+  if (!successful) {
+    await dialogService.alert("Logout Error", failureReason as string);
+    return;
+  }
+  // Navigate to post-logout page instead of reloading
+  await router.push({ name: "post-logout" });
+}
+
+function fullSyncClicked() {
+  if (userStore.currentUser?.isOfflineUser) {
+    router.push({ name: "go-online" });
+    return;
+  }
+  syncService.doFullSync($q, true, "MainLayout");
+}
+
+async function verionClicked() {
+  const title = `Version ${APP_VERSION}`;
+  const body = `Internal Build: ${APP_BUILD_VERSION}, Release Date: ${APP_BUILD_DATE}`;
+  await dialogService.alert(title, body);
+}
+
+function toggleLeftDrawer() {
+  leftDrawerOpen.value = !leftDrawerOpen.value;
+}
+
+async function goToOnlinePage() {
+  await router.push({ name: "go-online" });
+}
+
+function handleRouteChange(newPath: string, oldPath: string | null) {
+  const newRoute = route;
+  const oldRoute = router.resolve(oldPath || "/");
+  if (newRoute.meta && newRoute.meta.preferLeftDrawerClosed) {
+    leftDrawerOpen.value = false;
+  } else if (oldRoute.meta && oldRoute.meta.preferLeftDrawerClosed) {
+    leftDrawerOpen.value = true;
+  }
+}
+
+watch(() => route.fullPath, handleRouteChange);
 </script>
 
 <style scoped lang="scss">
+.offline-indicator-container {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: rgba(255, 165, 0, 0.1);
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(255, 165, 0, 0.2);
+  }
+}
+
+.offline-indicator-text {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sync-spinner-container {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+  gap: 8px;
+}
+
+.sync-spinner-text {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .drawer-bottom {
   margin-top: 8px;
   background: rgb(29, 29, 29);
