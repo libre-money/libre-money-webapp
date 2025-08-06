@@ -5,6 +5,7 @@ import { DEFAULT_REMOTE_SERVER_URL } from "../constants/auth-constants";
 
 const LOCAL_STORAGE_KEY__DOMAIN = "--ck-config--domain";
 const LOCAL_STORAGE_KEY__SERVER_URL = "--ck-config--server-url";
+const LOCAL_STORAGE_KEY__AUDIT_LOG_REMOTE_ENABLED = "--ck-config--audit-log-remote-enabled";
 
 class ConfigService {
   getServerUrlAndDomainNameOrFail() {
@@ -48,6 +49,19 @@ class ConfigService {
 
   clearRemoteServerUrl() {
     return localStorage.removeItem(LOCAL_STORAGE_KEY__SERVER_URL);
+  }
+
+  getAuditLogRemoteEnabled(): boolean {
+    const value = localStorage.getItem(LOCAL_STORAGE_KEY__AUDIT_LOG_REMOTE_ENABLED);
+    return value === "true";
+  }
+
+  setAuditLogRemoteEnabled(enabled: boolean) {
+    return localStorage.setItem(LOCAL_STORAGE_KEY__AUDIT_LOG_REMOTE_ENABLED, enabled.toString());
+  }
+
+  clearAuditLogRemoteEnabled() {
+    return localStorage.removeItem(LOCAL_STORAGE_KEY__AUDIT_LOG_REMOTE_ENABLED);
   }
 }
 

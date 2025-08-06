@@ -1,6 +1,7 @@
 import { User } from "src/models/user";
 import { useUserStore } from "src/stores/user";
 import { previousSessionService } from "./previous-session-service";
+import { auditLogService } from "./audit-log-service";
 
 const userStore = useUserStore();
 
@@ -17,6 +18,10 @@ export const authService = {
       if (currentUser) {
         previousSessionService.storePreviousSession(currentUser);
       }
+
+      // Cleanup audit log service
+      await auditLogService.cleanup();
+      configService.clearAuditLogRemoteEnabled();
 
       await credentialService.clearCredentials();
       userStore.setUser(null);
@@ -58,6 +63,12 @@ export const authService = {
       };
 
       userStore.setUser(user);
+
+      // Audit Log
+      await auditLogService.engineInit("LoginPage");
+
+      // Reset audit log session for new login
+      auditLogService.resetSession();
 
       return [true, null];
     } catch (error) {

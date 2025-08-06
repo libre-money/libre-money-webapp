@@ -184,6 +184,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuthentication: true, title: "Debug", rememberable: true },
       },
       {
+        path: "audit-log",
+        name: "audit-log",
+        component: () => import("pages/AuditLogPage.vue"),
+        meta: { requiresAuthentication: true, title: "Audit Log", rememberable: true },
+      },
+      {
         path: "about",
         name: "about",
         component: () => import("pages/AboutPage.vue"),

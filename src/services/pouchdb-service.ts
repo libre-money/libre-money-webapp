@@ -4,6 +4,7 @@ import { useUserStore } from "src/stores/user";
 import { deletionService } from "./deletion-service";
 import { dialogService } from "./dialog-service";
 import { configService } from "./config-service";
+import { auditLogService } from "./audit-log-service";
 
 export interface SyncProgress {
   phase: "connecting" | "downloading" | "uploading" | "finalizing";
@@ -79,17 +80,28 @@ export const pouchdbService = {
     doc.modifiedByUsername = userStore.currentUser?.username;
     doc.modifiedEpoch = Date.now();
     stripKnownTemporaryFields(doc);
+
+    let oldDoc: PouchDB.Core.PostDocument<any> | undefined = undefined;
+    let res;
+
     if (doc._id) {
-      const res = await pouchdb.put(doc);
-
-      this.notifyChangeListeners("upsert", doc);
-      return res;
+      // Try to fetch the old document for audit logging
+      try {
+        oldDoc = await pouchdb.get(doc._id);
+      } catch (error) {
+        // Document doesn't exist yet, this is effectively a new document
+        console.debug("Old document not found for audit logging (likely new document):", doc._id);
+      }
+      res = await pouchdb.put(doc);
     } else {
-      const res = await pouchdb.post(doc);
-
-      this.notifyChangeListeners("upsert", doc);
-      return res;
+      res = await pouchdb.post(doc);
     }
+
+    // Log to audit log if enabled (pass both old and new documents)
+    await auditLogService.logUpsert(doc, oldDoc);
+
+    this.notifyChangeListeners("upsert", doc);
+    return res;
   },
 
   async listDocs() {
@@ -127,6 +139,9 @@ export const pouchdbService = {
     }
 
     const res = await pouchdb.remove(doc._id, doc._rev);
+
+    // Log to audit log if enabled
+    await auditLogService.logRemoval(doc);
 
     this.notifyChangeListeners("remove", doc);
 
@@ -206,7 +221,7 @@ export const pouchdbService = {
           console.debug("Sync resumed");
           updateProgress();
         })
-        .on("complete", () => {
+        .on("complete", async () => {
           console.debug("Sync ended");
           syncPhase = "finalizing";
 
@@ -215,6 +230,9 @@ export const pouchdbService = {
             docsSynced = totalDocsToSync;
           }
           updateProgress();
+
+          // Log to audit log if enabled
+          await auditLogService.logSync();
 
           accept(errorCount);
           this.notifyChangeListeners("sync", undefined);

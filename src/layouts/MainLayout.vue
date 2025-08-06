@@ -95,6 +95,7 @@
 import EssentialLink from "components/sidebar/EssentialLink.vue";
 import { useQuasar } from "quasar";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
+import { auditLogService } from "src/services/audit-log-service";
 import { authService } from "src/services/auth-service";
 import { currencyFormatService } from "src/services/currency-format-service";
 import { dialogService } from "src/services/dialog-service";
@@ -265,6 +266,12 @@ const miscList = [
     link: "#/settings",
   },
   {
+    title: "Audit Log",
+    caption: "",
+    icon: "history",
+    link: "#/audit-log",
+  },
+  {
     title: "Debug",
     caption: "",
     icon: "bug_report",
@@ -303,6 +310,7 @@ onMounted(() => {
   checkIfInDevMode();
   currencyFormatService.init();
   syncService.setUpPouchdbListener();
+  auditLogService.engineInit("MainLayout");
   handleRouteChange(route.fullPath, null);
 });
 
