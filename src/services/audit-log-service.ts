@@ -8,12 +8,14 @@ export interface AuditLogEntry {
   _id?: string;
   _rev?: string;
   timestamp: number;
-  action: "upsert" | "remove" | "sync";
+  action: "upsert" | "remove" | "sync" | "sync-error";
   documentId?: string;
   documentCollection?: string;
   documentData?: any; // For backward compatibility and remove/sync actions
   oldDocumentData?: any; // For upsert actions - the document before changes
   newDocumentData?: any; // For upsert actions - the document after changes
+  errorMessage?: string; // For sync-error actions
+  errorDetails?: any; // For sync-error actions - additional error context
   username: string;
   domain: string;
   userAgent: string;
@@ -172,6 +174,39 @@ class AuditLogService {
       console.debug("Audit log: Sync operation logged");
     } catch (error) {
       console.error("Failed to log audit entry for sync:", error);
+      // Don't throw - audit logging should not break main functionality
+    }
+  }
+
+  /**
+   * Log a sync error
+   */
+  async logSyncError(error: Error, context?: any): Promise<void> {
+    try {
+      const userStore = useUserStore();
+      const currentUser = userStore.currentUser;
+
+      if (!currentUser) return;
+
+      const auditEntry: AuditLogEntry = {
+        timestamp: Date.now(),
+        action: "sync-error",
+        errorMessage: error.message,
+        errorDetails: {
+          name: error.name,
+          stack: error.stack,
+          context: context,
+        },
+        username: currentUser.username,
+        domain: currentUser.domain,
+        userAgent: navigator.userAgent,
+        sessionId: this.sessionId,
+      };
+
+      await this.auditDb.post(auditEntry);
+      console.debug("Audit log: Sync error logged", error.message);
+    } catch (logError) {
+      console.error("Failed to log audit entry for sync error:", logError);
       // Don't throw - audit logging should not break main functionality
     }
   }

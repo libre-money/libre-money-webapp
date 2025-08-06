@@ -98,6 +98,7 @@ import { dialogService } from "src/services/dialog-service";
 import { migrationService } from "src/services/migration-service";
 import { pouchdbService, type SyncProgress } from "src/services/pouchdb-service";
 import { useUserStore } from "src/stores/user";
+import { auditLogService } from "src/services/audit-log-service";
 import { sleep } from "src/utils/misc-utils";
 import { validators } from "src/utils/validators";
 import { computed, ref, reactive } from "vue";
@@ -263,6 +264,16 @@ async function sync() {
     }
   } catch (error) {
     console.error("Sync error:", error);
+
+    // Log sync error to audit log
+    if (error instanceof Error) {
+      await auditLogService.logSyncError(error, {
+        syncType: "full",
+        invocationOrigin: props.invocationOrigin,
+        reloadWindowAfterSync: props.reloadWindowAfterSync,
+      });
+    }
+
     await updateSyncStatus("Sync failed", "Please check your internet connection");
     await dialogService.alert("Sync Error", "Encountered error while trying to sync with remote. Ensure you have working internet connection");
   }

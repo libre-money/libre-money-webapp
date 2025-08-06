@@ -3,6 +3,7 @@ import { credentialService } from "./credential-service";
 import { pouchdbService } from "./pouchdb-service";
 import { useUserStore } from "src/stores/user";
 import { QVueGlobals } from "quasar";
+import { auditLogService } from "./audit-log-service";
 
 export type SyncInvocationOrigin = "background" | "LoginPage" | "GoOnlinePage" | "MainLayout";
 
@@ -122,6 +123,14 @@ class SyncService {
       const errorMessage = error instanceof Error ? error.message : "Unknown sync error";
       this.syncStatus.value.lastSyncError = errorMessage;
       console.debug("Background sync failed:", error);
+
+      // Log sync error to audit log
+      if (error instanceof Error) {
+        await auditLogService.logSyncError(error, {
+          syncType: "background",
+          invocationOrigin: "background",
+        });
+      }
     } finally {
       this.syncStatus.value.isBackgroundSyncing = false;
     }

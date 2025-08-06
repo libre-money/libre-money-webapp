@@ -45,7 +45,7 @@
           style="font-family: 'Courier New', Courier, monospace"
         >
           <template v-slot:body-cell-timestamp="props">
-            <q-td :props="props">
+            <q-td :props="props" style="max-width: 100px">
               {{ formatTimestamp(props.value) }}
             </q-td>
           </template>
@@ -53,6 +53,12 @@
           <template v-slot:body-cell-action="props">
             <q-td :props="props">
               <q-chip :color="getActionColor(props.value)" text-color="white" :label="props.value" size="sm" />
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-documentId="props">
+            <q-td :props="props" style="max-width: 100px">
+              {{ props.value }}
             </q-td>
           </template>
 
@@ -93,6 +99,15 @@
               </div>
               <q-btn v-else-if="props.value" flat dense color="primary" label="View" @click="viewDocumentData(props.value, 'Document Data')" />
               <span v-else>-</span>
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-errorMessage="props">
+            <q-td :props="props" style="max-width: 200px">
+              <div v-if="props.value" class="text-caption">
+                <div class="text-weight-medium text-negative">{{ props.value }}</div>
+                <q-btn v-if="props.row.errorDetails" flat dense color="orange" label="Details" @click="viewErrorDetails(props.row.errorDetails)" size="xs" />
+              </div>
             </q-td>
           </template>
 
@@ -177,6 +192,7 @@ const actionOptions = [
   { label: "Upsert", value: "upsert" },
   { label: "Remove", value: "remove" },
   { label: "Sync", value: "sync" },
+  { label: "Sync Error", value: "sync-error" },
 ];
 
 const $q = useQuasar();
@@ -234,6 +250,13 @@ const columns = [
     align: "center" as const,
     field: "documentData",
     sortable: false,
+  },
+  {
+    name: "errorMessage",
+    label: "Error",
+    align: "left" as const,
+    field: "errorMessage",
+    sortable: true,
   },
   // {
   //   name: "sessionId",
@@ -370,6 +393,8 @@ function getActionColor(action: string): string {
       return "red";
     case "sync":
       return "blue";
+    case "sync-error":
+      return "red";
     default:
       return "grey";
   }
@@ -440,6 +465,12 @@ function syncAuditLogs() {
     return;
   }
   auditLogService.syncAuditLogs();
+}
+
+function viewErrorDetails(errorDetails: any) {
+  selectedDocumentData.value = errorDetails;
+  selectedDocumentTitle.value = "Error Details";
+  showDocumentDialog.value = true;
 }
 
 // Lifecycle
