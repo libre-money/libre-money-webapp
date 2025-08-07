@@ -50,7 +50,7 @@
                   </td>
                   <td class="item-type">{{ item.type }}</td>
                   <td v-for="(periodData, index) in item.periods" :key="`${periodData.period.startEpoch}-${periodData.period.endEpoch}`" class="period-amount">
-                    <div v-if="periodData.amount > 0" class="amount-cell">
+                    <div v-if="periodData.amount > 0" class="amount-cell clickable" @click="showRecordsDialog(item, periodData.period)">
                       <div class="amount">{{ printAmount(periodData.amount, item.currency._id) }}</div>
                       <div class="count">({{ periodData.count }} {{ periodData.count === 1 ? "record" : "records" }})</div>
                       <div
@@ -64,8 +64,10 @@
                     <div v-else class="amount-cell empty"></div>
                   </td>
                   <td class="total-amount">
-                    <div class="amount">{{ printAmount(item.totalAmount, item.currency._id) }}</div>
-                    <div class="count">({{ item.totalCount }} {{ item.totalCount === 1 ? "record" : "records" }})</div>
+                    <div class="amount-cell clickable" @click="showRecordsDialog(item, null)">
+                      <div class="amount">{{ printAmount(item.totalAmount, item.currency._id) }}</div>
+                      <div class="count">({{ item.totalCount }} {{ item.totalCount === 1 ? "record" : "records" }})</div>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -80,7 +82,7 @@
                     :key="`total-${periodTotal.period.startEpoch}-${periodTotal.period.endEpoch}`"
                     class="period-total"
                   >
-                    <div v-if="periodTotal.totalAmount > 0" class="amount-cell">
+                    <div v-if="periodTotal.totalAmount > 0" class="amount-cell clickable" @click="showAllRecordsDialog(periodTotal.period)">
                       <div class="amount">{{ printAmount(periodTotal.totalAmount, analysisResult.currency._id) }}</div>
                       <div class="count">({{ periodTotal.totalCount }} {{ periodTotal.totalCount === 1 ? "record" : "records" }})</div>
                       <div class="allocated">Allocated: {{ printAmount(periodTotal.period.allocatedAmount, analysisResult.currency._id) }}</div>
@@ -154,8 +156,10 @@
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
+import QuickRecordsDialog from "src/components/QuickRecordsDialog.vue";
 import { RollingBudget } from "src/models/rolling-budget";
-import { BudgetAnalysisResult, budgetAnalysisService } from "src/services/budget-analysis-service";
+import { BudgetAnalysisResult, BudgetAnalysisItem, budgetAnalysisService } from "src/services/budget-analysis-service";
+import { BudgetedPeriod } from "src/models/rolling-budget";
 import { printAmount } from "src/utils/de-facto-utils";
 import { prettifyDate } from "src/utils/misc-utils";
 import { onMounted, ref, type Ref } from "vue";
@@ -226,6 +230,44 @@ function getDiffText(currentAmount: number, previousAmount: number, currencyId: 
 
 function createBudgetClicked() {
   router.push("/rolling-budgets");
+}
+
+async function showRecordsDialog(budgetItem: BudgetAnalysisItem, period: BudgetedPeriod | null) {
+  try {
+    await $q.dialog({
+      component: QuickRecordsDialog,
+      componentProps: {
+        budgetItem,
+        budget: selectedBudget.value,
+        period,
+      },
+    });
+  } catch (error) {
+    console.error("Error showing records dialog:", error);
+  }
+}
+
+async function showAllRecordsDialog(period: BudgetedPeriod) {
+  try {
+    await $q.dialog({
+      component: QuickRecordsDialog,
+      componentProps: {
+        budgetItem: {
+          id: "all",
+          name: "All Records",
+          type: "Expense" as any,
+          currency: analysisResult.value!.currency,
+          periods: [],
+          totalAmount: 0,
+          totalCount: 0,
+        },
+        budget: selectedBudget.value,
+        period,
+      },
+    });
+  } catch (error) {
+    console.error("Error showing all records dialog:", error);
+  }
 }
 
 onMounted(() => {
@@ -351,6 +393,18 @@ onMounted(() => {
       &.empty {
         color: #ccc;
       }
+
+      &.clickable {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #e3f2fd;
+          border-radius: 4px;
+          padding: 4px;
+          margin: -4px;
+        }
+      }
     }
 
     .item-row:hover {
@@ -380,9 +434,6 @@ onMounted(() => {
 
       .summary-type {
         background-color: #e3f2fd;
-        position: sticky;
-        left: 200px;
-        z-index: 10;
       }
 
       .period-total {
