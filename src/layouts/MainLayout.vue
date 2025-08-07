@@ -187,6 +187,12 @@ const entityList = [
 
 const reportList = [
   {
+    title: "Budget Analysis",
+    caption: "Compare expenses across budget periods",
+    icon: "analytics",
+    link: "#/budget-analysis",
+  },
+  {
     title: "Combined Report",
     caption: "",
     icon: "description",
