@@ -82,19 +82,19 @@
                   <q-input type="number" dense v-model="props.row.allocatedAmount" @update:model-value="allocatedAmountChanged(props.row)" />
                 </q-td>
                 <q-td key="rolledOver" :props="props">
-                  {{ props.row.rolledOverAmount }}
+                  {{ printAmount(props.row.rolledOverAmount, null) }}
                 </q-td>
                 <q-td key="total" :props="props">
-                  {{ props.row.totalAllocatedAmount }}
+                  {{ printAmount(props.row.totalAllocatedAmount, null) }}
                 </q-td>
                 <q-td key="used" :props="props">
-                  {{ props.row.usedAmount }}
+                  {{ printAmount(props.row.usedAmount, null) }}
                 </q-td>
                 <q-td key="held" :props="props">
                   <q-input type="number" dense v-model="props.row.heldAmount" @update:model-value="heldAmountChanged(props.row)" />
                 </q-td>
                 <q-td key="remaining" :props="props">
-                  {{ props.row.remainingAmount }}
+                  {{ printAmount(props.row.remainingAmount, null) }}
                 </q-td>
                 <q-td auto-width>
                   <q-btn size="sm" color="negative" round dense icon="delete" @click="removePeriod(props.rowIndex)" />
@@ -131,6 +131,7 @@ import { prettifyDate } from "src/utils/misc-utils";
 import { asAmount } from "src/utils/de-facto-utils";
 import { computationService } from "src/services/computation-service";
 import { normalizeEpochAsDate, generateMonthlyPeriods } from "src/utils/date-utils";
+import { printAmount } from "src/utils/de-facto-utils";
 
 // Props
 const props = defineProps<{
