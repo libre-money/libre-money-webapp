@@ -49,12 +49,19 @@
                     <q-chip v-if="item.type === 'Asset'" size="sm" color="blue" text-color="white" label="Asset" />
                   </td>
                   <td class="item-type">{{ item.type }}</td>
-                  <td v-for="periodData in item.periods" :key="`${periodData.period.startEpoch}-${periodData.period.endEpoch}`" class="period-amount">
+                  <td v-for="(periodData, index) in item.periods" :key="`${periodData.period.startEpoch}-${periodData.period.endEpoch}`" class="period-amount">
                     <div v-if="periodData.amount > 0" class="amount-cell">
                       <div class="amount">{{ printAmount(periodData.amount, item.currency._id) }}</div>
                       <div class="count">({{ periodData.count }} {{ periodData.count === 1 ? "record" : "records" }})</div>
+                      <div
+                        v-if="index > 0 && item.periods[index - 1].amount > 0"
+                        class="period-diff"
+                        :class="getDiffClass(periodData.amount, item.periods[index - 1].amount)"
+                      >
+                        {{ getDiffText(periodData.amount, item.periods[index - 1].amount, item.currency._id) }}
+                      </div>
                     </div>
-                    <div v-else class="amount-cell empty">-</div>
+                    <div v-else class="amount-cell empty"></div>
                   </td>
                   <td class="total-amount">
                     <div class="amount">{{ printAmount(item.totalAmount, item.currency._id) }}</div>
@@ -202,6 +209,21 @@ function formatPeriodTitle(period: any): string {
   return `${startDate} - ${endDate}`;
 }
 
+function getDiffClass(currentAmount: number, previousAmount: number): string {
+  if (currentAmount > previousAmount) return "increase";
+  if (currentAmount < previousAmount) return "decrease";
+  return "no-change";
+}
+
+function getDiffText(currentAmount: number, previousAmount: number, currencyId: string | undefined): string {
+  const diff = currentAmount - previousAmount;
+  if (diff === 0) return "No change";
+
+  const sign = diff > 0 ? "+" : "-";
+  const diffText = printAmount(Math.abs(diff), currencyId || "");
+  return `${sign}${diffText}`;
+}
+
 function createBudgetClicked() {
   router.push("/rolling-budgets");
 }
@@ -300,6 +322,30 @@ onMounted(() => {
         color: #888;
         margin-top: 2px;
         font-style: italic;
+      }
+
+      .period-diff {
+        font-size: 10px;
+        margin-top: 2px;
+        font-weight: 500;
+        border-radius: 3px;
+        padding: 1px 4px;
+        display: inline-block;
+
+        &.increase {
+          color: #c62828;
+          background-color: #ffebee;
+        }
+
+        &.decrease {
+          color: #2e7d32;
+          background-color: #e8f5e8;
+        }
+
+        &.no-change {
+          color: #666;
+          background-color: #f5f5f5;
+        }
       }
 
       &.empty {
