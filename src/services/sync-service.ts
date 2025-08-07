@@ -114,6 +114,13 @@ class SyncService {
       const errorCount = (await pouchdbService.sync()) as number;
       this.syncStatus.value.lastSyncTime = new Date();
 
+      // Also sync audit logs in background
+      try {
+        await auditLogService.syncAuditLogs();
+      } catch (auditSyncError) {
+        console.warn("Background audit log sync failed:", auditSyncError);
+      }
+
       if (errorCount > 0) {
         console.warn(`Background sync completed with ${errorCount} non-fatal errors`);
       } else {

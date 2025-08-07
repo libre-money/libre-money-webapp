@@ -46,14 +46,30 @@ class AuditLogService {
 
   private performBackgroundSync() {
     if (this.isRemoteEnabled() && credentialService.hasCredentials()) {
-      // TODO: Perform background sync
+      this.performBackgroundSyncImpl();
     }
     this.setupNextBackgroundSync();
   }
 
+  private async performBackgroundSyncImpl(): Promise<void> {
+    if (!this.isRemoteEnabled() || !credentialService.hasCredentials()) {
+      return;
+    }
+
+    try {
+      const result = await this.syncAuditLogs();
+      if (result.success) {
+        console.debug(`Background audit log sync completed: ${result.syncedCount} entries synced`);
+      } else {
+        console.warn("Background audit log sync failed:", result.error);
+      }
+    } catch (error) {
+      console.error("Background audit log sync error:", error);
+    }
+  }
+
   private setupNextBackgroundSync() {
-    // TODO: Uncomment this when we have a way to perform background sync
-    // setTimeout(() => this.performBackgroundSync(), BACKGROUND_SYNC_INTERVAL_MS);
+    setTimeout(() => this.performBackgroundSync(), BACKGROUND_SYNC_INTERVAL_MS);
   }
 
   public async engineInit(origin: "LoginPage" | "GoOnlinePage" | "MainLayout") {
@@ -288,15 +304,118 @@ class AuditLogService {
   }
 
   /**
-   * Sync audit logs to remote database (placeholder for future implementation)
+   * Get sync status information
    */
-  async syncAuditLogs(): Promise<void> {
-    // TODO: Implement remote sync functionality
-    console.debug("Audit log sync requested - not yet implemented");
+  async getSyncStatus(): Promise<{ isRemoteEnabled: boolean; hasCredentials: boolean; lastSyncTime?: number }> {
+    const isRemoteEnabled = this.isRemoteEnabled();
+    const hasCredentials = credentialService.hasCredentials();
+
+    let lastSyncTime: number | undefined;
+    if (isRemoteEnabled && hasCredentials) {
+      try {
+        // Get the most recent sync entry
+        const result = await this.auditDb.allDocs({
+          include_docs: true,
+          limit: 1,
+          descending: true,
+        });
+
+        const syncEntries = result.rows.map((row) => row.doc as AuditLogEntry).filter((entry) => entry && entry.action === "sync");
+
+        if (syncEntries.length > 0) {
+          lastSyncTime = syncEntries[0].timestamp;
+        }
+      } catch (error) {
+        console.debug("Failed to get last sync time:", error);
+      }
+    }
+
+    return {
+      isRemoteEnabled,
+      hasCredentials,
+      lastSyncTime,
+    };
   }
 
   /**
-   * Get audit logs with pagination
+   * Sync audit logs to remote database
+   *
+   * This method syncs all local audit log entries to the remote audit log database.
+   * It processes entries in batches to avoid overwhelming the server and provides
+   * detailed feedback on the sync operation.
+   *
+   * @returns Promise resolving to sync result with success status, synced count, and optional error
+   */
+  async syncAuditLogs(): Promise<{ success: boolean; syncedCount: number; error?: string }> {
+    if (!this.isRemoteEnabled() || !credentialService.hasCredentials()) {
+      return { success: false, syncedCount: 0, error: "Remote sync not enabled or no credentials" };
+    }
+
+    try {
+      const { domain, serverUrl } = configService.getServerUrlAndDomainNameOrFail();
+      const remoteDbUrl = this.getAuditDbUrl();
+      const remoteDB = new PouchDB(remoteDbUrl, {
+        auth: credentialService.getCredentials(),
+      });
+
+      // Get all local audit logs that haven't been synced yet
+      const localLogs = await this.auditDb.allDocs({
+        include_docs: true,
+      });
+
+      const auditEntries = localLogs.rows.map((row) => row.doc as AuditLogEntry).filter((entry) => entry && entry.timestamp);
+
+      if (auditEntries.length === 0) {
+        console.debug("No audit logs to sync");
+        return { success: true, syncedCount: 0 };
+      }
+
+      let syncedCount = 0;
+      let errorCount = 0;
+
+      // Sync in batches to avoid overwhelming the server
+      const batchSize = 50;
+      for (let i = 0; i < auditEntries.length; i += batchSize) {
+        const batch = auditEntries.slice(i, i + batchSize);
+
+        try {
+          // Prepare batch for remote sync (remove _id and _rev for new documents)
+          const batchForSync = batch.map((entry) => {
+            const { _id, _rev, ...entryWithoutId } = entry;
+            return entryWithoutId;
+          });
+
+          // Bulk upsert to remote database
+          const bulkResult = await remoteDB.bulkDocs(batchForSync, { new_edits: false });
+
+          // Count successful syncs
+          syncedCount += bulkResult.filter((result) => !("error" in result)).length;
+          errorCount += bulkResult.filter((result) => "error" in result).length;
+
+          console.debug(
+            `Synced batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(auditEntries.length / batchSize)}: ${syncedCount} successful, ${errorCount} errors`
+          );
+        } catch (batchError) {
+          console.error("Error syncing batch:", batchError);
+          errorCount += batch.length;
+        }
+      }
+
+      if (errorCount > 0) {
+        await this.logSyncError(new Error(`Sync completed with ${errorCount} errors`), { syncedCount, errorCount });
+      }
+
+      console.debug(`Audit log sync completed: ${syncedCount} synced, ${errorCount} errors`);
+      return { success: true, syncedCount, error: errorCount > 0 ? `${errorCount} errors occurred` : undefined };
+    } catch (error) {
+      console.error("Failed to sync audit logs:", error);
+      await this.logSyncError(error as Error, { operation: "syncAuditLogs" });
+      return { success: false, syncedCount: 0, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Get audit logs with pagination and remote sync support
    */
   async getAuditLogs(
     options: {
@@ -304,19 +423,27 @@ class AuditLogService {
       skip?: number;
       startKey?: string;
       descending?: boolean;
+      includeRemote?: boolean;
     } = {}
   ): Promise<{ rows: AuditLogEntry[]; total_rows: number }> {
-    if (!this.isRemoteEnabled()) {
-      return { rows: [], total_rows: 0 };
+    const { includeRemote = false, ...paginationOptions } = options;
+
+    // If remote is enabled and we want to include remote data, sync first
+    if (this.isRemoteEnabled() && includeRemote) {
+      try {
+        await this.syncAuditLogs();
+      } catch (error) {
+        console.warn("Failed to sync audit logs before retrieval:", error);
+      }
     }
 
     try {
       const result = await this.auditDb.allDocs({
         include_docs: true,
-        limit: options.limit || 50,
-        skip: options.skip || 0,
-        startkey: options.startKey,
-        descending: options.descending !== false, // Default to descending (newest first)
+        limit: paginationOptions.limit || 50,
+        skip: paginationOptions.skip || 0,
+        startkey: paginationOptions.startKey,
+        descending: paginationOptions.descending !== false, // Default to descending (newest first)
       });
 
       const rows = result.rows.map((row) => row.doc as AuditLogEntry).filter((doc) => doc && doc.timestamp); // Filter out any invalid docs
@@ -328,6 +455,38 @@ class AuditLogService {
     } catch (error) {
       console.error("Failed to retrieve audit logs:", error);
       return { rows: [], total_rows: 0 };
+    }
+  }
+
+  /**
+   * Clean up old audit logs (keep only last N days)
+   */
+  async cleanupOldLogs(daysToKeep = 30): Promise<{ deletedCount: number }> {
+    try {
+      const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
+
+      const oldLogs = await this.auditDb.allDocs({
+        include_docs: true,
+        startkey: "0",
+        endkey: cutoffTime.toString(),
+      });
+
+      const docsToDelete = oldLogs.rows
+        .map((row) => row.doc)
+        .filter(
+          (doc) => doc && typeof doc === "object" && "timestamp" in doc && typeof (doc as any).timestamp === "number" && (doc as any).timestamp < cutoffTime
+        )
+        .map((doc) => ({ _id: (doc as any)._id, _rev: (doc as any)._rev, _deleted: true }));
+
+      if (docsToDelete.length > 0) {
+        await this.auditDb.bulkDocs(docsToDelete);
+        console.debug(`Cleaned up ${docsToDelete.length} old audit log entries`);
+      }
+
+      return { deletedCount: docsToDelete.length };
+    } catch (error) {
+      console.error("Failed to cleanup old audit logs:", error);
+      return { deletedCount: 0 };
     }
   }
 }

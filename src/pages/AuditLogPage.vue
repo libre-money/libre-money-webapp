@@ -3,8 +3,10 @@
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <div class="title">Audit Log</div>
-        <q-btn color="secondary" text-color="white" label="Sync" icon="sync" @click="syncAuditLogs" class="q-ml-sm" />
-        <q-btn color="primary" text-color="white" label="Refresh" icon="refresh" @click="loadData" :loading="isLoading" />
+        <div class="row items-center q-gutter-sm">
+          <q-btn color="secondary" text-color="white" label="Sync" icon="sync" @click="syncAuditLogs" :loading="isSyncing" :disable="!isRemoteEnabled" />
+          <q-btn color="primary" text-color="white" label="Refresh" icon="refresh" @click="loadData" :loading="isLoading" />
+        </div>
       </div>
 
       <!-- Filters -->
@@ -175,6 +177,8 @@ import { Record } from "src/models/record";
 import DocumentDiffViewer from "src/components/DocumentDiffViewer.vue";
 
 const isLoading = ref(false);
+const isSyncing = ref(false);
+const isRemoteEnabled = ref(false);
 const rows = ref<AuditLogEntry[]>([]);
 const showDocumentDialog = ref(false);
 const selectedDocumentData = ref<unknown>(null);
@@ -462,12 +466,33 @@ async function showDiff(oldDoc: any, newDoc: any) {
   }
 }
 
-function syncAuditLogs() {
+async function syncAuditLogs() {
   if (!auditLogService.isRemoteEnabled()) {
     dialogService.alert("Sync Audit Logs", "Remote sync for audit logs is not enabled. Please contact your administrator or see the relevant documentation.");
     return;
   }
-  auditLogService.syncAuditLogs();
+
+  try {
+    isSyncing.value = true;
+    const result = await auditLogService.syncAuditLogs();
+
+    if (result.success) {
+      if (result.syncedCount > 0) {
+        dialogService.alert("Sync Complete", `Successfully synced ${result.syncedCount} audit log entries to remote database.`);
+      } else {
+        dialogService.alert("Sync Complete", "No new audit log entries to sync.");
+      }
+      // Refresh the data after sync
+      loadData();
+    } else {
+      dialogService.alert("Sync Failed", `Failed to sync audit logs: ${result.error}`);
+    }
+  } catch (error) {
+    console.error("Sync error:", error);
+    dialogService.alert("Sync Error", "An unexpected error occurred during sync.");
+  } finally {
+    isSyncing.value = false;
+  }
 }
 
 function viewErrorDetails(errorDetails: any) {
@@ -476,9 +501,20 @@ function viewErrorDetails(errorDetails: any) {
   showDocumentDialog.value = true;
 }
 
+async function loadSyncStatus() {
+  try {
+    const status = await auditLogService.getSyncStatus();
+    isRemoteEnabled.value = status.isRemoteEnabled && status.hasCredentials;
+  } catch (error) {
+    console.error("Failed to load sync status:", error);
+    isRemoteEnabled.value = false;
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   loadData();
+  loadSyncStatus();
 });
 </script>
 
