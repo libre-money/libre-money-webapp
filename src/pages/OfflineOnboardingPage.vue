@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="app-name q-pa-xs">
         <img class="logo" src="icons/logo.png" alt="CK" />
-        Cash Keeper
+        Libre Money
       </div>
       <div class="step-header q-pa-xs">
         <div class="step-title">{{ stepTitle }}</div>
@@ -23,12 +23,12 @@
               <q-icon name="celebration" color="green" size="32px" />
             </template>
             <div class="text-h6 q-mb-sm">Congratulations!</div>
-            <div class="text-body1">You've chosen Cash Keeper, the only personal finance & budgeting app that makes sense.</div>
+            <div class="text-body1">You've chosen Libre Money, the only personal finance & budgeting app that makes sense.</div>
           </q-banner>
 
-          <!-- How Cash Keeper Works -->
+          <!-- How Libre Money Works -->
           <div class="info-section q-mb-lg">
-            <div class="text-h6 q-mb-md">How Cash Keeper Works</div>
+            <div class="text-h6 q-mb-md">How Libre Money Works</div>
 
             <div class="feature-list">
               <div class="feature-item q-mb-md">
@@ -84,7 +84,7 @@
       <q-card-section v-if="currentStep === 2" class="step-content">
         <div class="username-section">
           <div class="text-h6 q-mb-md">Choose Your Username</div>
-          <div class="text-body2 text-grey-7 q-mb-lg">This will be your identifier within Cash Keeper.</div>
+          <div class="text-body2 text-grey-7 q-mb-lg">This will be your identifier within Libre Money.</div>
 
           <q-form @submit="createAccount" class="username-form">
             <q-input
@@ -206,7 +206,7 @@
 
           <template v-if="setupComplete">
             <div class="text-h6 q-mb-md">Account Setup Complete</div>
-            <div class="text-body2 text-grey-7 q-mb-lg">You can now start using Cash Keeper.</div>
+            <div class="text-body2 text-grey-7 q-mb-lg">You can now start using Libre Money.</div>
           </template>
 
           <!-- Progress Display -->
@@ -229,7 +229,7 @@
               <template v-slot:avatar>
                 <q-icon name="check_circle" color="green" size="32px" />
               </template>
-              <div class="text-body1"><strong>Setup Complete!</strong> Your Cash Keeper account is ready to use.</div>
+              <div class="text-body1"><strong>Setup Complete!</strong> Your Libre Money account is ready to use.</div>
             </q-banner>
 
             <div class="completion-summary q-mb-lg">
@@ -333,7 +333,7 @@ const setupComplete = ref(false);
 const stepTitle = computed(() => {
   switch (currentStep.value) {
     case 1:
-      return "Welcome to Cash Keeper";
+      return "Welcome to Libre Money";
     case 2:
       return "Create Your Account";
     case 3:
@@ -341,7 +341,7 @@ const stepTitle = computed(() => {
     case 4:
       return "Account Setup";
     default:
-      return "Cash Keeper";
+      return "Libre Money";
   }
 });
 

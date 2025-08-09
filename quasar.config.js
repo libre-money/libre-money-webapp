@@ -185,7 +185,7 @@ module.exports = configure(function (/* ctx */) {
       builder: {
         // https://www.electron.build/configuration/configuration
 
-        appId: "cash-keeper-client",
+        appId: "libre-money-client",
       },
     },
 

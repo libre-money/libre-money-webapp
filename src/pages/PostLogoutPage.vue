@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="app-name q-pa-xs">
         <img class="logo" src="icons/logo.png" alt="CK" />
-        Cash Keeper
+        Libre Money
       </div>
 
       <!-- Content -->
@@ -73,7 +73,7 @@
       <!-- Footer -->
       <q-card-section class="post-logout-footer">
         <div class="row items-center justify-center q-gutter-md">
-          <q-btn flat color="grey-6" size="sm" @click="goToAbout"> About Cash Keeper </q-btn>
+          <q-btn flat color="grey-6" size="sm" @click="goToAbout"> About Libre Money </q-btn>
         </div>
       </q-card-section>
     </q-card>
@@ -114,7 +114,7 @@ async function goToAbout() {
 }
 
 async function showVersionInfo() {
-  const title = `Cash Keeper v${APP_VERSION}`;
+  const title = `Libre Money v${APP_VERSION}`;
   const body = `Build: ${APP_BUILD_VERSION}\nRelease Date: ${APP_BUILD_DATE}`;
   await dialogService.alert(title, body);
 }

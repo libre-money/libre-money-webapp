@@ -1,4 +1,4 @@
-export const DEFAULT_REMOTE_SERVER_URL = "https://homeserver.cashkeeper.space";
+export const DEFAULT_REMOTE_SERVER_URL = "https://homeserver.libre.money";
 
 export type ServerOption = {
   label: string;
@@ -6,8 +6,8 @@ export type ServerOption = {
 };
 
 export const serverOptions: ServerOption[] = [
-  { label: "Cash Keeper (Cluster 1)", value: "cluster-1" },
-  { label: "Cash Keeper (Cluster 2)", value: "cluster-2" },
+  { label: "Libre Money (Cluster 1)", value: "cluster-1" },
+  { label: "Libre Money (Cluster 2)", value: "cluster-2" },
   { label: "Self Hosted", value: "self-hosted" },
 ];
 

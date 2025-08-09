@@ -1,7 +1,7 @@
 <template>
   <q-page class="row items-center justify-evenly">
     <q-card class="login-card">
-      <div class="app-name q-pa-xs"><img class="logo" src="icons/logo.png" alt="CK" />Cash Keeper</div>
+      <div class="app-name q-pa-xs"><img class="logo" src="icons/logo.png" alt="LM" />Libre Money</div>
       <div class="title q-pa-xs">{{ loginPageMode === "resume" ? "Welcome Back" : currentStep === 1 ? "Select Server" : "Login" }}</div>
 
       <!-- login page mode : login - START -->
@@ -36,7 +36,7 @@
 
           <div class="text-center q-mb-md">
             <div class="text-h6 q-mb-sm">Try Offline</div>
-            <div class="text-body2 text-grey-7">Start using Cash Keeper immediately with unlimited offline access</div>
+            <div class="text-body2 text-grey-7">Start using Libre Money immediately with unlimited offline access</div>
           </div>
 
           <q-btn unelevated color="secondary" label="Start Your Journey" icon="offline_bolt" class="full-width" @click="startOfflineSession" />

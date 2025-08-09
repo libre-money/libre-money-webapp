@@ -5,7 +5,7 @@
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
         <q-toolbar-title>
-          {{ $route.meta.title || "Cash Keeper" }}
+          {{ $route.meta.title || "Libre Money" }}
         </q-toolbar-title>
 
         <!-- Offline Indicator -->
@@ -21,7 +21,7 @@
           <span class="sync-spinner-text">Syncing...</span>
         </div>
 
-        <div v-if="$route.meta.title && !isDevDatabase && !isDevMachine">Cash Keeper</div>
+        <div v-if="$route.meta.title && !isDevDatabase && !isDevMachine">Libre Money</div>
         <div class="dev-mode-notification" v-if="isDevDatabase">DEV DB</div>
         <div class="dev-mode-warning" v-if="!isDevDatabase && isDevMachine">PROD DB in DEV ENV</div>
 
@@ -76,9 +76,9 @@
 
       <div class="drawer-bottom">
         <div class="app-version">
-          <img class="logo" src="icons/android-chrome-192x192.png" alt="CK" />
+          <img class="logo" src="icons/android-chrome-192x192.png" alt="LM" />
           <div @click="verionClicked" style="cursor: pointer">
-            <div style="font-size: 16px">Cash Keeper</div>
+            <div style="font-size: 16px">Libre Money</div>
             <div style="font-size: 10px; color: rgb(187, 186, 186)">Version: {{ APP_VERSION }} (Alpha)</div>
           </div>
         </div>

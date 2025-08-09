@@ -5,7 +5,7 @@ export const dataBackupService = {
     const res = await pouchdbService.listDocs();
     const docList = res.rows;
     const payload = {
-      identity: "Cash Keeper Data Dump",
+      identity: "Libre Money Data Dump",
       epoch: Date.now(),
       dateTime: new Date().toISOString(),
       docList,
@@ -14,7 +14,7 @@ export const dataBackupService = {
   },
 
   async initiateFileDownload(jsonData: string) {
-    const fileName = "CashKeeperDataDump.json";
+    const fileName = "LibreMoneyDataDump.json";
     const fileContent = jsonData;
     const blob = new Blob([fileContent], { type: "application/json" });
 
