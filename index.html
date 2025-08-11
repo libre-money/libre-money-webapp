@@ -107,7 +107,7 @@
   <body>
     <div id="index--app-loading" class="index--hidden">
       <div class="index--spinner"></div>
-      <div class="index--loading-text">Loading Cash Keeper...</div>
+      <div class="index--loading-text">Loading Libre Money...</div>
 
       <div class="index--error-container index--hidden" id="index--error-container">
         <div class="index--error-title">Timed Out</div>
@@ -156,7 +156,7 @@
       let showErrorTimeoutId = null;
 
       function checkIfAppLoaded() {
-        return window.__ck__hasLoaded;
+        return window.__lm__hasLoaded;
       }
 
       loadingIntervalId = setInterval(() => {

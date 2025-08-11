@@ -1,8 +1,8 @@
 {
-  "name": "cash-keeper-client",
+  "name": "libre-money-client",
   "version": "0.1.1",
   "description": "Finally a personal money tracking application that makes sense.",
-  "productName": "Cash Keeper",
+  "productName": "Libre Money",
   "author": "Sayem Shafayet",
   "private": true,
   "scripts": {

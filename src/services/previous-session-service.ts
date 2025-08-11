@@ -1,6 +1,6 @@
 import { User } from "src/models/user";
 
-const PREVIOUS_SESSION_KEY = "--ck-previous-session";
+const PREVIOUS_SESSION_KEY = "--lm-previous-session";
 
 export interface PreviousSession {
   user: User;

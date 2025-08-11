@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { RecordFilters } from "src/models/inferred/record-filters";
 
-const LOCAL_STORAGE_KEY = "--ck-record-filters";
+const LOCAL_STORAGE_KEY = "--lm-record-filters";
 
 const initialRecordFilters: RecordFilters | null = ((): RecordFilters | null => {
   const recordFilters = localStorage.getItem(LOCAL_STORAGE_KEY) || "null";
@@ -30,4 +30,3 @@ export const useRecordFiltersStore = defineStore("recordFilters", {
     },
   },
 });
-

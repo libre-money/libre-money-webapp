@@ -12,7 +12,7 @@
     <q-card class="std-card" v-if="!isLoading && !overview">
       <div class="q-pa-md q-gutter-sm">
         <div>
-          Welcome to Cash Keeper!<br /><br />
+          Welcome to Libre Money!<br /><br />
           If this is your first time here, please read the <strong>Currently Imaginary</strong> getting started guide.<br /><br />
           If you already have some data on our servers, use the button to the top right to <strong>Sync</strong> your data to this device.<br /><br />
           Enjoy!

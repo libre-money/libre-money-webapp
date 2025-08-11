@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { OFFLINE_DOMAIN } from "src/constants/auth-constants";
 import { User } from "src/models/user";
 
-const LOCAL_STORAGE_USER_KEY = "--ck-user";
+const LOCAL_STORAGE_USER_KEY = "--lm-user";
 
 const initialUser: User | null = ((): User | null => {
   const user = localStorage.getItem(LOCAL_STORAGE_USER_KEY) || "null";

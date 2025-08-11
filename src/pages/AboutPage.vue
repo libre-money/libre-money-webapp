@@ -3,7 +3,7 @@
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <div>
-          <div class="title">Cash Keeper</div>
+          <div class="title">Libre Money</div>
           <div style="margin-top: 8px">Finally a personal finance tracking application that makes sense.</div>
           <div style="margin-top: 8px">This Free and OpenSource Software (FOSS) is developed and maintained by Sayem Shafayet.</div>
 

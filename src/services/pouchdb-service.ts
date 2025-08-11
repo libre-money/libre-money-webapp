@@ -17,7 +17,7 @@ export interface SyncProgress {
 
 const userStore = useUserStore();
 
-const LOCAL_DB_NAME = "cash-keeper-main";
+const LOCAL_DB_NAME = "libre-money-main";
 
 const pouchdb = new PouchDB(LOCAL_DB_NAME);
 

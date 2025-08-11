@@ -13,7 +13,7 @@ function serializeString(localStorageKey: string, value: string) {
   localStorage.setItem(localStorageKey, JSON.stringify(value));
 }
 
-const LOCAL_STORAGE_KEY__CURRENCY_ID = "--ck-cache--last-used-currency-id";
+const LOCAL_STORAGE_KEY__CURRENCY_ID = "--lm-cache--last-used-currency-id";
 
 export const useCacheStore = defineStore("cacheStore", {
   state: () => ({

@@ -140,7 +140,7 @@ const syncProgress = reactive<SyncProgress>({
 const dialogTitle = computed(() => {
   switch (props.invocationOrigin) {
     case "LoginPage":
-      return "Welcome to Cash Keeper";
+      return "Welcome to Libre Money";
     case "MainLayout":
       return "Syncing Data";
     default:

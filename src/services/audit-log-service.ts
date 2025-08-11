@@ -26,7 +26,7 @@ export interface AuditLogEntry {
 
 const IS_AUDIT_LOG_FEATURE_ENABLED = true;
 const MAX_AUDIT_LOG_INCLUDED_DOCUMENT_SIZE_BYTES = 100_000; // 100KB
-const LOCAL_DB_NAME = "cash-keeper-audit-log";
+const LOCAL_DB_NAME = "libre-money-audit-log";
 const DEBOUNCE_SYNC_DELAY_MS = 2000; // 2 seconds delay before syncing
 
 class AuditLogService {

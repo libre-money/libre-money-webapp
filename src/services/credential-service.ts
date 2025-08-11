@@ -1,6 +1,6 @@
 import { decryptText, encryptText } from "src/utils/crypto-utils";
 
-const LOCAL_OR_TAB_STORAGE_KEY = "--ck-credentials";
+const LOCAL_OR_TAB_STORAGE_KEY = "--lm-credentials";
 
 const ON_REST_ENCRYPTION_PASSPHRASE = "4f5way7j9o05a34f0y97ja34f5";
 

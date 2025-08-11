@@ -31,11 +31,11 @@ function serializeValue(localStorageKey: string, value: any) {
   localStorage.setItem(localStorageKey, JSON.stringify(value));
 }
 
-const LOCAL_STORAGE_KEY__CURRENCY_ID = "--ck-settings--default-currency-id";
-const LOCAL_STORAGE_KEY__DEFAULT_VIEW = "--ck-settings--default-view";
-const LOCAL_STORAGE_KEY__REMEMBER_VIEW = "--ck-settings--remember-view";
-const LOCAL_STORAGE_KEY__LAST_VIEW = "--ck-settings--last-opened-view";
-const LOCAL_STORAGE_KEY__WALLET_CALIBRATION_STEP_SIZE = "--ck-settings--wallet-calibration-step-size";
+const LOCAL_STORAGE_KEY__CURRENCY_ID = "--lm-settings--default-currency-id";
+const LOCAL_STORAGE_KEY__DEFAULT_VIEW = "--lm-settings--default-view";
+const LOCAL_STORAGE_KEY__REMEMBER_VIEW = "--lm-settings--remember-view";
+const LOCAL_STORAGE_KEY__LAST_VIEW = "--lm-settings--last-opened-view";
+const LOCAL_STORAGE_KEY__WALLET_CALIBRATION_STEP_SIZE = "--lm-settings--wallet-calibration-step-size";
 
 export const useSettingsStore = defineStore("settingsStore", {
   state: () => ({

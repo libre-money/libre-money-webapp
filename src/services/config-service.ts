@@ -3,9 +3,9 @@ import { dialogService } from "./dialog-service";
 import { authService } from "./auth-service";
 import { DEFAULT_REMOTE_SERVER_URL } from "../constants/auth-constants";
 
-const LOCAL_STORAGE_KEY__DOMAIN = "--ck-config--domain";
-const LOCAL_STORAGE_KEY__SERVER_URL = "--ck-config--server-url";
-const LOCAL_STORAGE_KEY__AUDIT_LOG_REMOTE_ENABLED = "--ck-config--audit-log-remote-enabled";
+const LOCAL_STORAGE_KEY__DOMAIN = "--lm-config--domain";
+const LOCAL_STORAGE_KEY__SERVER_URL = "--lm-config--server-url";
+const LOCAL_STORAGE_KEY__AUDIT_LOG_REMOTE_ENABLED = "--lm-config--audit-log-remote-enabled";
 
 class ConfigService {
   getServerUrlAndDomainNameOrFail() {
