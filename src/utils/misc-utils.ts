@@ -76,3 +76,8 @@ export function tryOrElse<T, U>(fn: () => T, fallback: U): T | U {
     return fallback;
   }
 }
+
+export function throwMissingEnvironmentVariable(variableName: string) {
+  console.log(process.env);
+  throw new Error(`${variableName} is not set`);
+}
