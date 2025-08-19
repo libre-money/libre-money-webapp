@@ -22,11 +22,11 @@
             <q-card-section>
               <div class="text-subtitle1 q-mb-sm">
                 <q-icon name="data_object" color="primary" class="q-mr-sm" />
-                Sample Data Generator
+                Additional Demo Data Generator
               </div>
-              <div class="text-caption q-mb-md">Generate sample financial records for demonstration purposes</div>
+              <div class="text-caption q-mb-md">Generate additional demo data that complements onboarding data</div>
               <div class="row q-gutter-sm">
-                <q-btn color="primary" label="Generate Sample Data" @click="generateSampleData" :loading="generatingData" />
+                <q-btn color="primary" label="Generate Additional Demo Data" @click="generateSampleData" :loading="generatingData" />
                 <q-btn color="negative" label="Clear Demo Data" @click="clearDemoData" :loading="clearingData" />
               </div>
             </q-card-section>
@@ -94,11 +94,14 @@ const generateSampleData = async () => {
 
   try {
     // Generate sample data using the service
-    const result = await demoPreparationService.setupAllDemoData();
+    await demoPreparationService.setupAllDemoData();
+
+    // Get the count of created entities
+    const counts = demoPreparationService.getCreatedEntitiesCount();
 
     $q.notify({
       type: "positive",
-      message: `Sample data generated successfully! Created ${result.currencies.length} currencies, ${result.wallets.length} wallets, ${result.parties.length} parties, and ${result.assets.length} assets.`,
+      message: `Additional demo data generated successfully! Created ${counts.currencies} currencies, ${counts.wallets} wallets, ${counts.parties} parties, ${counts.assets} assets, and ${counts.budgets} budgets.`,
       position: "top",
       timeout: 5000,
     });
