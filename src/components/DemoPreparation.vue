@@ -101,7 +101,7 @@ const generateSampleData = async () => {
 
     $q.notify({
       type: "positive",
-      message: `Additional demo data generated successfully! Created ${counts.currencies} currencies, ${counts.wallets} wallets, ${counts.parties} parties, ${counts.assets} assets, and ${counts.budgets} budgets.`,
+      message: `Additional demo data generated successfully! Created ${counts.currencies} currencies, ${counts.wallets} wallets, ${counts.parties} parties, ${counts.assets} assets, ${counts.expenseAvenues} expense avenues, ${counts.incomeSources} income sources, ${counts.tags} tags, ${counts.records} records, and ${counts.budgets} budgets.`,
       position: "top",
       timeout: 5000,
     });

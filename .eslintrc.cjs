@@ -90,5 +90,8 @@ module.exports = {
     semi: [2, "always"],
 
     "@typescript-eslint/no-non-null-assertion": "off",
+
+    // Turn off the rule that prevents non-null assertions with optional chaining
+    "@typescript-eslint/no-non-null-asserted-optional-chain": "off",
   },
 };
