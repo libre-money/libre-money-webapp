@@ -23,6 +23,9 @@ class DemoPreparationService {
   private createdTags: Tag[] = [];
   private createdRecords: Record[] = [];
 
+  // State variable to store the primary demo currency
+  private primaryCurrency: Currency | null = null;
+
   /**
    * Setup additional demo currencies (complements whatever currency was chosen during onboarding)
    */
@@ -30,12 +33,12 @@ class DemoPreparationService {
     // Get existing currencies to see what's already available
     const existingCurrencies = await pouchdbService.listByCollection(Collection.CURRENCY);
 
-    // Define potential demo currencies
+    // Define only USD and Euro as demo currencies
     const demoCurrencies: Currency[] = [
       {
         $collection: Collection.CURRENCY,
-        name: "Bangladeshi Taka",
-        sign: "৳",
+        name: "US Dollar",
+        sign: "$",
         precisionMinimum: 2,
         precisionMaximum: 2,
       },
@@ -46,37 +49,30 @@ class DemoPreparationService {
         precisionMinimum: 2,
         precisionMaximum: 2,
       },
-      {
-        $collection: Collection.CURRENCY,
-        name: "British Pound",
-        sign: "£",
-        precisionMinimum: 2,
-        precisionMaximum: 2,
-      },
-      {
-        $collection: Collection.CURRENCY,
-        name: "Japanese Yen",
-        sign: "¥",
-        precisionMinimum: 0,
-        precisionMaximum: 0,
-      },
     ];
 
-    // Filter out currencies that already exist
-    const currenciesToCreate = demoCurrencies.filter((demoCurrency) => !existingCurrencies.docs.some((existing: any) => existing.sign === demoCurrency.sign));
+    // Filter out currencies that already exist (check by both name and sign)
+    const currenciesToCreate = demoCurrencies.filter(
+      (demoCurrency) => !existingCurrencies.docs.some((existing: any) => existing.name === demoCurrency.name || existing.sign === demoCurrency.sign)
+    );
 
     if (currenciesToCreate.length === 0) {
-      console.log("All demo currencies already exist, skipping creation");
+      console.log("USD and Euro already exist, skipping creation");
       return;
     }
 
-    console.log(`Creating ${currenciesToCreate.length} additional demo currencies`);
+    console.log(`Creating ${currenciesToCreate.length} additional demo currencies: ${currenciesToCreate.map((c) => c.name).join(", ")}`);
 
     this.createdCurrencies = [];
     for (const currency of currenciesToCreate) {
       const result = await pouchdbService.upsertDoc(currency, { isDemoData: true, demoCreatedAt: Date.now() });
       const createdCurrency = { ...currency, _id: result.id, _rev: result.rev };
       this.createdCurrencies.push(createdCurrency);
+
+      // Set the first created currency as the primary demo currency
+      if (!this.primaryCurrency) {
+        this.primaryCurrency = createdCurrency;
+      }
     }
   }
 
@@ -87,13 +83,13 @@ class DemoPreparationService {
     // Get existing wallets to avoid duplicates
     const existingWallets = await pouchdbService.listByCollection(Collection.WALLET);
 
-    if (this.createdCurrencies.length === 0) {
-      console.log("No additional currencies available, skipping wallet creation");
+    if (!this.primaryCurrency) {
+      console.log("No primary demo currency available, skipping wallet creation");
       return;
     }
 
-    // Use the first available demo currency for wallets
-    const demoCurrency = this.createdCurrencies[0];
+    // Use the primary demo currency for wallets
+    const demoCurrency = this.primaryCurrency;
     console.log(`Creating demo wallets using ${demoCurrency.name} (${demoCurrency.sign})`);
 
     // Create additional wallets that complement onboarding wallets
@@ -250,13 +246,13 @@ class DemoPreparationService {
     // Get existing assets to avoid duplicates
     const existingAssets = await pouchdbService.listByCollection(Collection.ASSET);
 
-    if (this.createdCurrencies.length === 0) {
-      console.log("No additional currencies available, skipping asset creation");
+    if (!this.primaryCurrency) {
+      console.log("No primary demo currency available, skipping asset creation");
       return;
     }
 
-    // Use the first available demo currency for assets
-    const demoCurrency = this.createdCurrencies[0];
+    // Use the primary demo currency for assets
+    const demoCurrency = this.primaryCurrency;
     console.log(`Creating demo assets using ${demoCurrency.name} (${demoCurrency.sign})`);
 
     // Create additional assets that complement onboarding assets
@@ -524,7 +520,7 @@ class DemoPreparationService {
    * Setup comprehensive demo records for all record types
    */
   async setupDemoRecords(): Promise<void> {
-    if (this.createdCurrencies.length === 0 || this.createdWallets.length === 0 || this.createdParties.length === 0 || this.createdAssets.length === 0) {
+    if (!this.primaryCurrency || this.createdWallets.length === 0 || this.createdParties.length === 0 || this.createdAssets.length === 0) {
       console.log("Required demo entities not available, skipping record creation");
       return;
     }
@@ -549,10 +545,8 @@ class DemoPreparationService {
 
     // Populate Maps with meaningful keys
     allCurrencies.docs.forEach((currency: any) => {
-      if (currency.name === "Bangladeshi Taka") currenciesMap.set("BDT", currency);
+      if (currency.name === "US Dollar") currenciesMap.set("USD", currency);
       else if (currency.name === "Euro") currenciesMap.set("EUR", currency);
-      else if (currency.name === "British Pound") currenciesMap.set("GBP", currency);
-      else if (currency.name === "Japanese Yen") currenciesMap.set("JPY", currency);
       else currenciesMap.set("PRIMARY", currency); // Default/onboarding currency
     });
 
@@ -658,7 +652,7 @@ class DemoPreparationService {
     });
 
     // Get primary entities with fallbacks
-    const primaryCurrency = currenciesMap.get("PRIMARY") || currenciesMap.get("BDT") || allCurrencies.docs[0];
+    const primaryCurrency = currenciesMap.get("PRIMARY") || currenciesMap.get("USD") || allCurrencies.docs[0];
     const primaryWallet = walletsMap.get("CHECKING") || walletsMap.get("PRIMARY") || allWallets.docs[0];
     const secondaryWallet = walletsMap.get("SAVINGS") || walletsMap.get("PRIMARY") || allWallets.docs[0];
     const investmentWallet = walletsMap.get("INVESTMENT") || walletsMap.get("SAVINGS") || allWallets.docs[0];
@@ -1431,13 +1425,13 @@ class DemoPreparationService {
    * Setup demo budgets (monthly and travel)
    */
   async setupDemoBudgets(): Promise<void> {
-    if (this.createdCurrencies.length === 0) {
-      console.log("No additional currencies available, skipping budget creation");
+    if (!this.primaryCurrency) {
+      console.log("No primary demo currency available, skipping budget creation");
       return;
     }
 
-    // Use the first available demo currency for budgets
-    const demoCurrency = this.createdCurrencies[0];
+    // Use the primary demo currency for budgets
+    const demoCurrency = this.primaryCurrency;
     console.log(`Creating demo budgets using ${demoCurrency.name} (${demoCurrency.sign})`);
 
     // Get current date for budget periods
@@ -1570,6 +1564,13 @@ class DemoPreparationService {
   }
 
   /**
+   * Get the primary demo currency
+   */
+  getPrimaryCurrency(): Currency | null {
+    return this.primaryCurrency;
+  }
+
+  /**
    * Get all created demo entities
    */
   getCreatedEntities(): {
@@ -1656,6 +1657,9 @@ class DemoPreparationService {
     }
 
     console.log("Demo data cleanup completed!");
+
+    // Reset the primary currency
+    this.primaryCurrency = null;
   }
 }
 
