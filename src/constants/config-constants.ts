@@ -9,3 +9,6 @@ export const UNBUDGETED_RECORDS_BUDGET_NAME = "Unbudgeted";
 
 export const GO_ONLINE_REGISTRATION_URL = import.meta.env.VITE_GO_ONLINE_REGISTRATION_URL || throwMissingEnvironmentVariable("VITE_GO_ONLINE_REGISTRATION_URL");
 export const GO_ONLINE_SELF_HOST_URL = import.meta.env.VITE_GO_ONLINE_SELF_HOST_URL || throwMissingEnvironmentVariable("VITE_GO_ONLINE_SELF_HOST_URL");
+
+// Demo preparation feature flag
+export const DEMO_PREPARATION_ENABLED = import.meta.env.VITE_DEMO_PREPARATION_ENABLED === "true";

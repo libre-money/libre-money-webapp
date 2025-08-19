@@ -73,10 +73,16 @@ export const pouchdbService = {
     });
   },
 
-  async upsertDoc(doc: PouchDB.Core.PostDocument<any>) {
+  async upsertDoc(doc: PouchDB.Core.PostDocument<any>, meta?: Record<string, unknown>) {
     await delayIntentionally();
 
     doc = JSON.parse(JSON.stringify(doc));
+
+    // Apply meta information if provided
+    if (meta && typeof meta === "object") {
+      Object.assign(doc, meta);
+    }
+
     doc.modifiedByUsername = userStore.currentUser?.username;
     doc.modifiedEpoch = Date.now();
     stripKnownTemporaryFields(doc);

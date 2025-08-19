@@ -52,6 +52,11 @@
         <q-btn color="secondary" text-color="white" label="Download All Local Data" @click="downloadLocalDataClicked" />
       </div>
     </q-card>
+
+    <!-- Demo preparation wrapper -->
+    <!-- <q-card class="std-card" v-if="DEMO_PREPARATION_ENABLED"> -->
+    <DemoPreparationWrapper />
+    <!-- </q-card> -->
   </q-page>
 </template>
 
@@ -64,7 +69,9 @@ import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
 import { ref, watch, type Ref } from "vue";
 import AddDocument from "./../components/AddDocument.vue";
+import DemoPreparationWrapper from "./../components/DemoPreparationWrapper.vue";
 import { rowsPerPageOptions } from "./../constants/constants";
+import { DEMO_PREPARATION_ENABLED } from "src/constants/config-constants";
 
 type EditableDocument = {
   _id: string;
