@@ -7,6 +7,9 @@ export type RecordFilters = {
   partyId?: string | null;
   currencyId?: string | null;
   walletId?: string | null;
+  expenseAvenueId?: string | null;
+  incomeSourceId?: string | null;
+  assetId?: string | null;
   searchString: string;
   deepSearchString: string;
   sortBy: "transactionEpochDesc" | "lastModifiedEpochDesc";
