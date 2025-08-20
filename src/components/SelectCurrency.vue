@@ -11,6 +11,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  shorthand: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(["update:modelValue"]);
@@ -83,7 +87,7 @@ function filterCurrencyFn(val: string, update: any, abort: any) {
     @filter="filterCurrencyFn"
     class="std-margin-bottom-32"
     option-value="_id"
-    option-label="name"
+    :option-label="props.shorthand ? 'sign' : 'name'"
     hide-selected
     v-if="!isLoading"
     :clearable="!mandatory"

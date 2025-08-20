@@ -9,8 +9,13 @@
           <date-input v-model="recordFilters.endEpoch" label="End Date" @update:model-value="endEpochChanged" style="margin-left: 4px"></date-input>
         </div>
         <br />
-        <div style="margin-top: -12px">
-          <select-wallet v-model="recordFilters.walletId"></select-wallet>
+        <div class="row no-wrap" style="margin-top: -12px">
+          <div class="col col-5" style="margin-right: 4px">
+            <select-currency v-model="recordFilters.currencyId" :mandatory="false" :shorthand="true"></select-currency>
+          </div>
+          <div class="col">
+            <select-wallet v-model="recordFilters.walletId" :limit-by-currency-id="recordFilters.currencyId"></select-wallet>
+          </div>
         </div>
         <div style="margin-top: -20px">
           <select-record-type v-model="recordFilters.recordTypeList" />
@@ -74,6 +79,7 @@ import SelectParty from "./SelectParty.vue";
 import SelectRecordType from "./SelectRecordType.vue";
 import SelectTag from "./SelectTag.vue";
 import SelectWallet from "./SelectWallet.vue";
+import SelectCurrency from "./SelectCurrency.vue";
 
 // Props
 const props = defineProps<{
@@ -111,6 +117,7 @@ if (props.inputFilters) {
     sortBy: "transactionEpochDesc",
     highlightDuplicates: false,
     type: "standard",
+    currencyId: null,
   };
 }
 isLoading.value = false;
@@ -140,6 +147,17 @@ function applyPreset(newPreset: string) {
 watch(selectedPreset, (newPreset: any) => {
   applyPreset(newPreset);
 });
+
+// Watch for currency changes and clear wallet selection if needed
+watch(
+  () => recordFilters.value?.currencyId,
+  (newCurrencyId, oldCurrencyId) => {
+    if (newCurrencyId !== oldCurrencyId && recordFilters.value?.walletId) {
+      // Clear wallet selection when currency changes since wallet options will be filtered
+      recordFilters.value.walletId = null;
+    }
+  }
+);
 
 applyPreset(selectedPreset.value!);
 

@@ -1482,9 +1482,7 @@ class DemoPreparationService {
    * Create a record in the database
    */
   private async createRecord(record: Record): Promise<void> {
-    const result = await pouchdbService.upsertDoc(record, { isDemoData: true, demoCreatedAt: Date.now() });
-    const createdRecord = { ...record, _id: result.id, _rev: result.rev };
-    // this.createdRecords.push(createdRecord); // This line was removed as per the new_code
+    await pouchdbService.upsertDoc(record, { isDemoData: true, demoCreatedAt: Date.now() });
   }
 
   /**
@@ -1565,12 +1563,10 @@ class DemoPreparationService {
     };
 
     // Create budgets
-    // this.createdBudgets = []; // This line was removed as per the new_code
     const budgetsToCreate = [monthlyBudget, travelBudget];
 
     for (const budget of budgetsToCreate) {
-      const result = await pouchdbService.upsertDoc(budget, { isDemoData: true, demoCreatedAt: Date.now() });
-      const createdBudget = { ...budget, _id: result.id, _rev: result.rev };
+      await pouchdbService.upsertDoc(budget, { isDemoData: true, demoCreatedAt: Date.now() });
       this.createdCounts.budgets++;
     }
   }
@@ -1686,11 +1682,11 @@ class DemoPreparationService {
       wallets: this.createdCounts.wallets,
       parties: this.createdCounts.parties,
       assets: this.createdCounts.assets,
-      budgets: this.createdCounts.budgets, // This line was removed as per the new_code
+      budgets: this.createdCounts.budgets,
       expenseAvenues: this.createdCounts.expenseAvenues,
       incomeSources: this.createdCounts.incomeSources,
       tags: this.createdCounts.tags,
-      records: this.createdCounts.records, // This line was removed as per the new_code
+      records: this.createdCounts.records,
     };
   }
 

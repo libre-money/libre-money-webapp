@@ -253,6 +253,7 @@ function viewUnbudgetedRecordsClicked() {
     recordTypeList: [RecordType.EXPENSE, RecordType.ASSET_PURCHASE],
     tagIdWhiteList: [],
     tagIdBlackList: [],
+    currencyId: null,
     searchString: "",
     deepSearchString: "",
     sortBy: "transactionEpochDesc",

@@ -213,6 +213,7 @@ async function viewRecordsClicked(summary: LoanAndDebtSummary) {
     endEpoch: Date.now(),
     recordTypeList: [],
     partyId: summary.partyId,
+    currencyId: null,
     tagIdWhiteList: [],
     tagIdBlackList: [],
     searchString: "",

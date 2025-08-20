@@ -55,6 +55,7 @@ class RollingBudgetService {
       recordTypeList,
       tagIdWhiteList: rollingBudget.tagIdWhiteList,
       tagIdBlackList: rollingBudget.tagIdBlackList,
+      currencyId: rollingBudget.currencyId,
       searchString: "",
       deepSearchString: "",
       sortBy: "transactionEpochDesc",

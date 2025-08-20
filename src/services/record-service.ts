@@ -307,7 +307,7 @@ class RecordService {
       return recordList;
     }
 
-    const { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, walletId, searchString, deepSearchString } = recordFilters;
+    const { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, currencyId, walletId, searchString, deepSearchString } = recordFilters;
 
     const [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.startEpoch, recordFilters.endEpoch);
 
@@ -340,6 +340,24 @@ class RecordService {
           record.repaymentReceived?.partyId === partyId
       );
     }
+
+    if (currencyId) {
+      recordList = recordList.filter(
+        (record) =>
+          record.income?.currencyId === currencyId ||
+          record.expense?.currencyId === currencyId ||
+          record.assetPurchase?.currencyId === currencyId ||
+          record.assetSale?.currencyId === currencyId ||
+          record.assetAppreciationDepreciation?.currencyId === currencyId ||
+          record.lending?.currencyId === currencyId ||
+          record.borrowing?.currencyId === currencyId ||
+          record.repaymentGiven?.currencyId === currencyId ||
+          record.repaymentReceived?.currencyId === currencyId ||
+          record.moneyTransfer?.fromCurrencyId === currencyId ||
+          record.moneyTransfer?.toCurrencyId === currencyId
+      );
+    }
+
     if (walletId) {
       recordList = recordList.filter(
         (record) =>

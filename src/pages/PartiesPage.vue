@@ -188,6 +188,7 @@ async function viewRecordsClicked(party: Party) {
     endEpoch: Date.now(),
     recordTypeList: [],
     partyId: party._id,
+    currencyId: null,
     tagIdWhiteList: [],
     tagIdBlackList: [],
     searchString: "",

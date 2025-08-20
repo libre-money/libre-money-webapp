@@ -5,6 +5,7 @@ export type RecordFilters = {
   tagIdWhiteList: string[];
   tagIdBlackList: string[];
   partyId?: string | null;
+  currencyId?: string | null;
   walletId?: string | null;
   searchString: string;
   deepSearchString: string;
