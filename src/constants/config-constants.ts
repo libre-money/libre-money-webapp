@@ -7,8 +7,11 @@ export const APP_BUILD_DATE = "NOT_APPLICABLE";
 export const RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD = 200;
 export const UNBUDGETED_RECORDS_BUDGET_NAME = "Unbudgeted";
 
-export const GO_ONLINE_REGISTRATION_URL = import.meta.env.VITE_GO_ONLINE_REGISTRATION_URL || throwMissingEnvironmentVariable("VITE_GO_ONLINE_REGISTRATION_URL");
-export const GO_ONLINE_SELF_HOST_URL = import.meta.env.VITE_GO_ONLINE_SELF_HOST_URL || throwMissingEnvironmentVariable("VITE_GO_ONLINE_SELF_HOST_URL");
+// Type assertion for Vite environment variables
+const env = (import.meta as any).env;
+
+export const GO_ONLINE_REGISTRATION_URL = env.VITE_GO_ONLINE_REGISTRATION_URL || throwMissingEnvironmentVariable("VITE_GO_ONLINE_REGISTRATION_URL");
+export const GO_ONLINE_SELF_HOST_URL = env.VITE_GO_ONLINE_SELF_HOST_URL || throwMissingEnvironmentVariable("VITE_GO_ONLINE_SELF_HOST_URL");
 
 // Demo preparation feature flag
-export const DEMO_PREPARATION_ENABLED = import.meta.env.VITE_DEMO_PREPARATION_ENABLED === "true";
+export const DEMO_PREPARATION_ENABLED = env.VITE_DEMO_PREPARATION_ENABLED === "true";

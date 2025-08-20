@@ -2,7 +2,7 @@
   <q-page class="row items-center justify-evenly">
     <q-card class="std-card">
       <div class="q-pa-md">
-        <!-- @vue-expect-error -->
+
         <q-table
           :loading="isLoading"
           title="Templates"

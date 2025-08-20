@@ -15,7 +15,7 @@ module.exports = configure(function (/* ctx */) {
     eslint: {
       // fix: true,
       // include: [],
-      // exclude: [],
+      exclude: ["src-pwa/**/*"],
       // rawOptions: {},
       warnings: true,
       errors: true,
