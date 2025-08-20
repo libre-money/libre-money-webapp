@@ -214,6 +214,7 @@ async function viewRecordsClicked(summary: LoanAndDebtSummary) {
     recordTypeList: [],
     partyId: summary.partyId,
     currencyId: null,
+    walletId: null,
     expenseAvenueId: null,
     incomeSourceId: null,
     assetId: null,
