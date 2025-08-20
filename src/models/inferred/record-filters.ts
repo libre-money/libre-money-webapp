@@ -4,12 +4,12 @@ export type RecordFilters = {
   recordTypeList: string[];
   tagIdWhiteList: string[];
   tagIdBlackList: string[];
-  partyId?: string | null;
-  currencyId?: string | null;
-  walletId?: string | null;
-  expenseAvenueId?: string | null;
-  incomeSourceId?: string | null;
-  assetId?: string | null;
+  partyId: string | null;
+  currencyId: string | null;
+  walletId: string | null;
+  expenseAvenueId: string | null;
+  incomeSourceId: string | null;
+  assetId: string | null;
   searchString: string;
   deepSearchString: string;
   sortBy: "transactionEpochDesc" | "lastModifiedEpochDesc";
