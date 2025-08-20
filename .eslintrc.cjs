@@ -93,5 +93,9 @@ module.exports = {
 
     // Turn off the rule that prevents non-null assertions with optional chaining
     "@typescript-eslint/no-non-null-asserted-optional-chain": "off",
+
+    // Currently we don't care about these options -
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
   },
 };
