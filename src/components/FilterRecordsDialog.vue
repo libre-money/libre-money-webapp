@@ -20,6 +20,20 @@
         <div style="margin-top: -20px">
           <select-record-type v-model="recordFilters.recordTypeList" />
         </div>
+
+        <!-- Conditional fields based on record types -->
+        <div v-if="hasExpenseType" style="margin-top: -20px">
+          <select-expense-avenue v-model="recordFilters.expenseAvenueId" :mandatory="false"></select-expense-avenue>
+        </div>
+
+        <div v-if="hasIncomeType" style="margin-top: -20px">
+          <select-income-source v-model="recordFilters.incomeSourceId" :mandatory="false"></select-income-source>
+        </div>
+
+        <div v-if="hasAssetType" style="margin-top: -20px">
+          <select-asset v-model="recordFilters.assetId" :mandatory="false"></select-asset>
+        </div>
+
         <div style="margin-top: -20px">
           <select-party v-model="recordFilters.partyId" :mandatory="false"></select-party>
         </div>
@@ -74,12 +88,15 @@ import DateInput from "src/components/lib/DateInput.vue";
 import { dateRangePresetList, sortByTypeList } from "src/constants/constants";
 import { RecordFilters } from "src/models/inferred/record-filters";
 import { getStartAndEndEpochFromPreset } from "src/utils/date-range-preset-utils";
-import { Ref, ref, watch } from "vue";
+import { Ref, ref, watch, computed } from "vue";
 import SelectParty from "./SelectParty.vue";
 import SelectRecordType from "./SelectRecordType.vue";
 import SelectTag from "./SelectTag.vue";
 import SelectWallet from "./SelectWallet.vue";
 import SelectCurrency from "./SelectCurrency.vue";
+import SelectExpenseAvenue from "./SelectExpenseAvenue.vue";
+import SelectIncomeSource from "./SelectIncomeSource.vue";
+import SelectAsset from "./SelectAsset.vue";
 
 // Props
 const props = defineProps<{
@@ -111,13 +128,16 @@ if (props.inputFilters) {
     tagIdWhiteList: [],
     tagIdBlackList: [],
     partyId: null,
+    currencyId: null,
     walletId: null,
+    expenseAvenueId: null,
+    incomeSourceId: null,
+    assetId: null,
     searchString: "",
     deepSearchString: "",
     sortBy: "transactionEpochDesc",
     highlightDuplicates: false,
     type: "standard",
-    currencyId: null,
   };
 }
 isLoading.value = false;
@@ -147,6 +167,17 @@ function applyPreset(newPreset: string) {
 watch(selectedPreset, (newPreset: any) => {
   applyPreset(newPreset);
 });
+
+// Helper to check if any record type is selected
+const hasExpenseType = computed(() => recordFilters.value?.recordTypeList?.includes("expense") || false);
+const hasIncomeType = computed(() => recordFilters.value?.recordTypeList?.includes("income") || false);
+const hasAssetType = computed(
+  () =>
+    recordFilters.value?.recordTypeList?.includes("asset-purchase") ||
+    recordFilters.value?.recordTypeList?.includes("asset-sale") ||
+    recordFilters.value?.recordTypeList?.includes("asset-appreciation-depreciation") ||
+    false
+);
 
 // Watch for currency changes and clear wallet selection if needed
 watch(

@@ -307,7 +307,19 @@ class RecordService {
       return recordList;
     }
 
-    const { recordTypeList, partyId, tagIdWhiteList, tagIdBlackList, currencyId, walletId, searchString, deepSearchString } = recordFilters;
+    const {
+      recordTypeList,
+      partyId,
+      tagIdWhiteList,
+      tagIdBlackList,
+      currencyId,
+      walletId,
+      expenseAvenueId,
+      incomeSourceId,
+      assetId,
+      searchString,
+      deepSearchString,
+    } = recordFilters;
 
     const [startEpoch, endEpoch] = normalizeEpochRange(recordFilters.startEpoch, recordFilters.endEpoch);
 
@@ -372,6 +384,24 @@ class RecordService {
           record.moneyTransfer?.fromWalletId === walletId ||
           record.moneyTransfer?.toWalletId === walletId
       );
+    }
+
+    // We use a union (OR) of the filters here, rather than an intersection (AND),
+    // because a single record can only be of one type: income, expense, or asset-related.
+    // For example, a record cannot be both an expense and an income at the same time.
+    // Therefore, we check if the record matches ANY of the provided filters.
+    // This is only done for this special case. Other filters are ANDed.
+    if (expenseAvenueId || incomeSourceId || assetId) {
+      recordList = recordList.filter((record) => {
+        if (expenseAvenueId && record.expense?.expenseAvenueId === expenseAvenueId) return true;
+        if (incomeSourceId && record.income?.incomeSourceId === incomeSourceId) return true;
+        if (
+          assetId &&
+          (record.assetPurchase?.assetId === assetId || record.assetSale?.assetId === assetId || record.assetAppreciationDepreciation?.assetId === assetId)
+        )
+          return true;
+        return false;
+      });
     }
 
     if (searchString && searchString.length > 0) {
