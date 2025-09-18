@@ -59,6 +59,7 @@ class FamilyDemoPreparationServiceV2 {
     await this.createFamilyLoans();
     await this.createPersonalLoansGiven();
     await this.generateSixMonthsRecords();
+    await this.createQuickTemplates();
   }
 
   async clearAllDemoData(): Promise<void> {
@@ -209,39 +210,88 @@ class FamilyDemoPreparationServiceV2 {
     if (!this.primaryCurrency || !this.primaryCurrency._id) return;
     const currencyId = this.primaryCurrency._id;
 
-    const wallets: Wallet[] = [
+    // Try to reuse onboarding wallets by common names/aliases
+    const alias = (names: string[]): Wallet | null => {
+      for (const n of names) {
+        const w = this.walletsMap.get(n);
+        if (w) return w;
+      }
+      return null;
+    };
+
+    const ensureWallet = async (preferredName: string, fallback: Wallet, aliases: string[]) => {
+      const existing = alias([preferredName, ...aliases]);
+      if (existing) {
+        // Alias to preferred name for downstream lookups
+        this.walletsMap.set(preferredName, existing);
+        return existing;
+      }
+      const result = await pouchdbService.upsertDoc(fallback, { isDemoData: true, demoCreatedAt: Date.now() });
+      const created = { ...fallback, _id: result.id, _rev: result.rev } as Wallet & { _id: string; _rev: string };
+      this.walletsMap.set(created.name, created);
+      this.createdCounts.wallets += 1;
+      return created;
+    };
+
+    await ensureWallet(
+      "Household Checking",
       {
         $collection: Collection.WALLET,
         name: "Household Checking",
         type: "bank",
-        initialBalance: 4500,
+        initialBalance: 6000,
         currencyId,
         minimumBalance: 0,
       } as unknown as Wallet,
+      ["Checking Account", "Main Checking", "Checking"]
+    );
+
+    await ensureWallet(
+      "Emergency Savings",
       {
         $collection: Collection.WALLET,
         name: "Emergency Savings",
         type: "bank",
-        initialBalance: 8000,
+        initialBalance: 12000,
         currencyId,
         minimumBalance: 0,
       } as unknown as Wallet,
+      ["Savings Account", "Emergency Fund", "Savings"]
+    );
+
+    await ensureWallet(
+      "Cash",
+      {
+        $collection: Collection.WALLET,
+        name: "Cash",
+        type: "cash",
+        initialBalance: 500,
+        currencyId,
+        minimumBalance: 0,
+      } as unknown as Wallet,
+      ["Wallet Cash", "Cash in Hand", "Cash"]
+    );
+
+    await ensureWallet(
+      "Credit Card",
       {
         $collection: Collection.WALLET,
         name: "Credit Card",
         type: "card",
-        initialBalance: -300,
+        initialBalance: -150,
         currencyId,
         minimumBalance: -5000,
       } as unknown as Wallet,
-    ];
+      ["Credit Card", "Visa", "Mastercard", "Credit"]
+    );
 
-    for (const wallet of wallets) {
-      if (this.walletsMap.has(wallet.name)) continue;
-      const result = await pouchdbService.upsertDoc(wallet, { isDemoData: true, demoCreatedAt: Date.now() });
-      const created = { ...wallet, _id: result.id, _rev: result.rev } as Wallet & { _id: string; _rev: string };
-      this.walletsMap.set(created.name, created);
-      this.createdCounts.wallets += 1;
+    // Ensure credit card limit is set to -5000 even if reused from onboarding
+    const existingCard = this.walletsMap.get("Credit Card");
+    if (existingCard && (existingCard as any).minimumBalance !== -5000) {
+      const updated = { ...(existingCard as any), minimumBalance: -5000 } as Wallet & { _id: string; _rev?: string };
+      const result = await pouchdbService.upsertDoc(updated, { isDemoData: (existingCard as any).isDemoData ?? true, demoCreatedAt: Date.now() });
+      const created = { ...updated, _id: result.id, _rev: result.rev } as Wallet & { _id: string; _rev: string };
+      this.walletsMap.set("Credit Card", created);
     }
   }
 
@@ -523,6 +573,8 @@ class FamilyDemoPreparationServiceV2 {
     const currencyId = this.primaryCurrency._id;
     const checking = this.walletsMap.get("Household Checking");
     if (!checking || !checking._id) return;
+    const creditCard = this.walletsMap.get("Credit Card");
+    const cash = this.walletsMap.get("Cash");
 
     const { start, end } = this.getSixMonthPeriod();
     const months = this.enumerateMonthlyDates(start, end);
@@ -624,7 +676,7 @@ class FamilyDemoPreparationServiceV2 {
           const rec = this.createExpenseRecord(
             new Date(y, mon, d),
             currencyId,
-            checking._id!,
+            Math.random() < 0.25 && creditCard?._id ? creditCard._id! : checking._id!,
             groceryAvenue,
             byParty("Local Grocery Market"),
             [byTag("Grocery")!].filter(Boolean) as string[],
@@ -644,7 +696,7 @@ class FamilyDemoPreparationServiceV2 {
           const rec = this.createExpenseRecord(
             new Date(y, mon, d),
             currencyId,
-            checking._id!,
+            Math.random() < 0.7 && creditCard?._id ? creditCard._id! : checking._id!,
             fuelAvenue,
             byParty("Shell Fuel Station"),
             [],
@@ -661,7 +713,7 @@ class FamilyDemoPreparationServiceV2 {
         const rec = this.createExpenseRecord(
           new Date(y, mon, 20),
           currencyId,
-          checking._id!,
+          cash?._id ? cash._id! : checking._id!,
           washAvenue,
           byParty("Sparkle Car Wash"),
           [],
@@ -693,7 +745,7 @@ class FamilyDemoPreparationServiceV2 {
         const rec = this.createExpenseRecord(
           new Date(y, mon, 22),
           currencyId,
-          checking._id!,
+          Math.random() < 0.5 && creditCard?._id ? creditCard._id! : cash?._id ? cash._id! : checking._id!,
           giftsAvenue,
           byParty("Sunrise Gift Shop"),
           [byTag("Gift")!].filter(Boolean) as string[],
@@ -709,7 +761,7 @@ class FamilyDemoPreparationServiceV2 {
         const rec = this.createExpenseRecord(
           new Date(y, mon, 11),
           currencyId,
-          checking._id!,
+          cash?._id ? cash._id! : checking._id!,
           petFoodAvenue,
           byParty("Happy Paws Pet Store"),
           [],
@@ -741,6 +793,13 @@ class FamilyDemoPreparationServiceV2 {
       if (savings && savings._id) {
         const xfer = this.createMoneyTransferRecord(new Date(y, mon, 5), currencyId, checking._id!, savings._id!, [], 600, "Monthly savings transfer");
         await pouchdbService.upsertDoc(xfer, { isDemoData: true, demoCreatedAt: Date.now() });
+        this.createdCounts.records += 1;
+      }
+
+      // Monthly cash top-up to avoid negative cash
+      if (cash && cash._id) {
+        const cashTopUp = this.createMoneyTransferRecord(new Date(y, mon, 6), currencyId, checking._id!, cash._id!, [], 250, "Monthly cash withdrawal");
+        await pouchdbService.upsertDoc(cashTopUp, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
       }
 
@@ -935,6 +994,85 @@ class FamilyDemoPreparationServiceV2 {
       transactionEpoch: date.getTime(),
       repaymentReceived: { amount, walletId, currencyId, partyId },
     } as Record;
+  }
+
+  // Quick templates
+  private async createQuickTemplates(): Promise<void> {
+    // Templates are regular records with a templateName; user can pick and edit before saving.
+    if (!this.primaryCurrency || !this.primaryCurrency._id) return;
+    const currencyId = this.primaryCurrency._id;
+    const checking = this.walletsMap.get("Household Checking");
+    const creditCard = this.walletsMap.get("Credit Card");
+    if (!checking) return;
+
+    const groceryAvenue = this.expenseAvenuesMap.get("Grocery");
+    const fuelAvenue = this.expenseAvenuesMap.get("Car Fuel");
+
+    if (groceryAvenue) {
+      const rec: Record = {
+        $collection: Collection.RECORD_TEMPLATE,
+        notes: "Weekly groceries",
+        type: "expense",
+        tagIdList: [this.tagsMap.get("Grocery")?._id!].filter(Boolean) as string[],
+        transactionEpoch: Date.now(),
+        templateName: "Weekly Groceries",
+        expense: {
+          expenseAvenueId: groceryAvenue._id!,
+          amount: 160,
+          currencyId,
+          partyId: this.partiesMap.get("Local Grocery Market")?._id || null,
+          walletId: checking._id!,
+          amountPaid: 160,
+          amountUnpaid: 0,
+        },
+      };
+      await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
+    }
+
+    if (fuelAvenue && creditCard) {
+      const rec: Record = {
+        $collection: Collection.RECORD_TEMPLATE,
+        notes: "Fuel refill",
+        type: "expense",
+        tagIdList: [],
+        transactionEpoch: Date.now(),
+        templateName: "Fuel Refill",
+        expense: {
+          expenseAvenueId: fuelAvenue._id!,
+          amount: 65,
+          currencyId,
+          partyId: this.partiesMap.get("Shell Fuel Station")?._id || null,
+          walletId: creditCard._id!,
+          amountPaid: 65,
+          amountUnpaid: 0,
+        },
+      };
+      await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
+    }
+
+    // 3) Car Wash (usually paid in cash)
+    const washAvenue = this.expenseAvenuesMap.get("Car Wash");
+    const cashWallet = this.walletsMap.get("Cash");
+    if (washAvenue && (cashWallet || checking)) {
+      const rec: Record = {
+        $collection: Collection.RECORD_TEMPLATE,
+        notes: "Quick car wash",
+        type: "expense",
+        tagIdList: [],
+        transactionEpoch: Date.now(),
+        templateName: "Car Wash",
+        expense: {
+          expenseAvenueId: washAvenue._id!,
+          amount: 15,
+          currencyId,
+          partyId: this.partiesMap.get("Sparkle Car Wash")?._id || null,
+          walletId: (cashWallet?._id ?? checking._id!) as string,
+          amountPaid: 15,
+          amountUnpaid: 0,
+        },
+      };
+      await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
+    }
   }
 
   // Date helpers
