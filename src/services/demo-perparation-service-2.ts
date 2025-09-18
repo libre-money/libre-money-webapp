@@ -167,10 +167,10 @@ class FamilyDemoPreparationServiceV2 {
   // Entities for the family of 4 demo
   private async createFamilyParties(): Promise<void> {
     const parties: Party[] = [
-      { $collection: Collection.PARTY, name: "Husband", type: "party" } as Party,
-      { $collection: Collection.PARTY, name: "Wife", type: "party" } as Party,
-      { $collection: Collection.PARTY, name: "Son 1", type: "party" } as Party,
-      { $collection: Collection.PARTY, name: "Son 2", type: "party" } as Party,
+      { $collection: Collection.PARTY, name: "Ethan", type: "party" } as Party, // Husband
+      { $collection: Collection.PARTY, name: "Maya", type: "party" } as Party, // Wife
+      { $collection: Collection.PARTY, name: "Alex", type: "party" } as Party, // Son 1
+      { $collection: Collection.PARTY, name: "Jason", type: "party" } as Party, // Son 2
 
       { $collection: Collection.PARTY, name: "Bank of America", type: "vendor" } as Party,
       { $collection: Collection.PARTY, name: "Blue Shield Insurance", type: "vendor" } as Party,
@@ -279,12 +279,12 @@ class FamilyDemoPreparationServiceV2 {
       { $collection: Collection.EXPENSE_AVENUE, name: "Grocery" } as ExpenseAvenue,
       { $collection: Collection.EXPENSE_AVENUE, name: "Mortgage" } as ExpenseAvenue,
       { $collection: Collection.EXPENSE_AVENUE, name: "Medical Insurance Family Pack" } as ExpenseAvenue,
-      { $collection: Collection.EXPENSE_AVENUE, name: "Son 1 School" } as ExpenseAvenue,
-      { $collection: Collection.EXPENSE_AVENUE, name: "Son 2 School" } as ExpenseAvenue,
-      { $collection: Collection.EXPENSE_AVENUE, name: "Son 1 Karate Lessons" } as ExpenseAvenue,
-      { $collection: Collection.EXPENSE_AVENUE, name: "Son 2 Football Lessons" } as ExpenseAvenue,
-      { $collection: Collection.EXPENSE_AVENUE, name: "Husband Salon" } as ExpenseAvenue,
-      { $collection: Collection.EXPENSE_AVENUE, name: "Wife Salon" } as ExpenseAvenue,
+      { $collection: Collection.EXPENSE_AVENUE, name: "School Tuition - Alex" } as ExpenseAvenue,
+      { $collection: Collection.EXPENSE_AVENUE, name: "School Tuition - Jason" } as ExpenseAvenue,
+      { $collection: Collection.EXPENSE_AVENUE, name: "Karate Lessons - Alex" } as ExpenseAvenue,
+      { $collection: Collection.EXPENSE_AVENUE, name: "Football Lessons - Jason" } as ExpenseAvenue,
+      { $collection: Collection.EXPENSE_AVENUE, name: "Barber - Ethan" } as ExpenseAvenue,
+      { $collection: Collection.EXPENSE_AVENUE, name: "Salon - Maya" } as ExpenseAvenue,
       { $collection: Collection.EXPENSE_AVENUE, name: "Car Fuel" } as ExpenseAvenue,
       { $collection: Collection.EXPENSE_AVENUE, name: "Car Wash" } as ExpenseAvenue,
       { $collection: Collection.EXPENSE_AVENUE, name: "Baking Item Expense" } as ExpenseAvenue,
@@ -543,12 +543,12 @@ class FamilyDemoPreparationServiceV2 {
       const wifeIncomeId = byIncome("Wife Salary");
       const sideGigId = byIncome("Side Gig - Baking");
       if (husbandIncomeId) {
-        const rec = this.createIncomeRecord(first, currencyId, checking._id!, husbandIncomeId, byParty("Husband"), [], 5200, "Husband monthly salary");
+        const rec = this.createIncomeRecord(first, currencyId, checking._id!, husbandIncomeId, byParty("Ethan"), [], 5200, "Ethan monthly salary");
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
       }
       if (wifeIncomeId) {
-        const rec = this.createIncomeRecord(first, currencyId, checking._id!, wifeIncomeId, byParty("Wife"), [], 3800, "Wife monthly salary");
+        const rec = this.createIncomeRecord(first, currencyId, checking._id!, wifeIncomeId, byParty("Maya"), [], 3800, "Maya monthly salary");
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
       }
@@ -558,7 +558,7 @@ class FamilyDemoPreparationServiceV2 {
           currencyId,
           checking._id!,
           sideGigId,
-          byParty("Wife"),
+          byParty("Maya"),
           [byTag("Gig")!].filter(Boolean) as string[],
           450,
           "Baking side gig income"
@@ -581,15 +581,15 @@ class FamilyDemoPreparationServiceV2 {
       // Fixed monthly expenses (non-loan)
       const expenses: { d: number; avenue: string; party?: string; amount: number; tag?: string }[] = [
         { d: 3, avenue: "Medical Insurance Family Pack", party: "Blue Shield Insurance", amount: 380 },
-        { d: 4, avenue: "Son 1 School", party: "Lincoln Elementary School", amount: 300 },
-        { d: 4, avenue: "Son 2 School", party: "Roosevelt Middle School", amount: 420 },
+        { d: 4, avenue: "School Tuition - Alex", party: "Lincoln Elementary School", amount: 300 },
+        { d: 4, avenue: "School Tuition - Jason", party: "Roosevelt Middle School", amount: 420 },
         { d: 5, avenue: "Water Bill", party: "City Water Utility", amount: 45 },
         { d: 6, avenue: "Electricity Bill", party: "City Electric Utility", amount: 120 },
         { d: 7, avenue: "Gas Bill", party: "City Gas Utility", amount: 60 },
         { d: 8, avenue: "Husband Salon", party: "Downtown Barber", amount: 25, tag: "Splurge" },
         { d: 15, avenue: "Wife Salon", party: "City Salon & Spa", amount: 40, tag: "Splurge" },
-        { d: 9, avenue: "Son 1 Karate Lessons", party: "Eastside Karate Academy", amount: 55, tag: "Family Time" },
-        { d: 10, avenue: "Son 2 Football Lessons", party: "Westside Football Club", amount: 65, tag: "Family Time" },
+        { d: 9, avenue: "Karate Lessons - Alex", party: "Eastside Karate Academy", amount: 55, tag: "Family Time" },
+        { d: 10, avenue: "Football Lessons - Jason", party: "Westside Football Club", amount: 65, tag: "Family Time" },
       ];
 
       for (const e of expenses) {
@@ -597,7 +597,20 @@ class FamilyDemoPreparationServiceV2 {
         if (!avenueId) continue;
         const date = new Date(y, mon, e.d);
         const tagIds = e.tag ? ([byTag(e.tag)!].filter(Boolean) as string[]) : [];
-        const rec = this.createExpenseRecord(date, currencyId, checking._id!, avenueId, e.party ? byParty(e.party) : null, tagIds, e.amount, e.avenue);
+        const noteMap: { [key: string]: string[] } = {
+          "Medical Insurance Family Pack": ["Family plan premium"],
+          "School Tuition - Alex": ["Monthly tuition for Alex"],
+          "School Tuition - Jason": ["Monthly tuition for Jason"],
+          "Water Bill": ["Monthly water bill"],
+          "Electricity Bill": ["Monthly electricity bill"],
+          "Gas Bill": ["Monthly gas bill"],
+          "Husband Salon": ["Haircut - Ethan"],
+          "Wife Salon": ["Salon visit - Maya"],
+          "Karate Lessons - Alex": ["Karate class fees - Alex"],
+          "Football Lessons - Jason": ["Football training fees - Jason"],
+        };
+        const note = noteMap[e.avenue] ? noteMap[e.avenue][0] : e.avenue;
+        const rec = this.createExpenseRecord(date, currencyId, checking._id!, avenueId, e.party ? byParty(e.party) : null, tagIds, e.amount, note);
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
       }
@@ -616,7 +629,7 @@ class FamilyDemoPreparationServiceV2 {
             byParty("Local Grocery Market"),
             [byTag("Grocery")!].filter(Boolean) as string[],
             amt,
-            "Monthly grocery shopping"
+            Math.random() < 0.5 ? "Groceries: produce, dairy, snacks" : "Weekly groceries: fruits, veggies, milk"
           );
           await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
           this.createdCounts.records += 1;
@@ -628,7 +641,16 @@ class FamilyDemoPreparationServiceV2 {
         const fills = [7, 18];
         for (const d of fills) {
           const amt = 55 + Math.floor(Math.random() * 15);
-          const rec = this.createExpenseRecord(new Date(y, mon, d), currencyId, checking._id!, fuelAvenue, byParty("Shell Fuel Station"), [], amt, "Car fuel");
+          const rec = this.createExpenseRecord(
+            new Date(y, mon, d),
+            currencyId,
+            checking._id!,
+            fuelAvenue,
+            byParty("Shell Fuel Station"),
+            [],
+            amt,
+            Math.random() < 0.5 ? "Gas fill-up" : "Fuel top-up"
+          );
           await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
           this.createdCounts.records += 1;
         }
@@ -644,7 +666,7 @@ class FamilyDemoPreparationServiceV2 {
           byParty("Sparkle Car Wash"),
           [],
           15,
-          "Monthly car wash"
+          Math.random() < 0.5 ? "Exterior wash" : "Quick car wash"
         );
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
@@ -660,7 +682,7 @@ class FamilyDemoPreparationServiceV2 {
           byParty("Home Baking Supplies"),
           [byTag("Gig")!].filter(Boolean) as string[],
           85,
-          "Baking supplies for side gig"
+          Math.random() < 0.5 ? "Flour, sugar, butter for cupcake order" : "Chocolate chips and vanilla extract"
         );
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
@@ -676,7 +698,7 @@ class FamilyDemoPreparationServiceV2 {
           byParty("Sunrise Gift Shop"),
           [byTag("Gift")!].filter(Boolean) as string[],
           60,
-          "Gift or celebration"
+          Math.random() < 0.5 ? "Toy car for Jason" : "Board game for family night"
         );
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
@@ -692,7 +714,7 @@ class FamilyDemoPreparationServiceV2 {
           byParty("Happy Paws Pet Store"),
           [],
           45,
-          "Dog food"
+          Math.random() < 0.5 ? "Dog kibble and treats" : "Bulk dry food bag"
         );
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
@@ -708,7 +730,7 @@ class FamilyDemoPreparationServiceV2 {
           byParty("Oakwood Veterinary Clinic"),
           [byTag("Medical")!].filter(Boolean) as string[],
           95,
-          "Vet visit"
+          Math.random() < 0.5 ? "Annual vaccination" : "General check-up"
         );
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
@@ -736,7 +758,7 @@ class FamilyDemoPreparationServiceV2 {
           byParty("Sunrise Gift Shop"),
           [familyTimeTag],
           amt,
-          "Family time outing"
+          Math.random() < 0.5 ? "Movie night tickets" : "Ice cream outing"
         );
         await pouchdbService.upsertDoc(rec, { isDemoData: true, demoCreatedAt: Date.now() });
         this.createdCounts.records += 1;
