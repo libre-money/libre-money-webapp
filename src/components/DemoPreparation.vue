@@ -71,7 +71,7 @@
 import { ref, computed } from "vue";
 import { useQuasar } from "quasar";
 import { DEMO_PREPARATION_ENABLED } from "src/constants/config-constants";
-import { demoPreparationService } from "src/services/demo-preparation-service";
+import { demoPreparationServiceV2 as demoPreparationService } from "src/services/demo-perparation-service-2";
 
 // Props and emits
 defineEmits<{
