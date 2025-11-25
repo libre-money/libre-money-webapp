@@ -43,3 +43,64 @@ $record-expense-text-color: #851f1f;
 
 $record-income-primary-color: #388036;
 $record-income-text-color: #ffffff;
+
+// Material Design 3 (Material You) Design Tokens
+// --------------------------------------------------
+
+// Override Quasar's default border radius for Material 3
+// Material 3 uses more rounded corners throughout
+$generic-border-radius: 20px;
+$button-border-radius: 20px;
+
+// Material 3 Border Radius Scale
+$border-radius-xs: 4px;
+$border-radius-sm: 8px;
+$border-radius-md: 12px;
+$border-radius-lg: 16px;
+$border-radius-xl: 20px;
+$border-radius-2xl: 28px;
+
+// Card/Dialog Border Radius - Material 3 uses 28px for large surfaces
+$card-border-radius: 28px;
+$dialog-border-radius: 28px;
+
+// Material 3 Button Specifications
+$button-border-radius-sm: 16px;
+$button-border-radius-lg: 24px;
+$button-height: 40px;
+$button-height-sm: 36px;
+$button-height-md: 40px;
+$button-height-lg: 48px;
+$button-padding-x: 24px;
+$button-padding-y: 10px;
+$button-padding-x-sm: 16px;
+$button-padding-y-sm: 8px;
+$button-padding-x-lg: 32px;
+$button-padding-y-lg: 12px;
+
+// Material 3 Elevation/Shadows - Softer, more diffused shadows
+$shadow-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
+$shadow-2: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
+$shadow-3: 0px 1px 3px 0px rgba(0, 0, 0, 0.3), 0px 4px 8px 3px rgba(0, 0, 0, 0.15);
+$shadow-4: 0px 2px 3px 0px rgba(0, 0, 0, 0.3), 0px 6px 10px 4px rgba(0, 0, 0, 0.15);
+$shadow-5: 0px 4px 4px 0px rgba(0, 0, 0, 0.3), 0px 8px 12px 6px rgba(0, 0, 0, 0.15);
+
+// Material 3 Spacing Scale - More generous spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+
+// Material 3 Typography - Font weights
+$typography-font-weight-light: 300;
+$typography-font-weight-regular: 400;
+$typography-font-weight-medium: 500;
+$typography-font-weight-semibold: 600;
+$typography-font-weight-bold: 700;
+
+// Material 3 Input/Dialog Specifications
+$input-border-radius: 16px;
+$dialog-max-width: 560px;
+$dialog-padding: 24px;

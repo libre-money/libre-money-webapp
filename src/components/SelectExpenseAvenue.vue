@@ -22,8 +22,7 @@ const fullWalletExpenseAvenueList: Ref<ExpenseAvenue[]> = ref([]);
 
 async function loadData() {
   isLoading.value = true;
-  fullWalletExpenseAvenueList.value = (await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE))
-    .docs as ExpenseAvenue[];
+  fullWalletExpenseAvenueList.value = (await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE)).docs as ExpenseAvenue[];
   fullWalletExpenseAvenueList.value.sort((a, b) => a.name.localeCompare(b.name));
 
   walletExpenseAvenueList.value = fullWalletExpenseAvenueList.value;
@@ -53,7 +52,7 @@ function filterExpenseAvenueFn(val: string, update: any, abort: any) {
   </div>
 
   <q-select
-    filled
+    standout="bg-primary text-white"
     v-model="value"
     :options="walletExpenseAvenueList"
     label="Expense Avenue"
@@ -66,6 +65,7 @@ function filterExpenseAvenueFn(val: string, update: any, abort: any) {
     option-value="_id"
     option-label="name"
     hide-selected
+    behavior="menu"
     v-if="!isLoading"
   />
 </template>

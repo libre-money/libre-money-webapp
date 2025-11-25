@@ -2,7 +2,6 @@
   <q-page class="row items-center justify-evenly">
     <q-card class="std-card">
       <div class="q-pa-md">
-
         <q-table
           :loading="isLoading"
           title="Templates"
@@ -73,13 +72,13 @@ const columns = [
     name: "name",
     required: true,
     label: "Name",
-    align: "left",
+    align: "left" as const,
     field: "templateName",
     sortable: true,
   },
   {
     name: "type",
-    align: "left",
+    align: "left" as const,
     label: "Type",
     sortable: true,
     field: (template: Record) => {
@@ -89,6 +88,7 @@ const columns = [
   {
     name: "actions",
     label: "Actions",
+    field: () => "",
   },
 ];
 

@@ -1,49 +1,66 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
-    <q-card class="q-dialog-plugin">
-      <q-card-section>
+  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
+    <q-card class="q-dialog-plugin column full-height">
+      <q-card-section class="no-shrink">
         <div class="std-dialog-title text-primary text-weight-bold">
           {{ existingRecordId ? "Editing an Expense" : "Adding an Expense" }}
         </div>
       </q-card-section>
       <q-separator />
-      <q-card-section style="max-height: 50vh" class="scroll">
+      <q-card-section class="col scroll" style="min-height: 0">
         <q-form class="q-gutter-md q-pa-md1" ref="recordForm">
           <date-time-input v-model="transactionEpoch" label="Date & Time"></date-time-input>
           <select-expense-avenue v-model="recordExpenseAvenueId"></select-expense-avenue>
           <q-input
+            input-class="text-h6"
             type="number"
-            filled
+            standout="bg-primary text-white"
             v-model.number="recordAmount"
             label="Expense Amount"
             lazy-rules
             :rules="validators.balance"
           >
             <template v-slot:append>
-              <div class="currency-label">{{ recordCurrencySign }}</div>
+              <!-- <div class="currency-label">{{ recordCurrencySign }}</div> -->
+              <q-btn-dropdown flat dense size="lg" color="primary" :label="recordCurrencySign as string">
+                <q-list style="min-width: 160px">
+                  <q-item
+                    v-for="curr in fullWalletCurrencyList"
+                    :key="curr._id"
+                    clickable
+                    v-close-popup
+                    @click="
+                      recordCurrencyId = curr._id ?? null;
+                      recordCurrencySign = curr.sign ?? null;
+                    "
+                  >
+                    <q-item-section>
+                      <q-item-label>{{ curr.sign }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-btn-dropdown>
             </template>
           </q-input>
 
-          <q-tabs v-model="paymentType" inline-label class="bg-blue-grey text-white shadow-2 std-margin-bottom-32">
+          <q-tabs
+            v-model="paymentType"
+            inline-label
+            class="bg-blue-grey-11 text-grey-7 shadow-1 rounded-borders q-mb-lg"
+            active-color="teal-9"
+            active-bg-color="teal-3"
+            indicator-color="transparent"
+          >
             <q-tab name="full" label="Paid" />
             <q-tab name="partial" label="Partially Paid" />
             <q-tab name="unpaid" label="Unpaid" />
           </q-tabs>
 
-          <select-wallet
-            v-model="recordWalletId"
-            v-if="paymentType == 'full' || paymentType == 'partial'"
-            :limitByCurrencyId="recordCurrencyId"
-          >
+          <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'" :limitByCurrencyId="recordCurrencyId">
           </select-wallet>
-          <div
-            class="wallet-balance-container"
-            v-if="(paymentType == 'full' || paymentType == 'partial') && selectedWallet"
-          >
+          <div class="wallet-balance-container" v-if="(paymentType == 'full' || paymentType == 'partial') && selectedWallet">
             <div>Balance in wallet: {{ printAmount(selectedWallet._balance!) }}</div>
-            <div style="margin-top: 8px">
-              Balance afterwards will be: {{ printAmount(selectedWallet.potentialBalance) }}
-            </div>
+            <div style="margin-top: 8px">Balance afterwards will be: {{ printAmount(selectedWallet.potentialBalance) }}</div>
             <div class="wallet-limit" style="margin-top: 8px" v-if="selectedWallet._minimumBalanceState !== 'not-set'">
               <span class="wallet-limit-warning" v-if="selectedWallet._minimumBalanceState === 'warning'">
                 Approaching limit {{ printAmount(selectedWallet.minimumBalance!) }}
@@ -59,7 +76,7 @@
 
           <q-input
             type="number"
-            filled
+            standout="bg-primary text-white"
             v-model="recordAmountPaid"
             label="Amount Paid"
             lazy-rules
@@ -69,36 +86,35 @@
           <q-input
             type="number"
             readonly
-            outlined
+            standout="bg-primary text-white"
             v-model="recordAmountUnpaid"
             label="Amount Due"
             v-if="paymentType == 'partial'"
             style="margin-top: 8px; margin-bottom: 24px"
           />
 
-          <select-party
-            v-model="recordPartyId"
-            :mandatory="paymentType == 'unpaid' || paymentType == 'partial'"
-          ></select-party>
+          <select-party v-model="recordPartyId" :mandatory="paymentType == 'unpaid' || paymentType == 'partial'"></select-party>
           <select-tag v-model="recordTagIdList"></select-tag>
-          <q-input type="textarea" filled v-model="recordNotes" label="Notes" lazy-rules :rules="validators.notes" />
-          <select-currency v-model="recordCurrencyId"></select-currency>
+          <q-input standout="bg-primary text-white" type="textarea" v-model="recordNotes" label="Notes" lazy-rules :rules="validators.notes" />
+          <!-- <select-currency v-model="recordCurrencyId"></select-currency> -->
         </q-form>
       </q-card-section>
       <q-separator />
-      <q-card-actions align="between" class="q-pa-md">
-        <q-btn color="blue-grey" label="Cancel" @click="onDialogCancel" />
-        <div class="spacer"></div>
-        <q-btn-dropdown size="md" color="primary" icon="save" label="Save" split @click="okClicked">
-          <q-list>
-            <q-item clickable v-close-popup @click="saveAsTemplateClicked">
-              <q-item-section>
-                <q-item-label>Save as Template</q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-btn-dropdown>
-      </q-card-actions>
+      <q-card-section class="no-shrink">
+        <div class="flex">
+          <q-btn flat rounded size="lg" label="Cancel" @click="onDialogCancel" />
+          <div class="spacer"></div>
+          <q-btn-dropdown rounded size="lg" color="primary" label="Save Record" split @click="okClicked">
+            <q-list>
+              <q-item clickable v-close-popup @click="saveAsTemplateClicked">
+                <q-item-section>
+                  <q-item-label>Save as Template</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+        </div>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </template>
@@ -108,6 +124,7 @@ import { QForm, useDialogPluginComponent, useQuasar } from "quasar";
 import { Collection, RecordType } from "src/constants/constants";
 import { Record } from "src/models/record";
 import { WalletWithPotentialBalance } from "src/models/wallet";
+import { Currency } from "src/models/currency";
 import { computationService } from "src/services/computation-service";
 import { NotificationType, dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
@@ -116,7 +133,7 @@ import { useSettingsStore } from "src/stores/settings";
 import { asAmount, printAmount as printAmountUtil } from "src/utils/de-facto-utils";
 import { deepClone, isNullOrUndefined } from "src/utils/misc-utils";
 import { validators } from "src/utils/validators";
-import { ref, watch } from "vue";
+import { Ref, ref, watch } from "vue";
 import DateTimeInput from "./lib/DateTimeInput.vue";
 import SelectCurrency from "./SelectCurrency.vue";
 import SelectExpenseAvenue from "./SelectExpenseAvenue.vue";
@@ -262,8 +279,10 @@ if (props.existingRecordId) {
   setTimeout(() => {
     if (props.suggestedCurrencyId) {
       recordCurrencyId.value = props.suggestedCurrencyId;
+    } else if (settingsStore.defaultCurrencyId) {
+      recordCurrencyId.value = settingsStore.defaultCurrencyId ?? null;
     } else {
-      recordCurrencyId.value = settingsStore.defaultCurrencyId;
+      recordCurrencyId.value = fullWalletCurrencyList.value[0]?._id ?? null;
     }
 
     if (props.suggestedWalletId) {
@@ -293,11 +312,12 @@ async function performManualValidation() {
   }
 
   if (paymentType.value === "full") {
-    recordAmountPaid.value = recordAmount.value;
+    recordAmountPaid.value = asAmount(recordAmount.value);
     recordAmountUnpaid.value = 0;
   }
 
-  recordAmountPaid.value = Math.min(recordAmountPaid.value, recordAmount.value);
+  // Ensure both values are defined numbers, fallback to 0 if undefined
+  recordAmountPaid.value = Math.min(asAmount(recordAmountPaid.value), asAmount(recordAmount.value));
 
   recordAmountUnpaid.value = asAmount(recordAmount.value) - asAmount(recordAmountPaid.value);
 
@@ -325,6 +345,15 @@ function populatePartialRecord() {
 
   return record;
 }
+
+const fullWalletCurrencyList: Ref<Currency[]> = ref([]);
+
+async function loadData() {
+  fullWalletCurrencyList.value = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
+  fullWalletCurrencyList.value.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+loadData();
 
 // Save record
 async function okClicked() {
@@ -384,7 +413,7 @@ watch(recordCurrencyId, async (newCurrencyId: any) => {
 
 watch([recordAmount, recordAmountPaid, selectedWallet, paymentType], async () => {
   if (paymentType.value === "full") {
-    recordAmountPaid.value = recordAmount.value;
+    recordAmountPaid.value = asAmount(recordAmount.value);
   }
   recordAmountUnpaid.value = asAmount(recordAmount.value) - asAmount(recordAmountPaid.value);
 

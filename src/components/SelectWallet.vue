@@ -81,7 +81,7 @@ watch(limitByCurrencyId, () => {
   </div>
 
   <q-select
-    filled
+    standout="bg-primary text-white"
     v-model="value"
     :options="walletList"
     :label="label || 'Wallet'"

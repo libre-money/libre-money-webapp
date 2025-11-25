@@ -72,7 +72,7 @@ function filterTagFn(val: string, update: any, abort: any) {
   </div>
 
   <q-select
-    filled
+    standout="bg-primary text-white"
     v-model="value"
     :options="tagList"
     :label="label || 'Tags'"

@@ -18,11 +18,7 @@
         <q-btn color="green-6" icon="wallet" flat round @click="showQuickBalanceClicked" />
         <div class="title">
           <div class="month-and-year-input-wrapper" v-if="!recordFilters && $q.screen.gt.xs">
-            <month-and-year-input
-              v-model:month="filterMonth"
-              v-model:year="filterYear"
-              @selection="monthAndYearSelected()"
-            ></month-and-year-input>
+            <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear" @selection="monthAndYearSelected()"></month-and-year-input>
           </div>
         </div>
         <q-btn-dropdown size="md" color="primary" label="Add Expenses" split @click="addExpenseClicked">
@@ -69,15 +65,8 @@
         <div class="filters-activated-area" v-if="recordFilters">
           <div style="flex: 1">
             <span v-if="recordFilters.type === 'standard'">These results are filtered.</span>
-            <span
-              v-else-if="
-                recordFilters.type === 'budget' && recordFilters._budgetName === UNBUDGETED_RECORDS_BUDGET_NAME
-              "
-              >Viewing unbudgeted records.</span
-            >
-            <span v-else-if="recordFilters.type === 'budget'"
-              >Viewing records under budget: {{ recordFilters._budgetName }}.</span
-            >
+            <span v-else-if="recordFilters.type === 'budget' && recordFilters._budgetName === UNBUDGETED_RECORDS_BUDGET_NAME">Viewing unbudgeted records.</span>
+            <span v-else-if="recordFilters.type === 'budget'">Viewing records under budget: {{ recordFilters._budgetName }}.</span>
             <span v-else-if="recordFilters.type === 'loansAndDebts' || recordFilters.type === 'parties'">
               Viewing dealings with party: {{ recordFilters._partyName }}.
             </span>
@@ -86,23 +75,14 @@
         </div>
 
         <div class="month-and-year-input-wrapper" v-if="!recordFilters && $q.screen.lt.sm">
-          <month-and-year-input
-            v-model:month="filterMonth"
-            v-model:year="filterYear"
-            @selection="monthAndYearSelected()"
-          ></month-and-year-input>
+          <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear" @selection="monthAndYearSelected()"></month-and-year-input>
         </div>
 
         <loading-indicator :is-loading="isLoading" :phases="4" ref="loadingIndicator"></loading-indicator>
 
         <template v-if="!isLoading">
           <div v-for="(record, index) in rows" class="record-row" v-bind:key="record._id">
-            <template
-              v-if="
-                index === 0 ||
-                prettifyDate(rows[index].transactionEpoch) !== prettifyDate(rows[index - 1].transactionEpoch)
-              "
-            >
+            <template v-if="index === 0 || prettifyDate(rows[index].transactionEpoch) !== prettifyDate(rows[index - 1].transactionEpoch)">
               <div class="divider-line-different-day">
                 <div class="divider-line-date">
                   <div class="divider-line-inner">{{ prettifyDate(rows[index].transactionEpoch) }}</div>
@@ -156,10 +136,7 @@
               </div>
 
               <div class="amounts-section">
-                <div
-                  class="amount"
-                  :class="{ 'amount-out': isRecordOutFlow(record), 'amount-in': isRecordInFlow(record) }"
-                >
+                <div class="amount" :class="{ 'amount-out': isRecordOutFlow(record), 'amount-in': isRecordInFlow(record) }">
                   {{ printAmount(getNumber(record, "amount")!, getString(record, "currencyId")!) }}
                 </div>
                 <div class="wallet" v-if="getWallet(record)">({{ getWallet(record)!.name }})</div>
@@ -168,22 +145,8 @@
                   {{ printAmount(getNumber(record, "amountUnpaid")!, getString(record, "currencyId")!) }}
                 </div>
                 <div class="controls">
-                  <q-btn
-                    class="control-button"
-                    round
-                    color="primary"
-                    icon="create"
-                    size="8px"
-                    @click="editSingleAmountRecordClicked(record)"
-                  />
-                  <q-btn
-                    class="control-button"
-                    round
-                    color="negative"
-                    icon="delete"
-                    size="8px"
-                    @click="deleteClicked(record)"
-                  />
+                  <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editSingleAmountRecordClicked(record)" />
+                  <q-btn class="control-button" round color="negative" icon="delete" size="8px" @click="deleteClicked(record)" />
                   <div class="username" v-if="record.modifiedByUsername">
                     <q-icon name="account_circle"></q-icon>
                     {{ record.modifiedByUsername }}
@@ -194,11 +157,7 @@
             <!-- Unified Single Amount Record -->
 
             <!-- Money Transfer - start -->
-            <div
-              class="money-transfer-row row"
-              v-else-if="record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer"
-              :data-index="index"
-            >
+            <div class="money-transfer-row row" v-else-if="record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer" :data-index="index">
               <div class="details-section">
                 <div class="record-date">
                   {{ prettifyDate(record.transactionEpoch) }}
@@ -207,9 +166,7 @@
                   </template>
                 </div>
 
-                <div class="primary-line">
-                  Transfer {{ record.moneyTransfer.fromWallet.name }} to {{ record.moneyTransfer.toWallet.name }}
-                </div>
+                <div class="primary-line">Transfer {{ record.moneyTransfer.fromWallet.name }} to {{ record.moneyTransfer.toWallet.name }}</div>
 
                 <div class="notes" v-if="record.notes">{{ record.notes }}</div>
 
@@ -231,36 +188,18 @@
               <div class="amounts-section">
                 <div class="row amounts-section-row">
                   <div class="amount-col amount-left-col">
-                    <div class="amount amount-out">
-                      Out {{ printAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}
-                    </div>
+                    <div class="amount amount-out">Out {{ printAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}</div>
                     <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
                   </div>
                   <div class="amount-col amount-right-col">
-                    <div class="amount amount-in">
-                      In {{ printAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}
-                    </div>
+                    <div class="amount amount-in">In {{ printAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}</div>
                     <div class="wallet">({{ record.moneyTransfer.toWallet.name }})</div>
                   </div>
                 </div>
 
                 <div class="controls">
-                  <q-btn
-                    class="control-button"
-                    round
-                    color="primary"
-                    icon="create"
-                    size="8px"
-                    @click="editMoneyTransferClicked(record)"
-                  />
-                  <q-btn
-                    class="control-button"
-                    round
-                    color="negative"
-                    icon="delete"
-                    size="8px"
-                    @click="deleteClicked(record)"
-                  />
+                  <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editMoneyTransferClicked(record)" />
+                  <q-btn class="control-button" round color="negative" icon="delete" size="8px" @click="deleteClicked(record)" />
                   <div class="username" v-if="record.modifiedByUsername">
                     <q-icon name="account_circle"></q-icon>
                     {{ record.modifiedByUsername }}
@@ -309,11 +248,7 @@ import QuickBalanceDialog from "src/components/QuickBalanceDialog.vue";
 import QuickExpenseSummaryDialog from "src/components/QuickExpenseSummaryDialog.vue";
 import QuickSummaryDialog from "src/components/QuickSummaryDialog.vue";
 import SelectTemplateDialog from "src/components/SelectTemplateDialog.vue";
-import {
-  PROMISE_POOL_CONCURRENCY_LIMT,
-  RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD,
-  UNBUDGETED_RECORDS_BUDGET_NAME,
-} from "src/constants/config-constants";
+import { PROMISE_POOL_CONCURRENCY_LIMT, RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD, UNBUDGETED_RECORDS_BUDGET_NAME } from "src/constants/config-constants";
 import { Collection, RecordType } from "src/constants/constants";
 import { Asset } from "src/models/asset";
 import { InferredRecord } from "src/models/inferred/inferred-record";
@@ -391,9 +326,7 @@ async function loadData(origin = "unspecified") {
       rangeEnd.setMonth(rangeEnd.getMonth() + 1);
       rangeEnd.setDate(rangeEnd.getDate() - 1);
       let [startEpoch, endEpoch] = normalizeEpochRange(rangeStart.getTime(), rangeEnd.getTime());
-      recordList = recordList.filter(
-        (record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch
-      );
+      recordList = recordList.filter((record) => record.transactionEpoch >= startEpoch && record.transactionEpoch <= endEpoch);
     }
 
     loadingIndicator.value?.startPhase({ phase: 3, weight: 10, label: "Sorting" });
@@ -413,18 +346,14 @@ async function loadData(origin = "unspecified") {
     let inferredRecordList: InferredRecord[];
     if (recordList.length < RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD) {
       let completedCount = 0;
-      inferredRecordList = await PromisePool.mapList(
-        recordList,
-        PROMISE_POOL_CONCURRENCY_LIMT,
-        async (rawData: Record) => {
-          const result = await recordService.inferRecord(rawData);
-          completedCount += 1;
-          if (completedCount % Math.floor(recordList.length / 10) === 0) {
-            loadingIndicator.value?.setProgress(completedCount / recordList.length);
-          }
-          return result;
+      inferredRecordList = await PromisePool.mapList(recordList, PROMISE_POOL_CONCURRENCY_LIMT, async (rawData: Record) => {
+        const result = await recordService.inferRecord(rawData);
+        completedCount += 1;
+        if (completedCount % Math.floor(recordList.length / 10) === 0) {
+          loadingIndicator.value?.setProgress(completedCount / recordList.length);
         }
-      );
+        return result;
+      });
     } else {
       inferredRecordList = await recordService.inferInBatch(recordList);
     }
@@ -471,38 +400,32 @@ async function addExpenseClicked() {
 }
 
 async function applyTemplateClicked() {
-  $q.dialog({ component: SelectTemplateDialog, componentProps: { templateType: "all" } }).onOk(
-    (selectedTemplate: Record) => {
-      selectedTemplate = deepClone(selectedTemplate);
-      console.debug({ selectedTemplate });
+  $q.dialog({ component: SelectTemplateDialog, componentProps: { templateType: "all" } }).onOk((selectedTemplate: Record) => {
+    selectedTemplate = deepClone(selectedTemplate);
+    console.debug({ selectedTemplate });
 
-      if (selectedTemplate.type === RecordType.EXPENSE) {
-        $q.dialog({ component: AddExpenseRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
-          paginationCurrentPage.value = 1;
-          loadData();
-        });
-      } else if (selectedTemplate.type === RecordType.INCOME) {
-        $q.dialog({ component: AddIncomeRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
-          paginationCurrentPage.value = 1;
-          loadData();
-        });
-      } else if (selectedTemplate.type === RecordType.MONEY_TRANSFER) {
-        $q.dialog({ component: AddMoneyTransferRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(
-          () => {
-            paginationCurrentPage.value = 1;
-            loadData();
-          }
-        );
-      } else if (selectedTemplate.type === RecordType.ASSET_PURCHASE) {
-        $q.dialog({ component: AddAssetPurchaseRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(
-          () => {
-            paginationCurrentPage.value = 1;
-            loadData();
-          }
-        );
-      }
+    if (selectedTemplate.type === RecordType.EXPENSE) {
+      $q.dialog({ component: AddExpenseRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
+        paginationCurrentPage.value = 1;
+        loadData();
+      });
+    } else if (selectedTemplate.type === RecordType.INCOME) {
+      $q.dialog({ component: AddIncomeRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
+        paginationCurrentPage.value = 1;
+        loadData();
+      });
+    } else if (selectedTemplate.type === RecordType.MONEY_TRANSFER) {
+      $q.dialog({ component: AddMoneyTransferRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
+        paginationCurrentPage.value = 1;
+        loadData();
+      });
+    } else if (selectedTemplate.type === RecordType.ASSET_PURCHASE) {
+      $q.dialog({ component: AddAssetPurchaseRecord, componentProps: { useTemplateId: selectedTemplate._id } }).onOk(() => {
+        paginationCurrentPage.value = 1;
+        loadData();
+      });
     }
-  );
+  });
 }
 
 async function addIncomeClicked() {
@@ -599,13 +522,11 @@ async function showQuickSummaryClicked() {
 }
 
 async function setFiltersClicked() {
-  $q.dialog({ component: FilterRecordsDialog, componentProps: { inputFilters: recordFilters.value } }).onOk(
-    (res: RecordFilters) => {
-      recordFilters.value = res;
-      recordFiltersStore.setRecordFilters(res);
-      loadData();
-    }
-  );
+  $q.dialog({ component: FilterRecordsDialog, componentProps: { inputFilters: recordFilters.value } }).onOk((res: RecordFilters) => {
+    recordFilters.value = res;
+    recordFiltersStore.setRecordFilters(res);
+    loadData();
+  });
 }
 
 async function clearFiltersClicked() {
@@ -624,15 +545,11 @@ async function importTextClicked() {
 // ----- Computed and Embedded
 
 function isRecordInFlow(record: InferredRecord) {
-  return [RecordType.INCOME, RecordType.BORROWING, RecordType.REPAYMENT_RECEIVED, RecordType.ASSET_SALE].includes(
-    record.type
-  );
+  return [RecordType.INCOME, RecordType.BORROWING, RecordType.REPAYMENT_RECEIVED, RecordType.ASSET_SALE].includes(record.type);
 }
 
 function isRecordOutFlow(record: InferredRecord) {
-  return [RecordType.EXPENSE, RecordType.LENDING, RecordType.REPAYMENT_GIVEN, RecordType.ASSET_PURCHASE].includes(
-    record.type
-  );
+  return [RecordType.EXPENSE, RecordType.LENDING, RecordType.REPAYMENT_GIVEN, RecordType.ASSET_PURCHASE].includes(record.type);
 }
 
 function isSingleAmountType(record: InferredRecord) {
@@ -655,8 +572,7 @@ function getInnerKey(record: InferredRecord, key: string) {
   if (record.type === RecordType.LENDING && record.lending) return (record.lending as any)[key];
   if (record.type === RecordType.BORROWING && record.borrowing) return (record.borrowing as any)[key];
   if (record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven) return (record.repaymentGiven as any)[key];
-  if (record.type === RecordType.REPAYMENT_RECEIVED && record.repaymentReceived)
-    return (record.repaymentReceived as any)[key];
+  if (record.type === RecordType.REPAYMENT_RECEIVED && record.repaymentReceived) return (record.repaymentReceived as any)[key];
   if (record.type === RecordType.ASSET_SALE && record.assetSale) return (record.assetSale as any)[key];
   if (record.type === RecordType.ASSET_PURCHASE && record.assetPurchase) return (record.assetPurchase as any)[key];
   if (record.type === RecordType.ASSET_APPRECIATION_DEPRECIATION && record.assetAppreciationDepreciation)

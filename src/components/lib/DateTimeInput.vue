@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { date } from "quasar";
-import { computed } from "vue";
+import { date, QPopupProxy } from "quasar";
+import { computed, ref } from "vue";
 
 const props = defineProps({
   modelValue: {
@@ -25,14 +25,24 @@ const value = computed({
     emit("update:modelValue", timestamp);
   },
 });
+
+const datePopupRef = ref<InstanceType<typeof QPopupProxy> | null>(null);
+
+function openDatePopup() {
+  datePopupRef.value?.show?.();
+}
+
+function onDateSelected() {
+  datePopupRef.value?.hide?.();
+}
 </script>
 
 <template>
-  <q-input filled v-model="value" :label="props.label">
+  <q-input standout="bg-primary text-white" v-model="value" :label="props.label" readonly @click="openDatePopup" @focus="openDatePopup">
     <template v-slot:prepend>
       <q-icon name="event" class="cursor-pointer">
-        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-          <q-date v-model="value" mask="YYYY-MM-DD hh:mm:ss a">
+        <q-popup-proxy ref="datePopupRef" cover transition-show="scale" transition-hide="scale">
+          <q-date v-model="value" mask="YYYY-MM-DD hh:mm:ss a" @update:model-value="onDateSelected">
             <div class="row items-center justify-end">
               <q-btn v-close-popup label="Close" color="primary" flat />
             </div>

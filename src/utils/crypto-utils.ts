@@ -60,7 +60,7 @@ const createEncryptionKeyFromPassword = async (encryptionPassword: string, salt:
   const key = await window.crypto.subtle.deriveKey(
     {
       name: PASSPHRASE_DERIVEKEY_ALGORITHM,
-      salt,
+      salt: salt as BufferSource,
       iterations: PASSPHRASE_DERIVEKEY_ITERATIONS,
       hash: PASSPHRASE_DERIVEKEY_HASH_ALGORITHM,
     },

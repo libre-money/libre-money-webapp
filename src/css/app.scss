@@ -10,7 +10,7 @@ body {
 }
 
 .std-dialog-title {
-  font-size: 20px;
+  font-size: 24px;
 }
 
 .main-left-sidebar-drawer {
@@ -92,6 +92,12 @@ body {
   margin-bottom: 24px;
 }
 
+// card paddings
+.q-card__section--vert,
+.q-card__actions {
+  padding: 1rem 1.5rem;
+}
+
 // Custom Scrollbar - Start
 
 ::-webkit-scrollbar {
@@ -114,3 +120,106 @@ body {
 }
 
 // Custom Scrollbar - End
+
+// Material Design 3 Global Styles
+// --------------------------------------------------
+
+// Buttons - Material 3 styling
+// .q-btn {
+//   font-weight: $typography-font-weight-medium;
+//   text-transform: none; // Material 3 uses lowercase text, not uppercase
+//   letter-spacing: 0.1px;
+
+//   // Larger buttons get more rounded corners
+//   &.q-btn--large,
+//   &[size="lg"] {
+//     border-radius: $button-border-radius-lg;
+//     min-height: $button-height-lg;
+//     padding: $button-padding-y-lg $button-padding-x-lg;
+//   }
+
+//   // Medium buttons
+//   &[size="md"] {
+//     border-radius: $button-border-radius;
+//     min-height: $button-height-md;
+//   }
+
+//   // Small buttons
+//   &[size="sm"] {
+//     border-radius: $button-border-radius-sm;
+//     min-height: $button-height-sm;
+//   }
+
+//   // Outlined buttons - Material 3 style with thinner borders
+//   &[outline] {
+//     border-width: 1px;
+//     font-weight: $typography-font-weight-medium;
+//   }
+
+//   // Flat buttons
+//   &[flat] {
+//     font-weight: $typography-font-weight-medium;
+//   }
+
+//   // Rounded buttons
+//   &[rounded] {
+//     border-radius: $button-border-radius-lg !important;
+//   }
+// }
+
+// // Cards - Material 3 styling
+// .q-card {
+//   border-radius: $card-border-radius !important;
+//   overflow: hidden;
+
+//   // Softer shadows for Material 3
+//   &.q-card--bordered {
+//     box-shadow: $shadow-1;
+//   }
+// }
+
+// // Dialogs - Material 3 styling
+// .q-dialog {
+//   .q-dialog__inner {
+//     > .q-card {
+//       border-radius: $dialog-border-radius !important;
+//       max-width: $dialog-max-width;
+//     }
+//   }
+// }
+
+// // Inputs - Material 3 styling
+// .q-field {
+//   .q-field__control {
+//     border-radius: $input-border-radius;
+//   }
+
+//   // Outlined inputs
+//   &--outlined {
+//     .q-field__control {
+//       border-radius: $input-border-radius;
+//     }
+//   }
+
+//   // Filled inputs
+//   &--filled {
+//     .q-field__control {
+//       border-radius: $input-border-radius $input-border-radius 0 0;
+//     }
+//   }
+// }
+
+// // Chips - Material 3 styling
+// .q-chip {
+//   border-radius: $button-border-radius-lg !important;
+//   font-weight: $typography-font-weight-medium;
+// }
+
+// // Tabs - Material 3 styling
+// .q-tabs {
+//   .q-tab {
+//     border-radius: $border-radius-md;
+//     font-weight: $typography-font-weight-medium;
+//     text-transform: none;
+//   }
+// }
