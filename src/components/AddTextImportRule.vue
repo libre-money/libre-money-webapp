@@ -8,9 +8,9 @@
         <q-form class="q-gutter-sm" ref="ruleForm">
           <!-- Basic Information -->
           <div class="text-subtitle1 text-primary q-mb-xs">Basic Information</div>
-          <q-input filled v-model="ruleName" label="Rule Name" lazy-rules :rules="validators.required" dense />
-          <q-input filled v-model="ruleDescription" label="Description" type="textarea" dense />
-          <q-input filled v-model="ruleRegex" label="Regular Expression" lazy-rules :rules="[validateRegex]" dense />
+          <q-input standout="bg-primary text-white" v-model="ruleName" label="Rule Name" lazy-rules :rules="validators.required" dense />
+          <q-input standout="bg-primary text-white" v-model="ruleDescription" label="Description" type="textarea" dense />
+          <q-input standout="bg-primary text-white" v-model="ruleRegex" label="Regular Expression" lazy-rules :rules="[validateRegex]" dense />
 
           <!-- Capture Groups -->
           <div class="text-subtitle1 text-primary q-mb-xs q-mt-md">Capture Groups</div>
@@ -56,7 +56,7 @@
               dense
             />
           </div>
-          <q-input filled v-model="dateFormat" label="Date Format" lazy-rules :rules="validators.required" dense />
+          <q-input standout="bg-primary text-white" v-model="dateFormat" label="Date Format" lazy-rules :rules="validators.required" dense />
 
           <!-- Wallet Match Rules -->
           <div class="text-subtitle1 text-primary q-mb-xs q-mt-md">Wallet Match Rules</div>
@@ -73,7 +73,7 @@
                   map-options
                   dense
                 />
-                <q-input filled v-model="rule.value" label="Match Value" class="col-12 col-sm-8" dense />
+                <q-input standout="bg-primary text-white" v-model="rule.value" label="Match Value" class="col-12 col-sm-8" dense />
               </div>
               <div class="row q-gutter-xs items-center">
                 <select-wallet v-model="rule.walletId" label="Target Wallet" class="col" />
@@ -90,7 +90,7 @@
               <div class="row q-gutter-xs">
                 q-select standout="bg-primary text-white" v-model="rule.operator" :options="operatorOptions" label="Operator" class="col-12 col-sm-4" emit-value
                 map-options dense />
-                <q-input filled v-model="rule.value" label="Match Value" class="col-12 col-sm-8" dense />
+                <q-input standout="bg-primary text-white" v-model="rule.value" label="Match Value" class="col-12 col-sm-8" dense />
               </div>
               <div class="row q-gutter-xs items-center">
                 <select-expense-avenue v-model="rule.expenseAvenueId" label="Target Expense Avenue" class="col" />

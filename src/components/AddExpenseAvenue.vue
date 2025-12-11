@@ -6,7 +6,7 @@
           {{ existingExpenseAvenueId ? "Editing an Expense Avenue" : "Adding an Expense Avenue" }}
         </div>
         <q-form class="q-gutter-md q-pa-md" ref="expenseAvenueForm">
-          <q-input filled v-model="expenseAvenueName" label="Name" lazy-rules :rules="validators.name" />
+          <q-input standout="bg-primary text-white" v-model="expenseAvenueName" label="Name" lazy-rules :rules="validators.name" />
         </q-form>
       </q-card-section>
 

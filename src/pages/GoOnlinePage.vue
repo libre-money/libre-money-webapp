@@ -97,16 +97,24 @@
             />
 
             <!-- Domain input -->
-            <q-input filled v-model="domain" label="Domain" lazy-rules :rules="validators.domain" class="local-control" />
+            <q-input standout="bg-primary text-white" v-model="domain" label="Domain" lazy-rules :rules="validators.domain" class="local-control" />
           </div>
 
           <div class="q-pa-md control-group">
             <div class="control-title">Enter your login credentials</div>
             <!-- Username input -->
-            <q-input filled v-model="username" label="Username" lazy-rules :rules="validators.username" class="local-control" />
+            <q-input standout="bg-primary text-white" v-model="username" label="Username" lazy-rules :rules="validators.username" class="local-control" />
 
             <!-- Password input -->
-            <q-input type="password" filled v-model="password" label="Password" lazy-rules :rules="validators.password" class="local-control" />
+            <q-input
+              type="password"
+              standout="bg-primary text-white"
+              v-model="password"
+              label="Password"
+              lazy-rules
+              :rules="validators.password"
+              class="local-control"
+            />
 
             <q-checkbox v-model="shouldRememberPassword" label="Store password on this device" class="q-mt-md" />
           </div>

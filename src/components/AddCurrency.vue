@@ -4,10 +4,24 @@
       <q-card-section>
         <div class="std-dialog-title q-pa-md">{{ existingCurrencyId ? "Editing a Currency" : "Adding a Currency" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="currencyForm">
-          <q-input filled v-model="currencyName" label="Name of the Currency" lazy-rules :rules="validators.name" />
-          <q-input filled v-model="currencySign" label="Currency Sign (i.e. USD)" lazy-rules :rules="validators.currencySign" />
-          <q-input filled v-model="precisionMinimum" label="Minimum Precision" lazy-rules :rules="validators.nonNegativeNumber" type="number" />
-          <q-input filled v-model="precisionMaximum" label="Maximum Precision" lazy-rules :rules="validators.nonNegativeNumber" type="number" />
+          <q-input standout="bg-primary text-white" v-model="currencyName" label="Name of the Currency" lazy-rules :rules="validators.name" />
+          <q-input standout="bg-primary text-white" v-model="currencySign" label="Currency Sign (i.e. USD)" lazy-rules :rules="validators.currencySign" />
+          <q-input
+            standout="bg-primary text-white"
+            v-model="precisionMinimum"
+            label="Minimum Precision"
+            lazy-rules
+            :rules="validators.nonNegativeNumber"
+            type="number"
+          />
+          <q-input
+            standout="bg-primary text-white"
+            v-model="precisionMaximum"
+            label="Maximum Precision"
+            lazy-rules
+            :rules="validators.nonNegativeNumber"
+            type="number"
+          />
         </q-form>
       </q-card-section>
 

@@ -4,7 +4,7 @@
       <q-card-section>
         <div class="std-dialog-title q-pa-md">{{ existingAssetId ? "Editing an Asset" : "Adding an Asset" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="assetForm">
-          <q-input filled v-model="assetName" label="Name of the Asset" lazy-rules :rules="validators.name" />
+          <q-input standout="bg-primary text-white" v-model="assetName" label="Name of the Asset" lazy-rules :rules="validators.name" />
           <q-select
             standout="bg-primary text-white"
             v-model="assetType"

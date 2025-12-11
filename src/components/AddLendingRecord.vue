@@ -10,14 +10,14 @@
 
           <select-wallet v-model="recordWalletId"></select-wallet>
 
-          <q-input type="number" filled v-model="recordAmount" label="Lending Amount" lazy-rules :rules="validators.balance">
+          <q-input type="number" standout="bg-primary text-white" v-model="recordAmount" label="Lending Amount" lazy-rules :rules="validators.balance">
             <template v-slot:append>
               <div class="currency-label">{{ recordCurrencySign }}</div>
             </template>
           </q-input>
 
           <select-tag v-model="recordTagIdList"></select-tag>
-          <q-input type="textarea" filled v-model="recordNotes" label="Notes" lazy-rules :rules="validators.notes" />
+          <q-input type="textarea" standout="bg-primary text-white" v-model="recordNotes" label="Notes" lazy-rules :rules="validators.notes" />
           <date-time-input v-model="transactionEpoch" label="Date & Time"></date-time-input>
         </q-form>
       </q-card-section>

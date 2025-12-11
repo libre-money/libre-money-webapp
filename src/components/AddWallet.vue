@@ -4,7 +4,7 @@
       <q-card-section>
         <div class="std-dialog-title q-pa-md">{{ existingWalletId ? "Editing a Wallet" : "Adding a Wallet" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="walletForm">
-          <q-input filled v-model="walletName" label="Name of the Wallet" lazy-rules :rules="validators.name" />
+          <q-input standout="bg-primary text-white" v-model="walletName" label="Name of the Wallet" lazy-rules :rules="validators.name" />
           <q-select
             standout="bg-primary text-white"
             v-model="walletType"

@@ -6,7 +6,7 @@
           {{ existingIncomeSourceId ? "Editing an Income Source" : "Adding an Income Source" }}
         </div>
         <q-form class="q-gutter-md q-pa-md" ref="incomeSourceForm">
-          <q-input filled v-model="incomeSourceName" label="Name" lazy-rules :rules="validators.name" />
+          <q-input standout="bg-primary text-white" v-model="incomeSourceName" label="Name" lazy-rules :rules="validators.name" />
         </q-form>
       </q-card-section>
 

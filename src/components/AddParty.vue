@@ -4,7 +4,7 @@
       <q-card-section>
         <div class="std-dialog-title q-pa-md">{{ existingPartyId ? "Editing a Party" : "Adding a Party" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="partyForm">
-          <q-input filled v-model="partyName" label="Name of the Party/Vendor" lazy-rules :rules="validators.name" />
+          <q-input standout="bg-primary text-white" v-model="partyName" label="Name of the Party/Vendor" lazy-rules :rules="validators.name" />
           <q-select standout="bg-primary text-white" v-model="partyType" :options="partyTypeList" label="Type" emit-value map-options />
         </q-form>
       </q-card-section>

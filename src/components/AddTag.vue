@@ -4,9 +4,9 @@
       <q-card-section>
         <div class="std-dialog-title q-pa-md">{{ existingTagId ? "Editing a Tag" : "Adding a Tag" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="tagForm">
-          <q-input filled v-model="tagName" label="Name of the Tag" lazy-rules :rules="validators.name" />
+          <q-input standout="bg-primary text-white" v-model="tagName" label="Name of the Tag" lazy-rules :rules="validators.name" />
 
-          <q-input filled v-model="tagColor" class="color-input">
+          <q-input standout="bg-primary text-white" v-model="tagColor" class="color-input">
             <template v-slot:append>
               <q-icon name="colorize" class="cursor-pointer">
                 <q-popup-proxy cover transition-show="scale" transition-hide="scale">

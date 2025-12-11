@@ -5,7 +5,16 @@
         <div class="std-dialog-title q-pa-md">Export Rule as Code</div>
         <div class="q-pa-md">
           <div class="text-subtitle2 q-mb-md">Copy the JSON code below:</div>
-          <q-input filled type="textarea" v-model="exportedCode" label="Rule JSON Code" readonly autogrow class="q-mb-md" style="font-family: monospace" />
+          <q-input
+            standout="bg-primary text-white"
+            type="textarea"
+            v-model="exportedCode"
+            label="Rule JSON Code"
+            readonly
+            autogrow
+            class="q-mb-md"
+            style="font-family: monospace"
+          />
           <div class="row justify-end q-gutter-sm">
             <q-btn color="primary" icon="content_copy" label="Copy to Clipboard" @click="copyToClipboard" />
           </div>

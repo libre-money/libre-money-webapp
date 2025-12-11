@@ -18,10 +18,17 @@
           />
 
           <!-- Custom Server URL input (only for Self Hosted) -->
-          <q-input v-if="selectedServer?.value === 'self-hosted'" filled v-model="customServerUrl" label="Server URL" lazy-rules :rules="validators.url" />
+          <q-input
+            v-if="selectedServer?.value === 'self-hosted'"
+            standout="bg-primary text-white"
+            v-model="customServerUrl"
+            label="Server URL"
+            lazy-rules
+            :rules="validators.url"
+          />
 
           <!-- Domain input -->
-          <q-input filled v-model="domain" label="Domain" lazy-rules :rules="validators.domain" />
+          <q-input standout="bg-primary text-white" v-model="domain" label="Domain" lazy-rules :rules="validators.domain" />
 
           <div class="row justify-end">
             <q-btn label="Reset Local Data" type="button" color="grey" outline @click="removeLocalDataClicked" />
@@ -51,9 +58,9 @@
             <div class="text-caption">Domain: {{ domain }}</div>
           </q-banner>
 
-          <q-input filled v-model="username" label="Username" lazy-rules :rules="validators.username" />
+          <q-input standout="bg-primary text-white" v-model="username" label="Username" lazy-rules :rules="validators.username" />
 
-          <q-input type="password" filled v-model="password" label="Password" lazy-rules :rules="validators.password" />
+          <q-input type="password" standout="bg-primary text-white" v-model="password" label="Password" lazy-rules :rules="validators.password" />
 
           <q-checkbox v-model="shouldRememberPassword" label="Store password on this device" />
 

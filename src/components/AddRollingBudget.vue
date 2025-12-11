@@ -5,7 +5,7 @@
         <div class="std-dialog-title q-pa-xs q-mb-sm">{{ existingBudgetId ? "Editing a Rolling Budget" : "Adding a Rolling Budget" }}</div>
         <q-form class="q-gutter-md q-pa-xs" ref="budgetForm">
           <div class="custom-group">
-            <q-input filled v-model="budgetName" label="Name of the Rolling Budget" lazy-rules :rules="validators.name" />
+            <q-input standout="bg-primary text-white" v-model="budgetName" label="Name of the Rolling Budget" lazy-rules :rules="validators.name" />
             <select-currency v-model="budgetCurrencyId"></select-currency>
             <q-checkbox
               v-model="budgetIsFeatured"
