@@ -29,6 +29,17 @@
             </q-input>
           </template>
 
+          <template v-slot:body-cell-name="rowWrapper">
+            <q-td :props="rowWrapper">
+              <div>
+                <q-badge :style="{ color: rowWrapper.row.color }" :label="rowWrapper.row.name" outline />
+              </div>
+              <!-- <div class="my-table-details">
+                {{ rowWrapper.row.name }}
+              </div> -->
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-actions="rowWrapper">
             <q-td :props="rowWrapper">
               <q-btn-dropdown size="sm" color="primary" label="Edit" split @click="editClicked(rowWrapper.row)">

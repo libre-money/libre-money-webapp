@@ -1,18 +1,18 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
-    <q-card class="q-dialog-plugin">
-      <q-card-section>
-        <div class="std-dialog-title q-pa-xs q-mb-sm">{{ existingBudgetId ? "Editing a Rolling Budget" : "Adding a Rolling Budget" }}</div>
-        <q-form class="q-gutter-md q-pa-xs" ref="budgetForm">
+  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
+    <q-card class="q-dialog-plugin column full-height">
+      <q-card-section class="no-shrink">
+        <div class="std-dialog-title text-primary text-weight-bold">
+          {{ existingBudgetId ? "Editing a Rolling Budget" : "Adding a Rolling Budget" }}
+        </div>
+      </q-card-section>
+      <q-separator />
+      <q-card-section class="col scroll" style="min-height: 0">
+        <q-form class="q-gutter-md" ref="budgetForm">
           <div class="custom-group">
             <q-input standout="bg-primary text-white" v-model="budgetName" label="Name of the Rolling Budget" lazy-rules :rules="validators.name" />
             <select-currency v-model="budgetCurrencyId"></select-currency>
-            <q-checkbox
-              v-model="budgetIsFeatured"
-              label="Highlight in Records Page"
-              @update:model-value="optionChanged('featured')"
-              style="margin-top: -16px"
-            />
+            <q-checkbox v-model="budgetIsFeatured" label="Highlight in Records Page" @update:model-value="optionChanged('featured')" style="margin-top: 16px" />
           </div>
 
           <div class="custom-group">
@@ -67,7 +67,7 @@
           <q-btn v-if="budgetFrequency === 'irregular'" color="primary" label="Add Period" @click="addPeriod" />
 
           <!-- @vue-expect-error -->
-          <q-table class="budgeted-period-table" :rows="budgetedPeriodList" :columns="tableColumns" flat>
+          <q-table class="budgeted-period-table" :rows="budgetedPeriodList" :columns="tableColumns" flat grid>
             <template v-slot:body="props">
               <q-tr :props="props">
                 <q-td key="startDate" :props="props">
@@ -104,13 +104,15 @@
           </q-table>
         </q-form>
       </q-card-section>
-
-      <q-card-actions class="row justify-end">
-        <q-btn color="secondary" label="Sort & (re)Calculate" @click="calculatePeriods" />
-        <div class="spacer"></div>
-        <q-btn color="blue-grey" label="Cancel" @click="onDialogCancel" />
-        <q-btn color="primary" label="OK" @click="okClicked" />
-      </q-card-actions>
+      <q-separator />
+      <q-card-section class="no-shrink">
+        <div class="flex">
+          <q-btn flat label="Cancel" @click="onDialogCancel" />
+          <div class="spacer"></div>
+          <q-btn outline label="Sort & Calculate" @click="calculatePeriods" />
+          <q-btn color="primary" label="OK" @click="okClicked" class="q-ml-sm" />
+        </div>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </template>
