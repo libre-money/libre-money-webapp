@@ -6,7 +6,7 @@
         <q-form class="q-gutter-md q-pa-md" ref="importForm">
           <div class="text-subtitle2 q-mb-md">Paste the JSON code below:</div>
           <q-input
-            filled
+            standout="bg-primary text-white"
             type="textarea"
             v-model="importCode"
             label="Rule JSON Code"

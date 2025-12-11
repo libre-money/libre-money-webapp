@@ -88,7 +88,7 @@
 
           <q-form @submit="createAccount" class="username-form">
             <q-input
-              filled
+              standout="bg-primary text-white"
               v-model="username"
               label="Username"
               placeholder="Enter your username"
@@ -166,7 +166,7 @@
               <div class="text-subtitle2 q-mb-md">Custom Currency Details</div>
 
               <q-input
-                filled
+                standout="bg-primary text-white"
                 v-model="customCurrencyName"
                 label="Currency Name"
                 placeholder="e.g., Euro, Bitcoin"
@@ -180,7 +180,7 @@
               </q-input>
 
               <q-input
-                filled
+                standout="bg-primary text-white"
                 v-model="customCurrencySign"
                 label="Currency Sign/Abbreviation"
                 placeholder="e.g., EUR, BTC"

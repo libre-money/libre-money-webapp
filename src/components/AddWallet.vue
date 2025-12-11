@@ -1,9 +1,12 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
-    <q-card class="q-dialog-plugin">
-      <q-card-section>
-        <div class="std-dialog-title q-pa-md">{{ existingWalletId ? "Editing a Wallet" : "Adding a Wallet" }}</div>
-        <q-form class="q-gutter-md q-pa-md" ref="walletForm">
+  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
+    <q-card class="q-dialog-plugin column full-height">
+      <q-card-section class="no-shrink">
+        <div class="std-dialog-title text-primary text-weight-bold">{{ existingWalletId ? "Editing a Wallet" : "Adding a Wallet" }}</div>
+      </q-card-section>
+      <q-separator />
+      <q-card-section class="col scroll" style="min-height: 0">
+        <q-form class="q-gutter-md" ref="walletForm">
           <q-input standout="bg-primary text-white" v-model="walletName" label="Name of the Wallet" lazy-rules :rules="validators.name" />
           <q-select
             standout="bg-primary text-white"
@@ -18,7 +21,7 @@
           <q-toggle class="std-toggle" v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options" left-label v-if="existingWalletId" />
           <q-input
             type="number"
-            filled
+            standout="bg-primary text-white"
             v-model="walletInitialBalance"
             label="Initial Balance"
             lazy-rules
@@ -27,7 +30,7 @@
           />
           <q-input
             type="number"
-            filled
+            standout="bg-primary text-white"
             v-model="walletMinimumBalance"
             label="Minimum Balance"
             lazy-rules
@@ -36,11 +39,14 @@
           />
         </q-form>
       </q-card-section>
-
-      <q-card-actions class="row justify-end">
-        <q-btn color="blue-grey" label="Cancel" @click="cancelClicked" />
-        <q-btn color="primary" label="OK" @click="okClicked" />
-      </q-card-actions>
+      <q-separator />
+      <q-card-section class="no-shrink">
+        <div class="flex">
+          <q-btn flat rounded size="lg" label="Cancel" @click="cancelClicked" />
+          <div class="spacer"></div>
+          <q-btn rounded size="lg" color="primary" label="OK" @click="okClicked" />
+        </div>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </template>

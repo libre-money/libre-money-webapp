@@ -115,7 +115,7 @@
           <q-form v-if="!previousSession?.user.isOfflineUser" ref="resumeForm" @submit="resumePreviousSession" class="q-gutter-md q-mb-lg">
             <q-input
               type="password"
-              filled
+              standout="bg-primary text-white"
               v-model="resumePassword"
               label="Password"
               hint="Enter your password to resume this session"

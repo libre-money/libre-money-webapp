@@ -27,7 +27,7 @@
           <q-toggle class="std-toggle" v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options" left-label v-if="existingAssetId" />
           <q-input
             type="number"
-            filled
+            standout="bg-primary text-white"
             v-model="assetInitialBalance"
             label="Initial Balance"
             lazy-rules

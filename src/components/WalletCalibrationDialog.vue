@@ -1,13 +1,18 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
-    <q-card class="q-dialog-plugin">
-      <q-card-section>
-        <div class="std-dialog-title" style="margin-bottom: 12px">Calibrate Wallet</div>
-
+  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
+    <q-card class="q-dialog-plugin column full-height">
+      <q-card-section class="no-shrink">
+        <div class="std-dialog-title text-primary text-weight-bold">Calibrate Wallet</div>
+      </q-card-section>
+      <q-separator />
+      <q-card-section class="col scroll" style="min-height: 0">
         <div class="wallet-calibration-content">
-          <div class="wallet-name">Wallet: {{ wallet.name }}</div>
-
           <div class="balance-section">
+            <div class="balance-row">
+              <span class="balance-label">Wallet:</span>
+              <span class="balance-value">{{ wallet.name }}</span>
+            </div>
+
             <div class="balance-row">
               <span class="balance-label">Current Balance:</span>
               <span class="balance-value">{{ printAmount(calibration?.currentBalance, calibration?.currencyId) }}</span>
@@ -17,7 +22,7 @@
               <span class="balance-label">New Balance:</span>
               <div class="balance-controls">
                 <q-btn flat dense icon="add" @click="incrementBalance" />
-                <q-input v-model.number="newBalance" type="number" dense outlined :step="stepSize" class="balance-input" />
+                <q-input standout="bg-primary text-white" v-model.number="newBalance" type="number" dense :step="stepSize" class="balance-input" />
                 <q-btn flat dense icon="remove" @click="decrementBalance" />
               </div>
             </div>
@@ -27,6 +32,8 @@
               <span class="balance-value">{{ printAmount(Math.abs(balanceDifference), calibration?.currencyId) }}</span>
             </div>
           </div>
+
+          <hr />
 
           <div class="breakdown-section">
             <div class="breakdown-header">
@@ -48,7 +55,7 @@
                 <select-income-source v-else v-model="row.incomeSourceId" />
               </div>
 
-              <q-input v-model.number="row.amount" type="number" dense outlined class="breakdown-amount" />
+              <q-input standout="bg-primary text-white" v-model.number="row.amount" type="number" dense class="breakdown-amount" />
               <q-btn flat dense icon="delete" @click="removeBreakdownRow(index)" class="delete-btn" />
             </div>
 
@@ -60,12 +67,14 @@
           </div>
         </div>
       </q-card-section>
-
-      <q-card-actions class="row justify-start std-bottom-action-row">
-        <q-btn color="blue-grey" label="Cancel" @click="onDialogCancel" />
-        <div class="spacer"></div>
-        <q-btn color="primary" label="Save" @click="saveClicked" />
-      </q-card-actions>
+      <q-separator />
+      <q-card-section class="no-shrink">
+        <div class="flex">
+          <q-btn flat rounded size="lg" label="Cancel" @click="cancelClicked" />
+          <div class="spacer"></div>
+          <q-btn rounded size="lg" color="primary" label="Save" @click="saveClicked" />
+        </div>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </template>
@@ -279,6 +288,8 @@ async function saveClicked() {
 onMounted(() => {
   loadCalibration();
 });
+
+const cancelClicked = onDialogCancel;
 </script>
 
 <style scoped lang="scss">
@@ -333,7 +344,7 @@ onMounted(() => {
 
 .breakdown-row {
   display: flex;
-  align-items: center;
+  align-items: start;
   gap: 8px;
   margin-bottom: 8px;
 }

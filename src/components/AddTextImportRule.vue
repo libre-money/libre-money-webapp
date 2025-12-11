@@ -16,7 +16,7 @@
           <div class="text-subtitle1 text-primary q-mb-xs q-mt-md">Capture Groups</div>
           <div class="row q-gutter-xs">
             <q-input
-              filled
+              standout="bg-primary text-white"
               v-model.number="walletCaptureGroup"
               label="Wallet Group"
               type="number"
@@ -26,7 +26,7 @@
               dense
             />
             <q-input
-              filled
+              standout="bg-primary text-white"
               v-model.number="expenseAvenueCaptureGroup"
               label="Expense Group"
               type="number"
@@ -36,7 +36,7 @@
               dense
             />
             <q-input
-              filled
+              standout="bg-primary text-white"
               v-model.number="dateCaptureGroup"
               label="Date Group"
               type="number"
@@ -46,7 +46,7 @@
               dense
             />
             <q-input
-              filled
+              standout="bg-primary text-white"
               v-model.number="amountCaptureGroup"
               label="Amount Group"
               type="number"

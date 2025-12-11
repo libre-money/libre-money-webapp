@@ -33,7 +33,7 @@
               option-label="label"
               map-options
               emit-value
-              filled
+              standout="bg-primary text-white"
             />
           </div>
 
@@ -45,7 +45,7 @@
             option-label="label"
             map-options
             emit-value
-            filled
+            standout="bg-primary text-white"
             @update:model-value="onFrequencyChanged"
           />
 

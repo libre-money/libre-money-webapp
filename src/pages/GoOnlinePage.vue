@@ -88,7 +88,7 @@
             <!-- Custom Server URL input (only for Self Hosted) -->
             <q-input
               v-if="selectedServer?.value === 'self-hosted'"
-              filled
+              standout="bg-primary text-white"
               v-model="customServerUrl"
               label="Server URL"
               lazy-rules

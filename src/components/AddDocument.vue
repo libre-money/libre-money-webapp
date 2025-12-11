@@ -7,7 +7,7 @@
           <q-input
             class="content-input"
             type="textarea"
-            filled
+            standout="bg-primary text-white"
             v-model="contentString"
             label="Content"
             lazy-rules

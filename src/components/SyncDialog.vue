@@ -64,7 +64,7 @@
           <q-form @submit="onSubmit" class="q-gutter-md">
             <q-input
               type="password"
-              filled
+              standout="bg-primary text-white"
               v-model="password"
               :label="`Password for ${username}`"
               placeholder="Enter your password"
