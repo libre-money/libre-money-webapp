@@ -98,17 +98,17 @@
               <q-card-section>
                 <div class="single-amount-row row" :data-index="index">
                   <div class="details-section">
-                    <div class="record-date text-weight-light text-grey-7">
+                    <div class="record-date text-weight-light text-grey-6">
                       <div>{{ prettifyDate(record.transactionEpoch) }}</div>
                       <template v-if="isPotentialDuplicate(record)">
                         <q-icon name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
                       </template>
                     </div>
 
-                    <div class="text-h6 text-brown-7" v-if="record.type === RecordType.EXPENSE">
+                    <div class="text-h6" v-if="record.type === RecordType.EXPENSE">
                       {{ record.expense?.expenseAvenue.name }}
                     </div>
-                    <div class="text-h5 text-brown-7" v-else-if="record.type === RecordType.INCOME">
+                    <div class="text-h5" v-else-if="record.type === RecordType.INCOME">
                       {{ record.income?.incomeSource.name }}
                     </div>
                     <div class="" v-else-if="getAsset(record)">Asset: {{ getAsset(record)!.name }}</div>
@@ -124,12 +124,12 @@
 
                     <div class="tags-line">
                       <q-chip size="sm" class="text-capitalize record-type" :data-record-type="record.type">{{ record.typePrettified }}</q-chip>
-                      <q-chip size="sm" v-for="tag in record.tagList" v-bind:key="tag._id">{{ tag.name }}</q-chip>
+                      <q-chip outline size="sm" v-for="tag in record.tagList" v-bind:key="tag._id" :style="`border-color: ${tag.color}`">{{ tag.name }}</q-chip>
                     </div>
                   </div>
 
                   <div class="amounts-section">
-                    <div class="amount" :class="{ 'text-black': isRecordOutFlow(record), 'text-positive': isRecordInFlow(record) }">
+                    <div class="amount" :class="{ '': isRecordOutFlow(record), 'text-positive': isRecordInFlow(record) }">
                       {{ printAmount(getNumber(record, "amount")!, getString(record, "currencyId")!) }}
                     </div>
                     <div class="flex items-center justify-end">
@@ -660,13 +660,6 @@ onMounted(() => {
     .tags-line {
       margin-left: -5px;
       .record-type {
-        // font-size: 12px;
-        // padding: 2px 6px;
-        // display: inline-block;
-        // border-radius: 6px;
-        // text-transform: capitalize;
-        // background-color: #e6e6e6;
-
         &[data-record-type="expense"] {
           background-color: $record-expense-primary-color;
           color: $record-expense-text-color;
