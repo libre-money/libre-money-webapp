@@ -16,7 +16,7 @@
 
       <!-- Step 1: Welcome -->
       <q-card-section v-if="currentStep === 1" class="step-content">
-        <div class="welcome-section">
+        <div class="welcome-section q-px-xl">
           <!-- Congratulations -->
           <q-banner class="bg-green-1 text-green-9 q-mb-lg" rounded>
             <template v-slot:avatar>
@@ -27,7 +27,7 @@
           </q-banner>
 
           <!-- How Libre Money Works -->
-          <div class="info-section q-mb-lg">
+          <div class="info-section q-mb-lg q-px-md">
             <div class="text-h6 q-mb-md">How Libre Money Works</div>
 
             <div class="feature-list">

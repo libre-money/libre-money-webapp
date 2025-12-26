@@ -1,7 +1,21 @@
 // app global css in SCSS form
 
+// Define CSS custom properties for theme colors (accessible in TypeScript)
+// These reference SCSS variables from quasar.variables.scss
+:root {
+  --primary-light: #{$primary-light};
+  --primary-dark: #{$primary-dark};
+}
+
 body {
   background-color: antiquewhite;
+  transition: background 0.3s ease;
+}
+
+body.body--dark {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #533483 70%, #6b46c1 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
 .std-column {

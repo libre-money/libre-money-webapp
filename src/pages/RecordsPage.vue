@@ -1,5 +1,5 @@
 <template>
-  <q-page padding class="column items-center justify-evenly1">
+  <q-page padding class="column items-center">
     <!-- Budget Highlights -->
     <BudgetHighlights
       ref="budgetHighlightsRef"

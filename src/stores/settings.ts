@@ -36,6 +36,7 @@ const LOCAL_STORAGE_KEY__DEFAULT_VIEW = "--lm-settings--default-view";
 const LOCAL_STORAGE_KEY__REMEMBER_VIEW = "--lm-settings--remember-view";
 const LOCAL_STORAGE_KEY__LAST_VIEW = "--lm-settings--last-opened-view";
 const LOCAL_STORAGE_KEY__WALLET_CALIBRATION_STEP_SIZE = "--lm-settings--wallet-calibration-step-size";
+const LOCAL_STORAGE_KEY__DARK_MODE = "--lm-settings--dark-mode";
 
 export const useSettingsStore = defineStore("settingsStore", {
   state: () => ({
@@ -44,6 +45,7 @@ export const useSettingsStore = defineStore("settingsStore", {
     rememberLastOpenedView: deserializeBoolean(LOCAL_STORAGE_KEY__REMEMBER_VIEW),
     lastOpenedView: deserializeString(LOCAL_STORAGE_KEY__LAST_VIEW) || "overview",
     walletCalibrationStepSize: deserializeNumber(LOCAL_STORAGE_KEY__WALLET_CALIBRATION_STEP_SIZE, 100),
+    darkMode: deserializeBoolean(LOCAL_STORAGE_KEY__DARK_MODE),
   }),
 
   getters: {},
@@ -68,6 +70,10 @@ export const useSettingsStore = defineStore("settingsStore", {
     setWalletCalibrationStepSize(value: number) {
       serializeValue(LOCAL_STORAGE_KEY__WALLET_CALIBRATION_STEP_SIZE, value);
       this.walletCalibrationStepSize = value;
+    },
+    setDarkMode(value: boolean) {
+      serializeValue(LOCAL_STORAGE_KEY__DARK_MODE, value);
+      this.darkMode = value;
     },
   },
 });

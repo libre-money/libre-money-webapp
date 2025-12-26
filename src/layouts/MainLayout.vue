@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated v-if="userStore.isUserLoggedIn">
+    <q-header v-if="userStore.isUserLoggedIn">
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
@@ -24,6 +24,11 @@
         <div v-if="$route.meta.title && !isDevDatabase && !isDevMachine">Libre Money</div>
         <div class="dev-mode-notification" v-if="isDevDatabase">DEV DB</div>
         <div class="dev-mode-warning" v-if="!isDevDatabase && isDevMachine">PROD DB in DEV ENV</div>
+
+        <!-- Theme Toggle -->
+        <q-btn flat dense round :icon="isDarkMode ? 'light_mode' : 'dark_mode'" @click="toggleDarkMode">
+          <q-tooltip>{{ isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode" }}</q-tooltip>
+        </q-btn>
 
         <q-btn flat dense round icon="perm_identity">
           <q-menu>
@@ -99,12 +104,15 @@
 import EssentialLink from "components/sidebar/EssentialLink.vue";
 import { useQuasar } from "quasar";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
+import { PRIMARY_LIGHT, PRIMARY_DARK } from "src/constants/theme-constants";
 import { auditLogService } from "src/services/audit-log-service";
 import { authService } from "src/services/auth-service";
 import { currencyFormatService } from "src/services/currency-format-service";
 import { dialogService } from "src/services/dialog-service";
 import { globalErrorService } from "src/services/global-error-service";
 import { syncService } from "src/services/sync-service";
+import { setCssVar } from "quasar";
+import { useSettingsStore } from "src/stores/settings";
 import { useUserStore } from "src/stores/user";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -301,10 +309,19 @@ const isDevDatabase = ref(false);
 const isDevMachine = ref(false);
 
 const userStore = useUserStore();
+const settingsStore = useSettingsStore();
 const $q = useQuasar();
 const router = useRouter();
 
 const isDarkMode = computed(() => $q.dark.isActive);
+
+function toggleDarkMode() {
+  const newDarkMode = !$q.dark.isActive;
+  $q.dark.set(newDarkMode);
+  settingsStore.setDarkMode(newDarkMode);
+  // Update primary color based on theme
+  setCssVar("primary", newDarkMode ? PRIMARY_DARK : PRIMARY_LIGHT);
+}
 
 function checkIfInDevMode() {
   isDevDatabase.value = false;
@@ -327,6 +344,16 @@ onMounted(() => {
   globalErrorService.setupSubscription();
   handleRouteChange(route.fullPath, null);
   informApplicationHasLoaded();
+
+  // Sync dark mode with saved preference on mount
+  if (settingsStore.darkMode !== null && settingsStore.darkMode !== undefined) {
+    $q.dark.set(settingsStore.darkMode);
+    // Set primary color based on theme
+    setCssVar("primary", settingsStore.darkMode ? PRIMARY_DARK : PRIMARY_LIGHT);
+  } else {
+    // Default to light mode primary color
+    setCssVar("primary", PRIMARY_LIGHT);
+  }
 });
 
 function informApplicationHasLoaded() {
@@ -378,6 +405,19 @@ function handleRouteChange(newPath: string, oldPath: string | null) {
 }
 
 watch(() => route.fullPath, handleRouteChange);
+
+// Watch dark mode changes and update body class
+watch(
+  () => isDarkMode.value,
+  (newValue) => {
+    if (newValue) {
+      document.body.classList.add("body--dark");
+    } else {
+      document.body.classList.remove("body--dark");
+    }
+  },
+  { immediate: true }
+);
 
 function hardRefreshClicked() {
   console.debug("hardRefreshClicked");
