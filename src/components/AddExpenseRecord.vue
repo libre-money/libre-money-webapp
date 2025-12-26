@@ -46,9 +46,9 @@
           <q-tabs
             v-model="paymentType"
             inline-label
-            class="bg-blue-grey-11 text-grey-7 shadow-1 rounded-borders q-mb-lg"
-            active-color="teal-9"
-            active-bg-color="teal-3"
+            class="bg-grey-11 text-grey-7 shadow-1 rounded-borders q-mb-lg"
+            active-color="primary"
+            active-bg-color="primary-dark"
             indicator-color="transparent"
           >
             <q-tab name="full" label="Paid" />

@@ -13,7 +13,12 @@ body {
 }
 
 body.body--dark {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 30%, #533483 70%, #6b46c1 100%);
+  // Option 1: Material 3 Dark Surface (Solid)
+  background-color: #0f172a; // slate-900
+
+  // Option 19: Dark Slate with Blue Tint
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 25%, #1e3a8a 50%, #1e293b 75%, #0f172a 100%);
+
   background-attachment: fixed;
   min-height: 100vh;
 }
