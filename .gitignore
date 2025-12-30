@@ -167,3 +167,4 @@ yarn-error.log*
 *.sln
 
 local/
+.local/
