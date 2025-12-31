@@ -3,29 +3,34 @@ import { Dark, setCssVar } from "quasar";
 import { PRIMARY_LIGHT, PRIMARY_DARK } from "src/constants/theme-constants";
 
 export default boot(() => {
-  // Check localStorage for saved dark mode preference
+  let isDarkMode = false;
+  let hasExplicitPreference = false;
+
+  // Check localStorage for saved dark mode preference (user's explicit choice)
   const darkModePreference = localStorage.getItem("--lm-settings--dark-mode");
-  
+
   if (darkModePreference !== null) {
     try {
-      const isDarkMode = JSON.parse(darkModePreference);
-      // Set Quasar's dark mode
-      Dark.set(isDarkMode);
-      // Set primary color based on theme
-      setCssVar("primary", isDarkMode ? PRIMARY_DARK : PRIMARY_LIGHT);
-      // Also set body class for custom gradient background
-      if (isDarkMode) {
-        document.body.classList.add("body--dark");
-      } else {
-        document.body.classList.remove("body--dark");
-      }
+      // User has explicitly set a preference, use that
+      isDarkMode = JSON.parse(darkModePreference);
+      hasExplicitPreference = true;
     } catch (ex) {
-      // Ignore parse errors, use default
-      setCssVar("primary", PRIMARY_LIGHT);
+      // Parse error - treat as no preference, will check system preference below
+      hasExplicitPreference = false;
     }
-  } else {
-    // Default to light mode
-    setCssVar("primary", PRIMARY_LIGHT);
   }
-});
 
+  // If no saved preference (or parse error), check system/browser preference
+  if (!hasExplicitPreference) {
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      isDarkMode = true;
+    }
+    // If no system preference or it's light, isDarkMode remains false (light mode)
+  }
+
+  // Set Quasar's dark mode
+  Dark.set(isDarkMode);
+
+  // Set primary color based on theme
+  setCssVar("primary", isDarkMode ? PRIMARY_DARK : PRIMARY_LIGHT);
+});

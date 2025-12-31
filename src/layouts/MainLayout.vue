@@ -345,14 +345,17 @@ onMounted(() => {
   handleRouteChange(route.fullPath, null);
   informApplicationHasLoaded();
 
-  // Sync dark mode with saved preference on mount
+  // Sync dark mode with saved preference on mount (only if user has explicitly set a preference)
+  // The boot file handles initial dark mode setup based on system preference
   if (settingsStore.darkMode !== null && settingsStore.darkMode !== undefined) {
-    $q.dark.set(settingsStore.darkMode);
-    // Set primary color based on theme
-    setCssVar("primary", settingsStore.darkMode ? PRIMARY_DARK : PRIMARY_LIGHT);
+    // Only update if it differs from current state (boot file may have already set it)
+    if ($q.dark.isActive !== settingsStore.darkMode) {
+      $q.dark.set(settingsStore.darkMode);
+      setCssVar("primary", settingsStore.darkMode ? PRIMARY_DARK : PRIMARY_LIGHT);
+    }
   } else {
-    // Default to light mode primary color
-    setCssVar("primary", PRIMARY_LIGHT);
+    // No saved preference - ensure primary color matches current dark mode state
+    setCssVar("primary", $q.dark.isActive ? PRIMARY_DARK : PRIMARY_LIGHT);
   }
 });
 

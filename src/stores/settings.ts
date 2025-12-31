@@ -18,6 +18,18 @@ function deserializeBoolean(localStorageKey: string): boolean {
   }
 }
 
+function deserializeBooleanOrNull(localStorageKey: string): boolean | null {
+  const value = localStorage.getItem(localStorageKey);
+  if (value === null) {
+    return null;
+  }
+  try {
+    return JSON.parse(value);
+  } catch (ex) {
+    return null;
+  }
+}
+
 function deserializeNumber(localStorageKey: string, defaultValue: number): number {
   const value = localStorage.getItem(localStorageKey) || String(defaultValue);
   try {
@@ -45,7 +57,7 @@ export const useSettingsStore = defineStore("settingsStore", {
     rememberLastOpenedView: deserializeBoolean(LOCAL_STORAGE_KEY__REMEMBER_VIEW),
     lastOpenedView: deserializeString(LOCAL_STORAGE_KEY__LAST_VIEW) || "overview",
     walletCalibrationStepSize: deserializeNumber(LOCAL_STORAGE_KEY__WALLET_CALIBRATION_STEP_SIZE, 100),
-    darkMode: deserializeBoolean(LOCAL_STORAGE_KEY__DARK_MODE),
+    darkMode: deserializeBooleanOrNull(LOCAL_STORAGE_KEY__DARK_MODE),
   }),
 
   getters: {},
