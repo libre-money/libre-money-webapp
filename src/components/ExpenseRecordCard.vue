@@ -7,7 +7,7 @@
             <div class="col">
               <div class="text-caption text-grey-6">{{ formattedDate }}</div>
               <div class="text-h6 text-weight-medium expense-category">
-                {{ record.expense?.expenseAvenue?.name || 'Unknown Category' }}
+                {{ record.expense?.expenseAvenue?.name || "Unknown Category" }}
               </div>
             </div>
             <div class="col-auto">
@@ -30,7 +30,7 @@
               :key="tag._id"
               :style="{
                 backgroundColor: tag.color,
-                color: getFontColor(tag.color)
+                color: getFontColor(tag.color),
               }"
               dense
               size="sm"
@@ -43,22 +43,10 @@
 
       <q-item-section side top>
         <div class="column q-gutter-xs">
-          <q-btn
-            round
-            color="primary"
-            icon="edit"
-            size="sm"
-            @click="$emit('edit', record)"
-          >
+          <q-btn round color="primary" icon="edit" size="sm" @click="$emit('edit', record)">
             <q-tooltip>Edit Expense</q-tooltip>
           </q-btn>
-          <q-btn
-            round
-            color="negative"
-            icon="delete"
-            size="sm"
-            @click="$emit('delete', record)"
-          >
+          <q-btn round color="negative" icon="delete" size="sm" @click="$emit('delete', record)">
             <q-tooltip>Delete Expense</q-tooltip>
           </q-btn>
         </div>
@@ -68,10 +56,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { InferredRecord } from 'src/models/inferred/inferred-record';
-import { printAmount } from 'src/utils/de-facto-utils';
-import { prettifyDate } from 'src/utils/misc-utils';
+import { computed } from "vue";
+import { InferredRecord } from "src/models/inferred/inferred-record";
+import { printAmount } from "src/utils/de-facto-utils";
+import { prettifyDate } from "src/utils/misc-utils";
 
 interface Props {
   record: InferredRecord;
@@ -94,18 +82,18 @@ const expenseAmount = computed(() => {
   if (amount && currencyId) {
     return printAmount(amount, currencyId);
   }
-  return 'N/A';
+  return "N/A";
 });
 
 function getFontColor(backgroundColor: string): string {
   // Simple algorithm to determine if we need light or dark text
   // based on background color brightness
-  const hex = backgroundColor.replace('#', '');
+  const hex = backgroundColor.replace("#", "");
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
   const b = parseInt(hex.substr(4, 2), 16);
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  return brightness > 150 ? '#000000' : '#ffffff';
+  return brightness > 150 ? "#000000" : "#ffffff";
 }
 </script>
 
@@ -124,7 +112,7 @@ function getFontColor(backgroundColor: string): string {
 }
 
 .amount {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   white-space: nowrap;
   margin-left: 16px;
 }
