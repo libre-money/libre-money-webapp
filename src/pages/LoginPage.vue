@@ -3,7 +3,7 @@
     <q-card class="login-card">
       <div class="app-name q-pa-xs"><img class="logo" src="icons/logo.png" alt="LM" />Libre Money</div>
 
-      <div class="title q-pa-md">{{ loginPageMode === "resume" ? "Resume Session" : currentStep === 1 ? "Connect Your Account" : "Sign In" }}</div>
+      <div class="title q-pa-md">{{ loginPageMode === "resume" ? "Resume Session" : "Sign In" }}</div>
 
       <!-- <div v-if="loginPageMode === 'login' && currentStep === 1" class="subtitle q-px-md q-pb-md">
         <div class="text-body2 text-grey-7 text-center">Choose where your data is stored, or start using the app offline.</div>
@@ -11,41 +11,38 @@
 
       <!-- login page mode : login - START -->
       <template v-if="loginPageMode === 'login'">
-        <!-- Step 1: Server Selection -->
-        <q-form v-if="currentStep === 1" ref="serverForm" @submit="onServerSelectionStepComplete" class="q-gutter-md q-pa-md">
-          <div>
-            <q-select
-              standout="bg-primary text-white"
-              v-model="selectedServer"
-              :options="serverOptions"
-              label="Server"
-              lazy-rules
-              :rules="[(val) => !!val || 'Please select where your data is stored']"
-            />
-          </div>
+        <q-card-section>
+          <q-form ref="loginForm" @submit="onLoginSubmit" class="q-gutter-sm">
+            <q-input standout="bg-primary text-white" v-model="username" label="Username" lazy-rules :rules="validators.username" />
 
-          <!-- Custom Server URL input (only for Self Hosted) -->
-          <q-input
-            v-if="selectedServer?.value === 'self-hosted'"
-            standout="bg-primary text-white"
-            v-model="customServerUrl"
-            label="Server Address"
-            lazy-rules
-            :rules="validators.url"
-          />
+            <q-input type="password" standout="bg-primary text-white" v-model="password" label="Password" lazy-rules :rules="validators.password" />
 
-          <!-- Domain input -->
-          <q-input standout="bg-primary text-white" v-model="domain" label="Domain" lazy-rules :rules="validators.domain" />
+            <!-- Self-hosted options (shown when isSelfHosted is true) -->
+            <template v-if="isSelfHosted">
+              <q-input standout="bg-primary text-white" v-model="customServerUrl" label="Server URL" lazy-rules :rules="validators.url" />
 
-          <div class="row justify-end q-mt-md">
-            <q-btn label="Reset Local Data" type="button" outline color="grey" @click="removeLocalDataClicked" />
-            <div class="spacer"></div>
-            <q-btn label="Continue" type="submit" color="primary" />
-          </div>
-        </q-form>
+              <q-input standout="bg-primary text-white" v-model="domain" label="Domain" lazy-rules :rules="validators.domain" />
+            </template>
+
+            <q-checkbox v-model="shouldRememberPassword" label="Remember password on this device" />
+
+            <div class="row justify-end q-mt-md">
+              <q-btn
+                outline
+                color="grey"
+                :label="isSelfHosted ? 'Hide Self-hosted Options' : 'Self-hosted Options'"
+                icon="dns"
+                @click="isSelfHosted = !isSelfHosted"
+                type="button"
+              />
+              <div class="spacer"></div>
+              <q-btn label="Login" type="submit" color="primary" :loading="isLoading" />
+            </div>
+          </q-form>
+        </q-card-section>
 
         <!-- Offline Mode Option -->
-        <q-card-section v-if="currentStep === 1" class="offline-option-section">
+        <q-card-section class="offline-option-section">
           <q-separator class="q-mb-md" />
 
           <div class="text-center q-mb-md">
@@ -59,32 +56,13 @@
           <q-btn unelevated color="secondary" label="Start In Offline Mode" icon="offline_bolt" class="full-width" @click="startOfflineSession" />
         </q-card-section>
 
-        <!-- Step 2: Username & Password -->
-        <q-card-section v-if="currentStep === 2">
-          <q-form ref="loginForm" @submit="onLoginSubmit" class="q-gutter-sm">
-            <!-- Server info display -->
-            <q-banner class="q-mb-lg" rounded>
-              <template v-slot:avatar>
-                <q-icon name="info" color="primary" size="20px" />
-              </template>
-              <div class="text-subtitle2 q-mb-xs">Account Details</div>
-              <div class="text-caption"><strong>Server:</strong> {{ selectedServer?.label }}</div>
-              <div class="text-caption"><strong>Address:</strong> {{ displayServerUrl }}</div>
-              <div class="text-caption"><strong>Domain:</strong> {{ domain }}</div>
-            </q-banner>
+        <!-- Reset Local Data Option -->
+        <q-card-section class="reset-data-section">
+          <q-separator class="q-mb-md" />
 
-            <q-input standout="bg-primary text-white" v-model="username" label="Username" lazy-rules :rules="validators.username" />
-
-            <q-input type="password" standout="bg-primary text-white" v-model="password" label="Password" lazy-rules :rules="validators.password" />
-
-            <q-checkbox v-model="shouldRememberPassword" label="Remember password on this device" />
-
-            <div class="row justify-end q-mt-md">
-              <q-btn label="Back" icon="arrow_back" type="button" color="grey" flat @click="goBackToServerSelection" />
-              <div class="spacer"></div>
-              <q-btn label="Login" type="submit" color="primary" :loading="isLoading" />
-            </div>
-          </q-form>
+          <div class="text-center">
+            <q-btn label="Reset Local Data" type="button" flat color="primary" @click="removeLocalDataClicked" />
+          </div>
         </q-card-section>
       </template>
       <!-- login page mode : login - END -->
@@ -165,7 +143,6 @@
 
 <script setup lang="ts">
 import { QForm, useQuasar } from "quasar";
-import { DEFAULT_REMOTE_SERVER_URL, ServerOption, serverOptions } from "src/constants/auth-constants";
 import { authService } from "src/services/auth-service";
 import { configService } from "src/services/config-service";
 import { NotificationType, dialogService } from "src/services/dialog-service";
@@ -196,12 +173,9 @@ const isLoading = ref(false);
 
 // ------------------- login page mode : login -------------------
 
-const currentStep = ref(1);
-
-const serverForm = ref<QForm | null>(null);
 const loginForm = ref<QForm | null>(null);
 
-const selectedServer = ref<ServerOption | null>(serverOptions[0]); // Default to first cluster
+const isSelfHosted = ref(false);
 const customServerUrl = ref<string | null>(configService.getRemoteServerUrl());
 const domain = ref<string | null>(configService.getDomainName());
 
@@ -219,23 +193,10 @@ const shouldRememberPasswordForResume = ref(false);
 
 // -------------------  functions -------------------
 
-const displayServerUrl = computed(() => {
-  if (selectedServer.value?.value === "self-hosted") {
-    return customServerUrl.value || "";
-  }
-  return DEFAULT_REMOTE_SERVER_URL;
-});
-
 const logoutTimeFormatted = computed(() => {
   if (!previousSession.value) return "";
   return previousSessionService.formatLogoutTime(previousSession.value.logoutAt);
 });
-
-async function onServerSelectionStepComplete() {
-  const isValid = await serverForm.value!.validate();
-  if (!isValid) return;
-  currentStep.value = 2;
-}
 
 async function processLogin(serverUrl: string, domain: string, username: string, password: string, shouldRememberPassword: boolean) {
   isLoading.value = true;
@@ -263,21 +224,62 @@ async function onLoginSubmit() {
   const isValid = await loginForm.value!.validate();
   if (!isValid) return;
 
-  const [successful, failureReason] = await processLogin(displayServerUrl.value, domain.value!, username.value!, password.value!, shouldRememberPassword.value);
+  isLoading.value = true;
 
-  if (!successful) {
-    return;
+  try {
+    let serverUrl: string;
+    let domainValue: string;
+    let usernameValue: string;
+
+    if (isSelfHosted.value) {
+      // Self-hosted flow: use provided serverUrl and domain
+      if (!customServerUrl.value || !domain.value) {
+        await dialogService.alert("Validation Error", "Please provide both Server URL and Domain for self-hosted login.");
+        isLoading.value = false;
+        return;
+      }
+      serverUrl = customServerUrl.value;
+      domainValue = domain.value;
+      usernameValue = username.value!;
+    } else {
+      // Default flow: authenticate with auth server
+      if (!username.value || !password.value) {
+        await dialogService.alert("Validation Error", "Please provide username and password.");
+        isLoading.value = false;
+        return;
+      }
+
+      const [authSuccess, authResponse, authError] = await authService.fetchAuthDetailsFromAuthServer(username.value, password.value);
+
+      if (!authSuccess || !authResponse) {
+        await dialogService.alert("Authentication Error", authError || "Unable to authenticate. Please try again.");
+        isLoading.value = false;
+        return;
+      }
+
+      serverUrl = authResponse.serverUrl;
+      domainValue = authResponse.domain;
+      usernameValue = authResponse.username;
+    }
+
+    const [successful, failureReason] = await processLogin(serverUrl, domainValue, usernameValue, password.value!, shouldRememberPassword.value);
+
+    if (!successful) {
+      isLoading.value = false;
+      return;
+    }
+
+    if (route.query && route.query.next) {
+      await router.push(route.query.next as RouteLocationRaw);
+    } else {
+      await router.push("/");
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    await dialogService.alert("Login Error", "An unexpected error occurred. Please try again.");
+  } finally {
+    isLoading.value = false;
   }
-
-  if (route.query && route.query.next) {
-    await router.push(route.query.next as RouteLocationRaw);
-  } else {
-    await router.push("/");
-  }
-}
-
-function goBackToServerSelection() {
-  currentStep.value = 1;
 }
 
 async function removeLocalDataClicked() {

@@ -12,6 +12,7 @@ const env = (import.meta as any).env;
 
 export const GO_ONLINE_REGISTRATION_URL = env.VITE_GO_ONLINE_REGISTRATION_URL || throwMissingEnvironmentVariable("VITE_GO_ONLINE_REGISTRATION_URL");
 export const GO_ONLINE_SELF_HOST_URL = env.VITE_GO_ONLINE_SELF_HOST_URL || throwMissingEnvironmentVariable("VITE_GO_ONLINE_SELF_HOST_URL");
+export const AUTH_SERVER_URL = env.VITE_AUTH_SERVER_URL || throwMissingEnvironmentVariable("VITE_AUTH_SERVER_URL");
 
 // Demo preparation feature flag
 export const DEMO_PREPARATION_ENABLED = env.VITE_DEMO_PREPARATION_ENABLED === "true";

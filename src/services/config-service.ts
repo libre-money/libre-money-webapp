@@ -1,7 +1,6 @@
 import { sleep } from "src/utils/misc-utils";
 import { dialogService } from "./dialog-service";
 import { authService } from "./auth-service";
-import { DEFAULT_REMOTE_SERVER_URL } from "../constants/auth-constants";
 
 const LOCAL_STORAGE_KEY__DOMAIN = "--lm-config--domain";
 const LOCAL_STORAGE_KEY__SERVER_URL = "--lm-config--server-url";
@@ -40,7 +39,7 @@ class ConfigService {
 
   getRemoteServerUrl() {
     const serverUrl = localStorage.getItem(LOCAL_STORAGE_KEY__SERVER_URL);
-    return serverUrl || DEFAULT_REMOTE_SERVER_URL;
+    return serverUrl;
   }
 
   setRemoteServerUrl(serverUrl: string) {

@@ -74,33 +74,6 @@
       <template v-if="currentView === 'credentials'">
         <q-form @submit="onMigrationSubmit">
           <div class="q-pa-md control-group">
-            <div class="control-title">Select your server and domain</div>
-            <q-select
-              standout="bg-primary text-white"
-              v-model="selectedServer"
-              :options="serverOptions"
-              label="Select Server"
-              lazy-rules
-              :rules="[(val) => !!val || 'Please select a server']"
-              class="local-control"
-            />
-
-            <!-- Custom Server URL input (only for Self Hosted) -->
-            <q-input
-              v-if="selectedServer?.value === 'self-hosted'"
-              standout="bg-primary text-white"
-              v-model="customServerUrl"
-              label="Server URL"
-              lazy-rules
-              :rules="validators.url"
-              class="local-control"
-            />
-
-            <!-- Domain input -->
-            <q-input standout="bg-primary text-white" v-model="domain" label="Domain" lazy-rules :rules="validators.domain" class="local-control" />
-          </div>
-
-          <div class="q-pa-md control-group">
             <div class="control-title">Enter your login credentials</div>
             <!-- Username input -->
             <q-input standout="bg-primary text-white" v-model="username" label="Username" lazy-rules :rules="validators.username" class="local-control" />
@@ -115,6 +88,25 @@
               :rules="validators.password"
               class="local-control"
             />
+
+            <div class="row justify-end q-mt-sm">
+              <q-btn
+                flat
+                outline
+                color="primary"
+                :label="isSelfHosted ? 'Hide Self-hosted Options' : 'Show Self-hosted Options'"
+                :icon="isSelfHosted ? 'expand_less' : 'expand_more'"
+                @click="isSelfHosted = !isSelfHosted"
+                :class="{ 'q-mb-md': isSelfHosted, 'q-px-sm': true }"
+              />
+            </div>
+
+            <!-- Self-hosted options (shown when isSelfHosted is true) -->
+            <template v-if="isSelfHosted">
+              <q-input standout="bg-primary text-white" v-model="customServerUrl" label="Server URL" lazy-rules :rules="validators.url" class="local-control" />
+
+              <q-input standout="bg-primary text-white" v-model="domain" label="Domain" lazy-rules :rules="validators.domain" class="local-control" />
+            </template>
 
             <q-checkbox v-model="shouldRememberPassword" label="Store password on this device" class="q-mt-md" />
           </div>
@@ -133,13 +125,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { validators } from "src/utils/validators";
-import { serverOptions, DEFAULT_REMOTE_SERVER_URL, ServerOption } from "src/constants/auth-constants";
 import { offlineToOnlineMigrationService } from "src/services/offline-to-online-migration-service";
 import { dialogService, NotificationType } from "src/services/dialog-service";
 import { GO_ONLINE_REGISTRATION_URL, GO_ONLINE_SELF_HOST_URL } from "src/constants/config-constants";
+import { authService } from "src/services/auth-service";
 import { useQuasar } from "quasar";
 
 type ViewType = "benefits" | "credentials";
@@ -152,20 +144,12 @@ const currentView = ref<ViewType>("benefits");
 const isLoading = ref(false);
 
 // Form fields
-const selectedServer = ref<ServerOption | null>(serverOptions[0]);
+const isSelfHosted = ref(false);
 const customServerUrl = ref<string>("");
 const domain = ref<string>("");
 const username = ref<string>("");
 const password = ref<string>("");
 const shouldRememberPassword = ref(false);
-
-// Computed
-const displayServerUrl = computed(() => {
-  if (selectedServer.value?.value === "self-hosted") {
-    return customServerUrl.value || "";
-  }
-  return DEFAULT_REMOTE_SERVER_URL;
-});
 
 // Methods
 function goToCredentialsView() {
@@ -188,10 +172,45 @@ async function onMigrationSubmit() {
   isLoading.value = true;
 
   try {
+    let serverUrl: string;
+    let domainValue: string;
+    let usernameValue: string;
+
+    if (isSelfHosted.value) {
+      // Self-hosted flow: use provided serverUrl and domain
+      if (!customServerUrl.value || !domain.value) {
+        await dialogService.alert("Validation Error", "Please provide both Server URL and Domain for self-hosted login.");
+        isLoading.value = false;
+        return;
+      }
+      serverUrl = customServerUrl.value;
+      domainValue = domain.value;
+      usernameValue = username.value;
+    } else {
+      // Default flow: authenticate with auth server
+      if (!username.value || !password.value) {
+        await dialogService.alert("Validation Error", "Please provide username and password.");
+        isLoading.value = false;
+        return;
+      }
+
+      const [authSuccess, authResponse, authError] = await authService.fetchAuthDetailsFromAuthServer(username.value, password.value);
+
+      if (!authSuccess || !authResponse) {
+        await dialogService.alert("Authentication Error", authError || "Unable to authenticate. Please try again.");
+        isLoading.value = false;
+        return;
+      }
+
+      serverUrl = authResponse.serverUrl;
+      domainValue = authResponse.domain;
+      usernameValue = authResponse.username;
+    }
+
     const [successful, failureReason] = await offlineToOnlineMigrationService.migrateOfflineUserToOnline(
-      displayServerUrl.value,
-      domain.value,
-      username.value,
+      serverUrl,
+      domainValue,
+      usernameValue,
       password.value,
       shouldRememberPassword.value,
       $q

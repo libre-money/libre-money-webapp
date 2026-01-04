@@ -9,8 +9,56 @@ import axios, { AxiosError } from "axios";
 import { credentialService } from "./credential-service";
 import { configService } from "./config-service";
 import { localDataService } from "./local-data-service";
+import { AUTH_SERVER_URL } from "src/constants/config-constants";
+
+export interface AuthServerResponse {
+  serverUrl: string;
+  domain: string;
+  username: string;
+}
 
 export const authService = {
+  /**
+   * Authenticates with the auth server using username and password.
+   * Returns serverUrl, domain, and username if successful.
+   */
+  async fetchAuthDetailsFromAuthServer(username: string, password: string): Promise<[boolean, AuthServerResponse | null, string | null]> {
+    try {
+      const response = await axios.post<AuthServerResponse>(
+        `${AUTH_SERVER_URL}/pre-authenticate`,
+        {
+          username,
+          password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 && response.data) {
+        return [true, response.data, null];
+      }
+
+      return [false, null, "Invalid response from authentication server."];
+    } catch (error) {
+      console.error(error);
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          return [false, null, "Invalid username or password."];
+        }
+        if (error.response?.status) {
+          return [false, null, `Authentication server error: ${error.response.status}`];
+        }
+        if (error.code === "ERR_NETWORK" || error.code === "ECONNREFUSED") {
+          return [false, null, "Unable to connect to authentication server. Please check your connection."];
+        }
+      }
+      return [false, null, "Unable to authenticate. Please try again."];
+    }
+  },
+
   async logout() {
     try {
       // Store previous session before clearing user data
