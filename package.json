@@ -12,7 +12,7 @@
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
     "build": "npm run check && quasar build -m pwa",
-    "build-prod": "npm run check && quasar build -m pwa --mode production",
+    "build-prod": "npm run check && quasar build -m pwa",
     "build-spa": "quasar build -m spa",
     "type-check": "vue-tsc --noEmit --skipLibCheck",
     "type-check:watch": "vue-tsc --noEmit --watch --skipLibCheck",

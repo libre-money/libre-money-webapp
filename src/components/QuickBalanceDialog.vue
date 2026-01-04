@@ -1,8 +1,9 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
+  <q-dialog ref="dialogRef" @hide="onDialogHide" :maximized="$q.screen.lt.sm">
     <q-card class="q-dialog-plugin column full-height">
-      <q-card-section class="no-shrink">
+      <q-card-section class="no-shrink row items-center justify-between">
         <div class="std-dialog-title text-primary text-weight-bold">Balances</div>
+        <q-btn flat round dense icon="close" @click="cancelClicked" />
       </q-card-section>
       <q-separator />
       <q-card-section class="col scroll" style="min-height: 0">
@@ -51,13 +52,6 @@
               </tr>
             </tbody>
           </table>
-        </div>
-      </q-card-section>
-      <q-separator />
-      <q-card-section class="no-shrink">
-        <div class="flex">
-          <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" label="Close" @click="cancelClicked" />
         </div>
       </q-card-section>
     </q-card>

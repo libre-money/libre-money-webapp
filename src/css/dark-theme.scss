@@ -1,7 +1,7 @@
 // Dark Theme Enhancements for Money Management App
 // --------------------------------------------------
 body.body--dark {
-  --primary-dark-rgb: 218, 165, 32;
+  --primary-dark-rgb: 50, 64, 123;
   --primary-dark-opacity-1: rgba(var(--primary-dark-rgb), 0.1);
   --primary-dark-opacity-15: rgba(var(--primary-dark-rgb), 0.15);
   --primary-dark-opacity-2: rgba(var(--primary-dark-rgb), 0.2);
@@ -10,9 +10,10 @@ body.body--dark {
   --primary-dark-opacity-8: rgba(var(--primary-dark-rgb), 0.08);
 }
 body.body--dark {
-  background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 20%, #1e2538 40%, #1a1f2e 60%, #0f1419 100%);
+  // background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 20%, #1e2538 40%, #1a1f2e 60%, #0f1419 100%);
   background-attachment: fixed;
   min-height: 100vh;
+  background-color: #1a1f2e;
   // color: #e2e8f0;
 }
 
@@ -116,48 +117,6 @@ body.body--dark .positive-balance {
 body.body--dark .negative-balance {
   color: #f87171;
 }
-
-// Buttons in dark mode
-// body.body--dark .q-btn {
-//   &.q-btn--outline {
-//     border-color: var(--primary-dark-opacity-3);
-//   }
-
-//   &.q-btn--outline:hover {
-//     border-color: var(--primary-dark-opacity-5);
-//     background-color: var(--primary-dark-opacity-1);
-//   }
-// }
-
-// Chips in dark mode
-// body.body--dark .q-chip {
-//   background-color: rgba(30, 37, 56, 0.8);
-//   color: #cbd5e1;
-// }
-
-// // Menu/Dropdown in dark mode
-// body.body--dark .q-menu {
-//   background-color: #1e2538;
-//   border: 1px solid rgba(255, 255, 255, 0.05);
-// }
-
-// body.body--dark .q-item {
-//   &.q-item--active {
-//     background-color: var(--primary-dark-opacity-15);
-//     color: var(--primary-dark);
-//   }
-// }
-
-// // Dialog enhancements for dark mode
-// body.body--dark .q-dialog__inner .q-card {
-//   background-color: #1e2538;
-//   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-// }
-
-// Input field enhancements
-// body.body--dark .q-field__label {
-//   color: #94a3b8;
-// }
 
 body.body--dark .q-field__native {
   color: #e2e8f0 !important;

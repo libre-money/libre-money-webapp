@@ -649,6 +649,16 @@ body.body--dark .record-row .details-section .tags-line .record-type[data-record
   color: #ffb4ab;
 }
 
+body.body--dark .record-row .details-section .tags-line .record-type[data-record-type="lending"] {
+  background-color: #2e1a2e !important;
+  color: #ffb4ff; // Matching expense text lightness/saturation but in purple
+}
+
+body.body--dark .record-row .details-section .tags-line .record-type[data-record-type="borrowing"] {
+  background-color: #1e1a2e !important;
+  color: #b4b4ff; // Matching expense text lightness/saturation but in blue
+}
+
 .record-row {
   .record-date {
     font-size: 10px;
@@ -687,6 +697,18 @@ body.body--dark .record-row .details-section .tags-line .record-type[data-record
         &[data-record-type="income"] {
           background-color: $record-income-primary-color;
           color: $record-income-text-color;
+        }
+
+        &[data-record-type="lending"],
+        &[data-record-type="repayment-received"] {
+          background-color: $record-lending-primary-color;
+          color: $record-lending-text-color;
+        }
+
+        &[data-record-type="borrowing"],
+        &[data-record-type="repayment-given"] {
+          background-color: $record-borrowing-primary-color;
+          color: $record-borrowing-text-color;
         }
       }
 
@@ -728,18 +750,6 @@ body.body--dark .record-row .details-section .tags-line .record-type[data-record
   }
 }
 
-.income-row {
-  .amount {
-    color: rgb(7, 112, 7);
-  }
-}
-
-body.body--dark .income-row {
-  .amount {
-    color: #4ade80; // Bright green for income in dark mode
-  }
-}
-
 .money-transfer-row {
   .amount-left-col {
     margin-right: 12px;
@@ -774,16 +784,6 @@ body.body--dark .income-row {
 
 .amount-out {
   color: rgb(112, 7, 7);
-}
-
-body.body--dark {
-  .amount-in {
-    color: #4ade80; // Bright green for incoming money
-  }
-
-  .amount-out {
-    color: #f87171; // Soft red for outgoing money
-  }
 }
 
 .quick-summary-title {
@@ -859,27 +859,5 @@ body.body--dark {
 .expense-avenue {
   font-weight: bold;
   font-size: 18px;
-}
-
-// Dark mode adjustments for record cards
-body.body--dark {
-  .expense-record-card {
-    background-color: #1e2538; // Dark surface variant
-    border-color: rgba(255, 255, 255, 0.05);
-  }
-
-  .record-row {
-    .amounts-section {
-      .amount {
-        &.text-positive {
-          color: #4ade80; // Bright green for positive amounts
-        }
-      }
-    }
-  }
-
-  .unpaid-amount {
-    color: #f87171; // Soft red for unpaid amounts
-  }
 }
 </style>

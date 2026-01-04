@@ -76,9 +76,9 @@
       <q-separator />
       <q-card-section class="no-shrink">
         <div class="flex">
-          <q-btn flat rounded size="lg" label="Cancel" @click="cancelClicked" />
+          <q-btn flat rounded label="Cancel" @click="cancelClicked" />
           <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" label="Apply Filters" @click="okClicked" />
+          <q-btn rounded color="primary" label="Apply Filters" @click="okClicked" />
         </div>
       </q-card-section>
     </q-card>

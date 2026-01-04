@@ -1,10 +1,14 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
-    <q-card class="q-dialog-plugin">
-      <q-card-section v-if="summaryList.length">
-        <div class="std-dialog-title" style="margin-bottom: 12px">Summary</div>
+  <q-dialog ref="dialogRef" @hide="onDialogHide" :maximized="$q.screen.lt.sm">
+    <q-card class="q-dialog-plugin column full-height">
+      <q-card-section class="no-shrink row items-center justify-between">
+        <div class="std-dialog-title text-primary text-weight-bold">Summary</div>
+        <q-btn flat round dense icon="close" @click="okClicked" />
+      </q-card-section>
+      <q-separator />
+      <q-card-section class="col scroll" style="min-height: 0">
         <loading-indicator :is-loading="isLoading" :phases="4" ref="loadingIndicator"></loading-indicator>
-        <div class="quick-summary-container" v-if="!isLoading">
+        <div class="quick-summary-container" v-if="!isLoading && summaryList.length">
           <div v-for="summary in summaryList" v-bind:key="summary.currency._id!" style="padding-bottom: 12px">
             <table class="overview-table quick-summary-table">
               <tbody>
@@ -31,10 +35,6 @@
           </div>
         </div>
       </q-card-section>
-
-      <q-card-actions class="row justify-end" style="margin-right: 8px; margin-bottom: 8px">
-        <q-btn color="primary" label="Close" @click="okClicked" />
-      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>

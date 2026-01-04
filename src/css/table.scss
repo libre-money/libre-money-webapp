@@ -31,7 +31,7 @@
   }
 
   tr:nth-child(even) {
-    background-color: #1a1f2e;
+    background-color: #192034;
   }
 
   tr:hover {
@@ -39,7 +39,7 @@
   }
 
   th {
-    background-color: rgba(30, 37, 56, 0.8);
+    background-color: var(--primary-dark-opacity-2);
     color: #cbd5e1;
   }
 }
