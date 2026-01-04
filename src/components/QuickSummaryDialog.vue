@@ -1,8 +1,9 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
     <q-card class="q-dialog-plugin column full-height">
-      <q-card-section class="no-shrink">
+      <q-card-section class="no-shrink row items-center justify-between">
         <div class="std-dialog-title text-primary text-weight-bold">Summary</div>
+        <q-btn flat round dense icon="close" @click="okClicked" />
       </q-card-section>
       <q-separator />
       <q-card-section v-if="quickSummaryList.length" class="col scroll" style="min-height: 0">
@@ -34,13 +35,6 @@
               </tbody>
             </table>
           </div>
-        </div>
-      </q-card-section>
-      <q-separator />
-      <q-card-section class="no-shrink">
-        <div class="flex">
-          <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" label="Close" @click="okClicked" />
         </div>
       </q-card-section>
     </q-card>

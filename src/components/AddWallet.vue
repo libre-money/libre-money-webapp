@@ -7,20 +7,13 @@
       <q-separator />
       <q-card-section class="col scroll" style="min-height: 0">
         <q-form class="q-gutter-md" ref="walletForm">
-          <q-input standout="bg-primary text-white" v-model="walletName" label="Name of the Wallet" lazy-rules :rules="validators.name" />
-          <q-select
-            standout="bg-primary text-white"
-            v-model="walletType"
-            :options="walletTypeList"
-            label="Type"
-            emit-value
-            map-options
-            class="std-margin-bottom-32 std-margin-top-12"
-          />
+          <q-input hide-bottom-space standout="bg-primary text-white" v-model="walletName" label="Name of the Wallet" lazy-rules :rules="validators.name" />
+          <q-select standout="bg-primary text-white" v-model="walletType" :options="walletTypeList" label="Type" emit-value map-options />
           <select-currency v-model="walletCurrencyId"></select-currency>
-          <q-toggle class="std-toggle" v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options" left-label v-if="existingWalletId" />
+          <q-toggle v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options" right-label v-if="existingWalletId" />
           <q-input
             type="number"
+            hide-bottom-space
             standout="bg-primary text-white"
             v-model="walletInitialBalance"
             label="Initial Balance"
@@ -44,7 +37,7 @@
         <div class="flex">
           <q-btn flat rounded size="lg" label="Cancel" @click="cancelClicked" />
           <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" label="OK" @click="okClicked" />
+          <q-btn rounded size="lg" color="primary" :label="existingWalletId ? 'Update' : 'Add'" @click="okClicked" />
         </div>
       </q-card-section>
     </q-card>

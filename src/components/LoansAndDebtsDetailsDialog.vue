@@ -1,8 +1,12 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
-    <q-card class="q-dialog-plugin">
-      <q-card-section v-if="recordSummary">
-        <div class="std-dialog-title q-pa-md">Loan and Debt Summary</div>
+  <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
+    <q-card class="q-dialog-plugin column full-height">
+      <q-card-section class="no-shrink row items-center justify-between">
+        <div class="std-dialog-title text-primary text-weight-bold">Loan and Debt Summary</div>
+        <q-btn flat round dense icon="close" @click="okClicked" />
+      </q-card-section>
+      <q-separator />
+      <q-card-section v-if="recordSummary" class="col scroll" style="min-height: 0">
         <div class="dialog-card">
           <div>
             <span class="key">Party/Vendor:</span>
@@ -50,16 +54,12 @@
           </div>
         </div>
       </q-card-section>
-
-      <q-card-actions class="row justify-end">
-        <q-btn color="blue-grey" label="Close" @click="cancelClicked" />
-      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup lang="ts">
-import { useDialogPluginComponent } from "quasar";
+import { useDialogPluginComponent, useQuasar } from "quasar";
 import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
 import { printAmount as printAmountUtil } from "src/utils/de-facto-utils";
 import { ref, Ref } from "vue";
@@ -74,6 +74,8 @@ const emit = defineEmits([...useDialogPluginComponent.emits]);
 
 // Dialog plugin
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginComponent();
+
+const $q = useQuasar();
 
 // State
 const isLoading = ref(false);
@@ -94,8 +96,6 @@ function printAmount(amount: number) {
 function okClicked() {
   onDialogOK();
 }
-
-const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss">
 .key {

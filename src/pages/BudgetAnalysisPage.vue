@@ -26,12 +26,12 @@
         <!-- Analysis Table -->
         <div v-if="!isLoading && analysisResult" class="budget-analysis-container">
           <div class="q-mb-md">
-            <h6>{{ analysisResult.budget.name }} - {{ analysisResult.currency.name }}</h6>
+            <div class="text-h6">{{ analysisResult.budget.name }} - {{ analysisResult.currency.name }}</div>
             <p class="text-caption">Comparative breakdown across {{ analysisResult.periods.length }} periods</p>
           </div>
 
           <div class="table-container">
-            <table class="budget-analysis-table">
+            <q-markup-table class="">
               <thead>
                 <tr>
                   <th class="item-header">Item</th>
@@ -101,14 +101,14 @@
                   </td>
                 </tr>
               </tfoot>
-            </table>
+            </q-markup-table>
           </div>
 
           <!-- Summary -->
           <div class="q-mt-lg summary-section">
             <q-card flat bordered>
               <q-card-section>
-                <h6>Summary</h6>
+                <div class="text-h6">Summary</div>
                 <div class="row q-gutter-md">
                   <div class="col-12 col-sm-6">
                     <div class="summary-item">
@@ -276,6 +276,10 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+.q-table thead th {
+  text-align: left;
+}
+
 .budget-analysis-container {
   .table-container {
     overflow-x: auto;
@@ -284,18 +288,15 @@ onMounted(() => {
 
   .budget-analysis-table {
     width: 100%;
-    border-collapse: collapse;
     font-size: 14px;
 
     th,
     td {
       padding: 8px 12px;
       text-align: left;
-      border: 1px solid #e0e0e0;
     }
 
     th {
-      background-color: #f5f5f5;
       font-weight: 600;
       position: sticky;
       top: 0;
@@ -307,7 +308,6 @@ onMounted(() => {
       position: sticky;
       left: 0;
       z-index: 20;
-      background-color: #f5f5f5;
     }
 
     .type-header {
@@ -330,7 +330,6 @@ onMounted(() => {
       position: sticky;
       left: 0;
       z-index: 10;
-      background-color: white;
     }
 
     .item-type {
@@ -404,18 +403,6 @@ onMounted(() => {
           padding: 4px;
           margin: -4px;
         }
-      }
-    }
-
-    .item-row:hover {
-      background-color: #f8f9fa;
-
-      .item-name {
-        background-color: #f8f9fa;
-      }
-
-      .item-type {
-        background-color: #f8f9fa;
       }
     }
 

@@ -1,50 +1,48 @@
 <template>
   <q-page class="row items-center justify-evenly">
     <q-card class="std-card">
-      <div class="q-pa-md">
-        <!-- @vue-expect-error -->
-        <q-table
-          :loading="isLoading"
-          title="Accounts"
-          :rows="rows"
-          :columns="columns"
-          row-key="_id"
-          flat
-          bordered
-          :rows-per-page-options="rowsPerPageOptions"
-          binary-state-sort
-          v-model:pagination="pagination"
-          @request="dataForTableRequested"
-          class="std-table-non-morphing"
-        >
-          <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
-              <template v-slot:prepend>
-                <q-btn icon="search" flat round @click="dataForTableRequested" />
-              </template>
-            </q-input>
-          </template>
+      <!-- @vue-expect-error -->
+      <q-table
+        :loading="isLoading"
+        title="Accounts"
+        :rows="rows"
+        :columns="columns"
+        row-key="_id"
+        flat
+        :bordered="!$q.dark.isActive"
+        :rows-per-page-options="rowsPerPageOptions"
+        binary-state-sort
+        v-model:pagination="pagination"
+        @request="dataForTableRequested"
+        class="std-table-non-morphing"
+      >
+        <template v-slot:top-right>
+          <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
+            <template v-slot:prepend>
+              <q-btn icon="search" flat round @click="dataForTableRequested" />
+            </template>
+          </q-input>
+        </template>
 
-          <template v-slot:body-cell-actions="rowWrapper">
-            <q-td :props="rowWrapper">
-              <q-btn-dropdown size="sm" color="primary" label="Ledger" split @click="ledgerClicked(rowWrapper.row)">
-                <q-list>
-                  <q-item clickable v-close-popup @click="editClicked(rowWrapper.row)" disable>
-                    <q-item-section>
-                      <q-item-label>Edit</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item clickable v-close-popup @click="deleteClicked(rowWrapper.row)" disable>
-                    <q-item-section>
-                      <q-item-label>Delete</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-btn-dropdown>
-            </q-td>
-          </template>
-        </q-table>
-      </div>
+        <template v-slot:body-cell-actions="rowWrapper">
+          <q-td :props="rowWrapper">
+            <q-btn-dropdown size="sm" color="primary" label="Ledger" split @click="ledgerClicked(rowWrapper.row)">
+              <q-list>
+                <q-item clickable v-close-popup @click="editClicked(rowWrapper.row)" disable>
+                  <q-item-section>
+                    <q-item-label>Edit</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="deleteClicked(rowWrapper.row)" disable>
+                  <q-item-section>
+                    <q-item-label>Delete</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
+          </q-td>
+        </template>
+      </q-table>
     </q-card>
   </q-page>
 </template>

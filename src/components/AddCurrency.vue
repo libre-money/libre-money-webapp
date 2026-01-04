@@ -26,7 +26,7 @@
       </q-card-section>
 
       <q-card-actions class="row justify-end">
-        <q-btn color="blue-grey" label="Cancel" @click="cancelClicked" />
+        <q-btn flat label="Cancel" @click="cancelClicked" />
         <q-btn color="primary" label="OK" @click="okClicked" />
       </q-card-actions>
     </q-card>

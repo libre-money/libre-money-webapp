@@ -7,55 +7,53 @@
         <q-btn color="primary" text-color="white" label="Record Loan Taken" @click="addBorrowingRecord" />
       </div>
 
-      <div class="q-pa-md">
-        <!-- @vue-expect-error -->
-        <q-table
-          :loading="isLoading"
-          title="Loans & Debts"
-          :rows="rows"
-          :columns="columns"
-          row-key="_id"
-          flat
-          bordered
-          :rows-per-page-options="rowsPerPageOptions"
-          binary-state-sort
-          v-model:pagination="pagination"
-          @request="dataForTableRequested"
-          class="std-table-non-morphing"
-        >
-          <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
-              <template v-slot:prepend>
-                <q-btn icon="search" flat round @click="dataForTableRequested" />
-              </template>
-            </q-input>
-          </template>
+      <!-- @vue-expect-error -->
+      <q-table
+        :loading="isLoading"
+        title="Loans & Debts"
+        :rows="rows"
+        :columns="columns"
+        row-key="_id"
+        flat
+        :bordered="$q.dark.isActive ? false : true"
+        :rows-per-page-options="rowsPerPageOptions"
+        binary-state-sort
+        v-model:pagination="pagination"
+        @request="dataForTableRequested"
+        class="std-table-non-morphing"
+      >
+        <template v-slot:top-right>
+          <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
+            <template v-slot:prepend>
+              <q-btn icon="search" flat round @click="dataForTableRequested" />
+            </template>
+          </q-input>
+        </template>
 
-          <template v-slot:body-cell-actions="rowWrapper">
-            <q-td :props="rowWrapper">
-              <q-btn-dropdown size="sm" color="primary" label="View Details" split @click="viewDetailsClicked(rowWrapper.row)">
-                <q-list>
-                  <q-item clickable v-close-popup @click="viewRecordsClicked(rowWrapper.row)">
-                    <q-item-section>
-                      <q-item-label>View Records</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item clickable v-close-popup @click="addRepaymentReceivedRecordClicked(rowWrapper.row)">
-                    <q-item-section>
-                      <q-item-label>Record Repayment Received</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item clickable v-close-popup @click="addRepaymentGivenRecordClicked(rowWrapper.row)">
-                    <q-item-section>
-                      <q-item-label>Record Repayment Given</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-btn-dropdown>
-            </q-td>
-          </template>
-        </q-table>
-      </div>
+        <template v-slot:body-cell-actions="rowWrapper">
+          <q-td :props="rowWrapper">
+            <q-btn-dropdown size="sm" color="primary" label="View Details" split @click="viewDetailsClicked(rowWrapper.row)">
+              <q-list>
+                <q-item clickable v-close-popup @click="viewRecordsClicked(rowWrapper.row)">
+                  <q-item-section>
+                    <q-item-label>View Records</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="addRepaymentReceivedRecordClicked(rowWrapper.row)">
+                  <q-item-section>
+                    <q-item-label>Record Repayment Received</q-item-label>
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-close-popup @click="addRepaymentGivenRecordClicked(rowWrapper.row)">
+                  <q-item-section>
+                    <q-item-label>Record Repayment Given</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
+          </q-td>
+        </template>
+      </q-table>
     </q-card>
   </q-page>
 </template>
