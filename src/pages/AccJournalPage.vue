@@ -24,55 +24,65 @@
 
     <!-- Journal - Start -->
     <q-card class="std-card" v-if="!isLoading && journalEntryList.length > 0">
-      <div class="fin-presentation-container q-pa-md journal-presentation">
-        <div class="fin-presentation-head-container journal-head-container row">
-          <div class="fin-presentation-head-numeric date-head">Date</div>
-          <div class="fin-presentation-head-textual particulars-head">Particulars</div>
-          <div class="fin-presentation-head-numeric debit-head">Debit</div>
-          <div class="fin-presentation-head-numeric credit-head">Credit</div>
-        </div>
-        <template v-for="journalEntry in journalEntryList" v-bind:key="journalEntry.serial">
-          <div class="fin-presentation-row journal-entry-row row">
-            <div class="fin-presentation-item-numeric date">
-              {{ prettifyDate(journalEntry.entryEpoch) }}
-            </div>
-            <div class="particulars-container">
-              <div class="fin-presentation-row debit-row row" v-for="debit in journalEntry.debitList" v-bind:key="debit.account?.code">
-                <div class="fin-presentation-item-textual debit-text">
+      <q-markup-table bordered wrap-cells separator="cell">
+        <thead>
+          <tr>
+            <th class="text-left" style="width: 140px">Date</th>
+            <th class="text-left">Particulars</th>
+            <th class="text-right" style="width: 140px">Debit</th>
+            <th class="text-right" style="width: 140px">Credit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="journalEntry in journalEntryList" v-bind:key="journalEntry.serial">
+            <template v-for="(debit, debitIndex) in journalEntry.debitList" v-bind:key="`debit-${debit.account?.code}`">
+              <tr>
+                <td v-if="debitIndex === 0 && journalEntry.debitList.length > 0" :rowspan="getJournalEntryRowCount(journalEntry)" class="date-cell">
+                  {{ prettifyDate(journalEntry.entryEpoch) }}
+                </td>
+                <td class="particulars-cell">
                   {{ debit.account.name }}
                   <span v-if="journalEntry.modality === 'opening'">({{ debit.account.type }})</span>
-                </div>
-                <div class="fin-presentation-item-numeric debit-sum">
+                </td>
+                <td class="text-right debit-cell">
                   {{ printAmount(debit.amount, debit.currencyId) }}
-                </div>
-                <div class="fin-presentation-item-numeric column-spacer"></div>
-              </div>
-              <div class="fin-presentation-row credit-row row" v-for="credit in journalEntry.creditList" v-bind:key="credit.account?.code">
-                <div class="fin-presentation-item-textual credit-text">
+                </td>
+                <td class="text-right credit-cell"></td>
+              </tr>
+            </template>
+            <template v-for="(credit, creditIndex) in journalEntry.creditList" v-bind:key="`credit-${credit.account?.code}`">
+              <tr>
+                <td v-if="creditIndex === 0 && journalEntry.debitList.length === 0" :rowspan="getJournalEntryRowCount(journalEntry)" class="date-cell">
+                  {{ prettifyDate(journalEntry.entryEpoch) }}
+                </td>
+                <td class="particulars-cell">
                   {{ credit.account.name }}
                   <span v-if="journalEntry.modality === 'opening'">({{ credit.account.type }})</span>
-                </div>
-                <div class="fin-presentation-item-numeric column-spacer"></div>
-                <div class="fin-presentation-item-numeric credit-sum">
+                </td>
+                <td class="text-right debit-cell"></td>
+                <td class="text-right credit-cell">
                   {{ printAmount(credit.amount, credit.currencyId) }}
+                </td>
+              </tr>
+            </template>
+            <tr class="notes-row">
+              <td v-if="journalEntry.debitList.length === 0 && journalEntry.creditList.length === 0" :rowspan="1" class="date-cell">
+                {{ prettifyDate(journalEntry.entryEpoch) }}
+              </td>
+              <td class="particulars-cell notes-cell">
+                <div>{{ journalEntry.description }}</div>
+                <div v-if="journalEntry.notes">{{ journalEntry.notes }}</div>
+                <div v-if="!journalEntry.isBalanced && !journalEntry.isMultiCurrency" class="fin-warning">Journal entry is NOT balanced.</div>
+                <div v-if="!journalEntry.isBalanced && journalEntry.isMultiCurrency" class="fin-multi-currency-note">
+                  Journal is multi-currency and thereby is not balanced.
                 </div>
-              </div>
-              <div class="notes-row row">
-                <div class="fin-presentation-item-textual notes-text">
-                  <div>{{ journalEntry.description }}</div>
-                  <div v-if="journalEntry.notes">{{ journalEntry.notes }}</div>
-                  <div v-if="!journalEntry.isBalanced && !journalEntry.isMultiCurrency" class="fin-warning">Journal entry is NOT balanced.</div>
-                  <div v-if="!journalEntry.isBalanced && journalEntry.isMultiCurrency" class="fin-multi-currency-note">
-                    Journal is multi-currency and thereby is not balanced.
-                  </div>
-                </div>
-                <div class="column-spacer"></div>
-                <div class="column-spacer"></div>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
+              </td>
+              <td class="text-right debit-cell"></td>
+              <td class="text-right credit-cell"></td>
+            </tr>
+          </template>
+        </tbody>
+      </q-markup-table>
     </q-card>
     <!-- Journal - End -->
   </q-page>
@@ -109,6 +119,10 @@ const journalEntryList: Ref<AccJournalEntry[]> = ref([]);
 const filters: Ref<AccJournalFilters> = ref(getDefaultFilters());
 
 // ----- Functions
+
+function getJournalEntryRowCount(journalEntry: AccJournalEntry): number {
+  return journalEntry.debitList.length + journalEntry.creditList.length + 1; // +1 for notes row
+}
 
 async function loadData() {
   isLoading.value = true;
@@ -156,19 +170,53 @@ onMounted(() => {
 <style scoped lang="scss">
 @import "./../css/finance.scss";
 
-.particulars-container {
-  flex: 1;
+.journal-table {
+  thead th {
+    background-color: $fin-head-bg-color;
+    color: white;
+    font-weight: 500;
+    padding: 8px;
+  }
+
+  tbody {
+    td {
+      padding: 8px;
+      border: 1px solid $fin-border-color;
+    }
+
+    .date-cell {
+      vertical-align: top;
+      font-weight: 500;
+    }
+
+    .particulars-cell {
+      vertical-align: top;
+    }
+
+    .debit-cell,
+    .credit-cell {
+      font-family: "Courier New", Courier, monospace;
+      white-space: nowrap;
+    }
+
+    .notes-row {
+      .notes-cell {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.7);
+      }
+    }
+  }
 }
 
-.notes-row {
-  font-size: 12px;
-}
-
-.journal-head-container {
-  margin-bottom: 12px;
-}
-
-.journal-entry-row {
-  margin-bottom: 12px;
+:deep(body.body--dark) {
+  .journal-table {
+    tbody {
+      .notes-row {
+        .notes-cell {
+          color: rgba(255, 255, 255, 0.7);
+        }
+      }
+    }
+  }
 }
 </style>

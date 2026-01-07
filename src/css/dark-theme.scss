@@ -60,7 +60,10 @@ body.body--dark .q-table {
 }
 
 body.body--dark .q-table thead th {
-  background-color: rgba(30, 37, 56, 0.8);
+  // background-color: rgba(30, 37, 56, 0.8);
+  // Suggestion: Use an expressive dark neutral for table headers in dark mode.
+  // Material 3 tokens suggest surface-variant or shadow for elevation, e.g. #232941 or #23283e.
+  background-color: #121935;
   color: #cbd5e1; // slate-300
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }

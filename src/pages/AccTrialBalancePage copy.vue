@@ -21,55 +21,49 @@
       <loading-indicator :is-loading="isLoading" :phases="3" ref="loadingIndicator"></loading-indicator>
     </q-card>
 
-    <!-- Trial Balance Tables - Start -->
+    <!-- Ledger - Start -->
     <template v-if="!isLoading && trialBalance">
-      <q-card
-        class="std-card q-mb-md"
-        v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList"
-        v-bind:key="trialBalanceWithCurrency.currencyId"
-      >
-        <div class="q-pa-md" v-for="aType in AccTypeList" v-bind:key="aType">
-          <q-table
-            :title="`${aType} (${trialBalanceWithCurrency._currency!.name})`"
-            :rows="getTableRows(trialBalanceWithCurrency, aType)"
-            :columns="tableColumns"
-            row-key="accountCode"
-            flat
-            bordered
-            hide-pagination
-            hide-no-data
-            :separator="'horizontal'"
-          >
-            <template v-slot:body-cell-debit="props">
-              <q-td :props="props" class="text-right">
-                <span v-if="props.value !== null">{{ printAmount(props.value, props.row.currencyId) }}</span>
-              </q-td>
+      <q-card class="std-card" v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
+        <div class="fin-presentation-container q-pa-md" v-for="aType in AccTypeList" v-bind:key="aType">
+          <div class="fin-presentation-title">{{ aType }}&nbsp;({{ trialBalanceWithCurrency._currency!.name }})</div>
+          <div class="fin-presentation">
+            <div class="fin-presentation-head-container row">
+              <div class="fin-presentation-head-textual particulars-head">Account</div>
+              <div class="fin-presentation-head-numeric debit-head">Debit</div>
+              <div class="fin-presentation-head-numeric credit-head">Credit</div>
+            </div>
+            <template v-for="balanceEntry in trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].balanceList" v-bind:key="balanceEntry.account.code">
+              <div class="fin-presentation-row row">
+                <div class="fin-presentation-item-textual">
+                  {{ balanceEntry.account.name }}
+                </div>
+                <div class="fin-presentation-item-numeric debit-sum" v-if="balanceEntry.isBalanceDebit">
+                  {{ printAmount(balanceEntry.balance, trialBalanceWithCurrency._currency!._id) }}
+                </div>
+                <div class="fin-presentation-item-numeric credit-sum" v-if="balanceEntry.isBalanceDebit"></div>
+                <div class="fin-presentation-item-numeric debit-sum" v-if="!balanceEntry.isBalanceDebit"></div>
+                <div class="fin-presentation-item-numeric credit-sum" v-if="!balanceEntry.isBalanceDebit">
+                  {{ printAmount(balanceEntry.balance, trialBalanceWithCurrency._currency!._id) }}
+                </div>
+              </div>
             </template>
-            <template v-slot:body-cell-credit="props">
-              <q-td :props="props" class="text-right">
-                <span v-if="props.value !== null">{{ printAmount(props.value, props.row.currencyId) }}</span>
-              </q-td>
-            </template>
-            <template v-slot:bottom-row>
-              <q-tr>
-                <q-td class="text-weight-medium">Total</q-td>
-                <q-td class="text-right text-weight-medium">
-                  <span v-if="trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
-                    {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
-                  </span>
-                </q-td>
-                <q-td class="text-right text-weight-medium">
-                  <span v-if="!trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
-                    {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
-                  </span>
-                </q-td>
-              </q-tr>
-            </template>
-          </q-table>
+
+            <div class="fin-presentation-head-container row">
+              <div class="fin-presentation-head-textual">Total</div>
+              <div class="fin-presentation-head-numeric debit-total" v-if="trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
+                {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
+              </div>
+              <div class="fin-presentation-head-numeric credit-total" v-if="trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit"></div>
+              <div class="fin-presentation-head-numeric debit-total" v-if="!trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit"></div>
+              <div class="fin-presentation-head-numeric credit-total" v-if="!trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].isBalanceDebit">
+                {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
+              </div>
+            </div>
+          </div>
         </div>
       </q-card>
     </template>
-    <!-- Trial Balance Tables - End -->
+    <!-- Ledger - End -->
   </q-page>
 </template>
 
@@ -104,43 +98,6 @@ const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
 const trialBalance: Ref<AccTrialBalance | null> = ref(null);
 const filters: Ref<AccStatementFilters> = ref(getDefaultFilters());
-
-// ----- Table Configuration
-const tableColumns = [
-  {
-    name: "account",
-    required: true,
-    label: "Account",
-    align: "left" as const,
-    field: "accountName",
-    sortable: false,
-  },
-  {
-    name: "debit",
-    label: "Debit",
-    align: "right" as const,
-    field: "debit",
-    sortable: false,
-  },
-  {
-    name: "credit",
-    label: "Credit",
-    align: "right" as const,
-    field: "credit",
-    sortable: false,
-  },
-];
-
-function getTableRows(trialBalanceWithCurrency: any, accountType: string) {
-  const balanceList = trialBalanceWithCurrency.trialBalanceOfTypeMap[accountType].balanceList;
-  return balanceList.map((balanceEntry: any) => ({
-    accountCode: balanceEntry.account.code,
-    accountName: balanceEntry.account.name,
-    debit: balanceEntry.isBalanceDebit ? balanceEntry.balance : null,
-    credit: !balanceEntry.isBalanceDebit ? balanceEntry.balance : null,
-    currencyId: trialBalanceWithCurrency._currency!._id,
-  }));
-}
 
 // ----- Functions
 async function loadData() {
@@ -191,3 +148,14 @@ onMounted(() => {
   loadData();
 });
 </script>
+
+<style scoped lang="scss">
+@import "./../css/finance.scss";
+
+.debit-total,
+.credit-total,
+.debit-sum,
+.credit-sum {
+  text-align: right;
+}
+</style>

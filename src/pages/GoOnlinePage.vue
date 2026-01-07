@@ -2,70 +2,66 @@
   <q-page class="row items-center justify-evenly">
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
-        <div class="title">{{ currentView === "benefits" ? "Upgrade to Online" : "Enter Your Credentials" }}</div>
+        <div class="title text-center">{{ currentView === "benefits" ? "Upgrade to Online" : "Enter Your Credentials" }}</div>
       </div>
+
+      <q-separator />
 
       <!-- Benefits View -->
       <template v-if="currentView === 'benefits'">
         <div class="q-pa-md">
-          <div class="text-h6 q-mb-md text-center">Why Go Online?</div>
+          <div class="text-h6 q-mb-md">Why Go Online?</div>
 
-          <div class="benefits-list q-mb-lg">
-            <div class="benefit-item">
-              <q-icon name="sync" color="primary" size="24px" />
-              <div class="benefit-text">
-                <div class="benefit-title">Sync Across Devices</div>
-                <div class="benefit-description">Access your data from any device, anywhere</div>
-              </div>
-            </div>
+          <q-list class="q-mb-lg">
+            <q-item>
+              <q-item-section avatar>
+                <q-icon name="sync" color="primary" size="24px" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-medium">Sync Across Devices</q-item-label>
+                <q-item-label caption>Access your data from any device, anywhere</q-item-label>
+              </q-item-section>
+            </q-item>
 
-            <div class="benefit-item">
-              <q-icon name="backup" color="primary" size="24px" />
-              <div class="benefit-text">
-                <div class="benefit-title">Automatic Backup</div>
-                <div class="benefit-description">Never lose your financial data again</div>
-              </div>
-            </div>
+            <q-item>
+              <q-item-section avatar>
+                <q-icon name="backup" color="primary" size="24px" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-medium">Automatic Backup</q-item-label>
+                <q-item-label caption>Never lose your financial data again</q-item-label>
+              </q-item-section>
+            </q-item>
 
-            <div class="benefit-item">
-              <q-icon name="payments" color="primary" size="24px" />
-              <div class="benefit-text">
-                <div class="benefit-title">Modest and fair pricing</div>
-                <div class="benefit-description">No hidden fees, no upsells, no surprises</div>
-              </div>
-            </div>
+            <q-item>
+              <q-item-section avatar>
+                <q-icon name="payments" color="primary" size="24px" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-medium">Modest and fair pricing</q-item-label>
+                <q-item-label caption>No hidden fees, no upsells, no surprises</q-item-label>
+              </q-item-section>
+            </q-item>
 
-            <div class="benefit-item">
-              <q-icon name="dns" color="primary" size="24px" />
-              <div class="benefit-text">
-                <div class="benefit-title">Self-hosting options</div>
-                <div class="benefit-description">Run your own server, or use our hosted service</div>
-              </div>
-            </div>
-          </div>
+            <q-item>
+              <q-item-section avatar>
+                <q-icon name="dns" color="primary" size="24px" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label class="text-weight-medium">Self-hosting options</q-item-label>
+                <q-item-label caption>Run your own server, or use our hosted service</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
 
-          <div class="action-buttons q-gutter-md">
-            <q-btn
-              unelevated
-              color="primary"
-              label="Get Online Credentials"
-              icon="cloud_upload"
-              @click="getOnlineCredentials"
-              style="width: calc(100% - 16px); margin-left: 16px; margin-right: 16px"
-            />
+          <div class="action-buttons q-gutter-md q-pa-md">
+            <q-btn unelevated color="primary" label="Get Online Credentials" icon="cloud_upload" @click="getOnlineCredentials" class="full-width" />
 
-            <q-btn
-              outline
-              color="secondary"
-              label="Self-Host Options"
-              icon="dns"
-              @click="getSelfHostOptions"
-              style="width: calc(100% - 16px); margin-left: 16px; margin-right: 16px"
-            />
+            <q-btn outline color="secondary" label="Self-Host Options" icon="dns" @click="getSelfHostOptions" class="full-width" />
 
             <q-separator class="q-my-md" />
 
-            <q-btn flat color="primary" label="I Already Have Credentials" icon="login" class="full-width" @click="goToCredentialsView" />
+            <q-btn outline color="primary" label="I Already Have Credentials" icon="login" class="full-width" @click="goToCredentialsView" />
           </div>
         </div>
       </template>
@@ -234,37 +230,6 @@ async function onMigrationSubmit() {
 </script>
 
 <style scoped lang="scss">
-.benefits-list {
-  .benefit-item {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 16px;
-    padding: 12px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-
-    .q-icon {
-      margin-right: 12px;
-      margin-top: 2px;
-      flex-shrink: 0;
-    }
-
-    .benefit-text {
-      .benefit-title {
-        font-weight: 600;
-        font-size: 14px;
-        margin-bottom: 4px;
-      }
-
-      .benefit-description {
-        font-size: 13px;
-        color: #666;
-        line-height: 1.4;
-      }
-    }
-  }
-}
-
 .action-buttons {
   .q-btn {
     font-weight: 500;

@@ -1,5 +1,5 @@
 <template>
-  <q-page class="column items-center justify-evenly" style="padding: 0px">
+  <q-page class="column" style="padding: 0px">
     <!-- Desktop Only Notice -->
     <q-card class="std-card desktop-only-notice" v-if="!$q.screen.gt.sm">
       <div class="q-pa-lg text-center">
@@ -17,7 +17,7 @@
       <q-card class="std-card pro-mode-table-card">
         <!-- Header - Start -->
         <div class="title-row q-pa-md q-gutter-sm" style="margin-bottom: -12px">
-          <q-btn color="secondary" icon="filter_list" label="Filters" @click="setFiltersClicked" />
+          <q-btn color="primary" icon="filter_list" label="Filters" @click="setFiltersClicked" />
           <q-select
             v-model="pageSize"
             :options="[25, 50, 100, 200]"
@@ -28,14 +28,14 @@
             @update:model-value="handlePageSizeChange"
           />
           <div class="spacer"></div>
-          <q-btn color="secondary" icon="refresh" :label="hasUnsavedChanges ? 'Discard Changes' : 'Reload'" @click="loadData" :disable="isLoading" />
-          <q-btn color="secondary" icon="add" label="Add New Record" @click="addNewRecord" />
+          <q-btn color="primary" icon="refresh" :label="hasUnsavedChanges ? 'Discard Changes' : 'Reload'" @click="loadData" :disable="isLoading" />
+          <q-btn color="primary" icon="add" label="Add New Record" @click="addNewRecord" />
           <q-btn color="positive" icon="save" label="Save Changes" @click="saveAllChanges" :disable="!hasUnsavedChanges" :loading="isSaving" />
 
-          <q-chip v-if="hasUnsavedChanges" color="orange" text-color="white" icon="edit">
+          <q-btn flat outline rounded v-if="hasUnsavedChanges" color="orange" icon="edit" ripple="false">
             {{ changedRecords.size }} edit{{ changedRecords.size !== 1 ? "s" : ""
             }}{{ deletedRecords.size > 0 ? ", " + deletedRecords.size + " deletion" + (deletedRecords.size !== 1 ? "s" : "") : "" }}
-          </q-chip>
+          </q-btn>
         </div>
 
         <!-- Filter Status -->
@@ -1286,7 +1286,7 @@ onMounted(() => {
 .pro-mode-table-container {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: 60vh;
+  max-height: 70vh;
   min-width: 1000px;
 }
 
@@ -1557,6 +1557,112 @@ onMounted(() => {
   span {
     color: #666;
     font-size: 14px;
+  }
+}
+
+// Dark mode styles
+body.body--dark {
+  .pro-mode-table {
+    th {
+      background-color: #121935;
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    td {
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+    }
+
+    .row-even {
+      background-color: #192034;
+    }
+
+    .row-odd {
+      background-color: #1e2538;
+    }
+
+    .row-changed {
+      background-color: rgba(251, 191, 36, 0.15) !important; // Dark amber/yellow
+      border-left: 3px solid #fbbf24;
+    }
+
+    .row-deleted {
+      background-color: rgba(239, 68, 68, 0.15) !important; // Dark red
+      border-left: 3px solid #ef4444;
+    }
+
+    .amount-label,
+    .currency-label,
+    .wallet-label {
+      color: #94a3b8;
+    }
+  }
+
+  .cell-input {
+    color: #e2e8f0;
+
+    &:focus {
+      outline: 2px solid #1976d2;
+      background-color: rgba(30, 37, 56, 0.8);
+    }
+  }
+
+  .contenteditable-input {
+    color: #e2e8f0;
+
+    &:focus {
+      outline: 2px solid #1976d2;
+      background-color: rgba(30, 37, 56, 0.8);
+    }
+
+    &:empty:before {
+      color: #64748b;
+    }
+  }
+
+  .add-tag-select {
+    background: #1e2538;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+  }
+
+  .action-btn {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(30, 37, 56, 0.6);
+    }
+
+    &.delete-btn:hover:not(:disabled) {
+      background-color: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+    }
+
+    &.revert-btn:hover:not(:disabled) {
+      background-color: rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+    }
+
+    &.restore-btn:hover:not(:disabled) {
+      background-color: rgba(34, 197, 94, 0.2);
+      border-color: #22c55e;
+    }
+  }
+
+  .filters-activated-area {
+    background-color: rgba(30, 37, 56, 0.6);
+
+    span {
+      color: #94a3b8;
+    }
+  }
+
+  .pagination-controls {
+    .pagination-info {
+      color: #94a3b8;
+    }
   }
 }
 </style>

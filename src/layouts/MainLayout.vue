@@ -52,7 +52,7 @@
 
     <q-drawer :dark="isDarkMode" v-model="leftDrawerOpen" show-if-above bordered v-if="userStore.isUserLoggedIn">
       <q-list>
-        <q-item-label header style="border-bottom: 1px solid #eee"> CORE </q-item-label>
+        <q-item-label header> CORE </q-item-label>
         <EssentialLink v-for="link in operationList" :key="link.title" v-bind="link" />
       </q-list>
 

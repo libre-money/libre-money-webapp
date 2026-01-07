@@ -83,7 +83,7 @@ export const useSettingsStore = defineStore("settingsStore", {
       serializeValue(LOCAL_STORAGE_KEY__WALLET_CALIBRATION_STEP_SIZE, value);
       this.walletCalibrationStepSize = value;
     },
-    setDarkMode(value: boolean) {
+    setDarkMode(value: boolean | null) {
       serializeValue(LOCAL_STORAGE_KEY__DARK_MODE, value);
       this.darkMode = value;
     },

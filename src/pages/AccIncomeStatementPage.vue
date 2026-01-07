@@ -21,65 +21,75 @@
       <loading-indicator :is-loading="isLoading" :phases="3" ref="loadingIndicator"></loading-indicator>
     </q-card>
 
-    <!-- Ledger - Start -->
+    <!-- Income Statement Tables - Start -->
     <template v-if="!isLoading && trialBalance">
-      <q-card class="std-card q-pa-md">
-        <div class="fin-presentation-container" v-for="aType in ['Income', 'Expense']" v-bind:key="aType">
-          <div class="fin-presentation">
-            <div class="fin-presentation-head-container row">
-              <div class="fin-presentation-head-textual particulars-head">{{ aType }} Account</div>
-              <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
-                <div class="fin-presentation-head-numeric debit-head">{{ trialBalanceWithCurrency._currency!.sign }}</div>
-              </template>
-            </div>
-            <template
-              v-for="(balanceEntry, balanceEntryIndex) in trialBalance.trialBalanceWithCurrencyList[0].trialBalanceOfTypeMap[aType].balanceList"
-              v-bind:key="balanceEntry.account.code"
+      <q-card class="std-card q-pa-md q-mb-md">
+        <template v-for="aType in ['Income', 'Expense']" v-bind:key="aType">
+          <div
+            class="q-mb-md"
+            v-if="trialBalance.trialBalanceWithCurrencyList.length > 0 && trialBalance.trialBalanceWithCurrencyList[0].trialBalanceOfTypeMap[aType]"
+          >
+            <q-table
+              :title="`${aType} Account`"
+              :rows="getTableRows(aType)"
+              :columns="getTableColumns()"
+              row-key="accountCode"
+              flat
+              bordered
+              hide-pagination
+              hide-no-data
+              :separator="'horizontal'"
             >
-              <div class="fin-presentation-row row">
-                <div class="fin-presentation-item-textual">
-                  {{ balanceEntry.account.name }}
-                </div>
-                <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
-                  <div class="fin-presentation-item-numeric debit-sum">
+              <template v-slot:body-cell-account="props">
+                <q-td :props="props">{{ props.value }}</q-td>
+              </template>
+              <template
+                v-for="currency in trialBalance.trialBalanceWithCurrencyList"
+                :key="currency.currencyId"
+                v-slot:[`body-cell-${currency.currencyId}`]="props"
+              >
+                <q-td :props="props" class="text-right">
+                  <span v-if="props.value !== null && props.value !== undefined">{{ printAmount(props.value, currency._currency!._id) }}</span>
+                </q-td>
+              </template>
+              <template v-slot:bottom-row>
+                <q-tr>
+                  <q-td class="text-weight-medium">Total {{ aType }}</q-td>
+                  <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" :key="trialBalanceWithCurrency.currencyId">
+                    <q-td class="text-right text-weight-medium">
+                      {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
+                    </q-td>
+                  </template>
+                </q-tr>
+              </template>
+            </q-table>
+          </div>
+        </template>
+        <!-- Total Profit Row -->
+        <div class="q-mt-md" v-if="trialBalance.trialBalanceWithCurrencyList.length > 0">
+          <q-table title="Total Profit" :rows="[]" :columns="getTableColumns()" flat bordered hide-pagination hide-no-data :separator="'horizontal'">
+            <template v-slot:bottom-row>
+              <q-tr>
+                <q-td class="text-weight-medium">Total Profit</q-td>
+                <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" :key="trialBalanceWithCurrency.currencyId">
+                  <q-td class="text-right text-weight-medium">
                     {{
                       printAmount(
-                        trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].balanceList[balanceEntryIndex]?.balance || 0,
+                        trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].balanceList.find(
+                          (balance) => balance.account.code === AccDefaultAccounts.EQUITY__RETAINED_EARNINGS.code
+                        )?.balance,
                         trialBalanceWithCurrency._currency!._id
                       )
                     }}
-                  </div>
+                  </q-td>
                 </template>
-              </div>
+              </q-tr>
             </template>
-            <div class="fin-presentation-head-container row">
-              <div class="fin-presentation-head-textual">Total {{ aType }}</div>
-              <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
-                <div class="fin-presentation-head-numeric debit-total">
-                  {{ printAmount(trialBalanceWithCurrency.trialBalanceOfTypeMap[aType].totalBalance, trialBalanceWithCurrency._currency!._id) }}
-                </div>
-              </template>
-            </div>
-          </div>
-        </div>
-        <div class="fin-presentation-head-container row">
-          <div class="fin-presentation-head-textual">Total Profit</div>
-          <template v-for="trialBalanceWithCurrency in trialBalance.trialBalanceWithCurrencyList" v-bind:key="trialBalanceWithCurrency.currencyId">
-            <div class="fin-presentation-head-numeric debit-total">
-              {{
-                printAmount(
-                  trialBalanceWithCurrency.trialBalanceOfTypeMap["Equity"].balanceList.find(
-                    (balance) => balance.account.code === AccDefaultAccounts.EQUITY__RETAINED_EARNINGS.code
-                  )?.balance,
-                  trialBalanceWithCurrency._currency!._id
-                )
-              }}
-            </div>
-          </template>
+          </q-table>
         </div>
       </q-card>
     </template>
-    <!-- Ledger - End -->
+    <!-- Income Statement Tables - End -->
   </q-page>
 </template>
 
@@ -114,6 +124,55 @@ const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
 const trialBalance: Ref<AccTrialBalance | null> = ref(null);
 const filters: Ref<AccStatementFilters> = ref(getDefaultFilters());
+
+// ----- Table Configuration
+function getTableColumns() {
+  if (!trialBalance.value || !trialBalance.value.trialBalanceWithCurrencyList || trialBalance.value.trialBalanceWithCurrencyList.length === 0) {
+    return [];
+  }
+  const columns: any[] = [
+    {
+      name: "account",
+      required: true,
+      label: "Account",
+      align: "left" as const,
+      field: "accountName",
+      sortable: false,
+    },
+  ];
+  trialBalance.value.trialBalanceWithCurrencyList.forEach((trialBalanceWithCurrency) => {
+    columns.push({
+      name: trialBalanceWithCurrency.currencyId,
+      label: trialBalanceWithCurrency._currency!.sign,
+      align: "right" as const,
+      field: trialBalanceWithCurrency.currencyId,
+      sortable: false,
+    });
+  });
+  return columns;
+}
+
+function getTableRows(accountType: string) {
+  if (!trialBalance.value || !trialBalance.value.trialBalanceWithCurrencyList || trialBalance.value.trialBalanceWithCurrencyList.length === 0) {
+    return [];
+  }
+  const firstCurrency = trialBalance.value.trialBalanceWithCurrencyList[0];
+  const balanceList = firstCurrency.trialBalanceOfTypeMap[accountType]?.balanceList;
+  if (!balanceList || !Array.isArray(balanceList)) {
+    return [];
+  }
+  return balanceList.map((balanceEntry: any, index: number) => {
+    const row: any = {
+      accountCode: balanceEntry.account.code,
+      accountName: balanceEntry.account.name,
+    };
+    trialBalance.value!.trialBalanceWithCurrencyList.forEach((trialBalanceWithCurrency) => {
+      const entry = trialBalanceWithCurrency.trialBalanceOfTypeMap[accountType]?.balanceList[index];
+      row[trialBalanceWithCurrency.currencyId] = entry?.balance || 0;
+    });
+    return row;
+  });
+}
 
 // ----- Functions
 async function loadData() {
@@ -164,15 +223,4 @@ onMounted(() => {
 });
 </script>
 
-<style scoped lang="scss">
-@import "./../css/finance.scss";
-
-.debit-head {
-  text-align: center;
-}
-
-.debit-total,
-.debit-sum {
-  text-align: right;
-}
-</style>
+<style scoped lang="scss"></style>

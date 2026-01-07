@@ -1,38 +1,70 @@
 <template>
-  <q-page class="row items-start justify-evenly">
-    <q-card class="std-card">
-      <div class="title-row q-pa-md q-gutter-sm">
-        <div>
-          <div class="title">Libre Money</div>
-          <div style="margin-top: 8px">Finally a personal finance tracking application that makes sense.</div>
-          <div style="margin-top: 8px">This Free and OpenSource Software (FOSS) is developed and maintained by Sayem Shafayet.</div>
+  <q-page class="row items-center justify-evenly">
+    <q-card class="">
+      <q-card-section class="q-pa-lg">
+        <div class="text-h4 q-mb-md">Libre Money</div>
+        <div class="text-body1 text-grey-8 q-mb-sm">Finally a personal finance tracking application that makes sense.</div>
+        <div class="text-body2 text-grey-7 q-mb-md">This Free and OpenSource Software (FOSS) is developed and maintained by Sayem Shafayet.</div>
 
-          <div style="margin-top: 8px">
-            Source Code: <a href="https://github.com/iShafayet/cash-keeper-client" target="_blank">Under GPL-3.0 license on GitHub</a>.
-          </div>
-          <div style="margin-top: 8px">2023 to {{ getCurrentYear() }} © <a href="https://ishafayet.me" target="_blank">Sayem Shafayet</a>.</div>
+        <div class="text-body2 text-grey-7 q-mb-xs">
+          Source Code:
+          <a href="https://github.com/iShafayet/cash-keeper-client" target="_blank" class="text-primary"> Under GPL-3.0 license on GitHub </a>
         </div>
-      </div>
+        <div class="text-body2 text-grey-7">
+          2023 to {{ getCurrentYear() }} ©
+          <a href="https://ishafayet.me" target="_blank" class="text-primary">Sayem Shafayet</a>
+        </div>
+      </q-card-section>
 
-      <div class="q-pa-md control-group">
-        <div class="q-pa-md" :hidden="!isLoading">
+      <q-separator />
+
+      <q-card-section class="q-pa-lg">
+        <div v-if="isLoading" class="q-mb-md">
           <loading-indicator :is-loading="isLoading" :phases="1" ref="loadingIndicator"></loading-indicator>
         </div>
 
-        <div class="control-title">Version: {{ APP_VERSION }}</div>
-        <div class="control-title">Build Number: {{ APP_BUILD_VERSION }}</div>
-        <div class="control-title">Build Date: {{ APP_BUILD_DATE }}</div>
+        <q-list class="rounded-borders" separator bordered>
+          <q-item>
+            <q-item-section>
+              <q-item-label class="text-weight-medium">Version</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-item-label>{{ APP_VERSION }}</q-item-label>
+            </q-item-section>
+          </q-item>
 
-        <div style="margin-top: 12px" :hidden="isLoading">
-          <q-btn color="secondary" text-color="white" label="Check for Updates" @click="forceUpdateClicked" />
+          <q-item>
+            <q-item-section>
+              <q-item-label class="text-weight-medium">Build Number</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-item-label>{{ APP_BUILD_VERSION }}</q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label class="text-weight-medium">Build Date</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-item-label>{{ APP_BUILD_DATE }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+
+        <div v-if="!isLoading" class="q-mt-md">
+          <q-btn color="secondary" text-color="white" label="Check for Updates" icon="update" @click="forceUpdateClicked" unelevated class="full-width" />
         </div>
-      </div>
+      </q-card-section>
 
-      <div :hidden="isLoading" class="q-pa-md" style="display: flex; justify-content: end">
-        <q-btn color="red" text-color="white" label="Remove Local Data" @click="removeLocalDataClicked" />
-        <div class="spacer"></div>
-        <q-btn color="grey-7" text-color="white" label="Home" @click="backToHomeClicked" />
-      </div>
+      <q-separator v-if="!isLoading" />
+
+      <q-card-section v-if="!isLoading" class="q-pa-lg">
+        <div class="row q-gutter-sm">
+          <q-btn color="negative" label="Remove Local Data" icon="delete_forever" @click="removeLocalDataClicked" class="col" />
+          <q-btn outline color="info" label="Home" icon="home" @click="backToHomeClicked" class="col" />
+        </div>
+      </q-card-section>
     </q-card>
   </q-page>
 </template>
@@ -86,24 +118,13 @@ function backToHomeClicked() {
 </script>
 
 <style scoped lang="scss">
-.local-control {
-  max-width: 260px;
-}
+a {
+  text-decoration: none;
+  transition: opacity 0.2s ease;
 
-.control-group {
-  background-color: rgb(244, 244, 244);
-  margin: 12px;
-}
-
-.control-toggle {
-  display: flex;
-  justify-content: start;
-  width: calc(100% - 16px);
-  max-width: 300px;
-  color: #3b3b3b;
-}
-
-.control-title {
-  color: #3b3b3b;
+  &:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+  }
 }
 </style>
