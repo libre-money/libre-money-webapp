@@ -4,7 +4,7 @@ import { Wallet } from "src/models/wallet";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref, watch } from "vue";
 
-const props = defineProps(["modelValue", "label", "limitByCurrencyId", "preselect"]);
+const props = defineProps(["modelValue", "label", "limitByCurrencyId", "preselect", "rules"]);
 const emit = defineEmits(["update:modelValue"]);
 
 const value = computed({
@@ -96,6 +96,7 @@ watch(limitByCurrencyId, () => {
     option-label="name"
     hide-selected
     v-if="!isLoading"
+    :rules="props.rules"
     clearable
   />
 </template>
