@@ -96,15 +96,14 @@
             <!-- Unified Single Amount Record - start -->
             <q-card flat bordered class="expense-record-card" v-if="isSingleAmountType(record)">
               <q-card-section>
+                <div class="record-date text-weight-light text-grey-6">
+                  <div>{{ prettifyDate(record.transactionEpoch) }}</div>
+                  <template v-if="isPotentialDuplicate(record)">
+                    <q-icon name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
+                  </template>
+                </div>
                 <div class="single-amount-row row" :data-index="index">
                   <div class="details-section">
-                    <div class="record-date text-weight-light text-grey-6">
-                      <div>{{ prettifyDate(record.transactionEpoch) }}</div>
-                      <template v-if="isPotentialDuplicate(record)">
-                        <q-icon name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
-                      </template>
-                    </div>
-
                     <div class="text-h6" v-if="record.type === RecordType.EXPENSE">
                       {{ record.expense?.expenseAvenue.name }}
                     </div>
@@ -155,56 +154,68 @@
             <!-- Unified Single Amount Record -->
 
             <!-- Money Transfer - start -->
-            <div class="money-transfer-row row" v-else-if="record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer" :data-index="index">
-              <div class="details-section">
-                <div class="record-date">
-                  {{ prettifyDate(record.transactionEpoch) }}
-                  <template v-if="isPotentialDuplicate(record)">
-                    <q-icon name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
-                  </template>
+            <q-card flat bordered class="expense-record-card" v-else-if="record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer">
+              <q-card-section>
+                <div class="single-amount-row col money-transfer-row" :data-index="index">
+                  <div class="details-section">
+                    <div class="record-date text-weight-light text-grey-6">
+                      <div>{{ prettifyDate(record.transactionEpoch) }}</div>
+                      <template v-if="isPotentialDuplicate(record)">
+                        <q-icon name="flag" class="duplicate-flag" title="Potential duplicate" /> Potential duplicate
+                      </template>
+                    </div>
+
+                    <table class="full-width">
+                      <tbody>
+                        <tr>
+                          <td class="text-h6">From: {{ record.moneyTransfer.fromWallet?.name }}</td>
+                          <td class="text-right" width="50%">
+                            <div class="amounts-section">
+                              <div class="amount amount-out">{{ printAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}</div>
+                              <div class="wallet">({{ record.moneyTransfer.fromWallet?.name }})</div>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td class="text-h6">To: {{ record.moneyTransfer.toWallet?.name }}</td>
+                          <td class="text-right">
+                            <div class="amounts-section">
+                              <div class="amount amount-in">{{ printAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}</div>
+                              <div class="wallet">({{ record.moneyTransfer.toWallet?.name }})</div>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="row justify-between q-mt-sm">
+                    <div>
+                      <div class="notes text-body2 text-grey-7 q-mb-sm" v-if="record.notes">Notes: {{ record.notes }}</div>
+
+                      <div class="tags-line">
+                        <q-chip size="sm" class="text-capitalize record-type" :data-record-type="record.type">{{ record.typePrettified }}</q-chip>
+                        <q-chip outline size="sm" v-for="tag in record.tagList" v-bind:key="tag._id" :style="`border-color: ${tag.color}`">{{
+                          tag.name
+                        }}</q-chip>
+                      </div>
+                    </div>
+                    <div class="amounts-section">
+                      <div class="flex items-center justify-end">
+                        <div class="username" v-if="record.modifiedByUsername">
+                          <q-icon name="account_circle"></q-icon>
+                          {{ record.modifiedByUsername }}
+                        </div>
+                      </div>
+                      <div class="controls q-my-sm">
+                        <q-btn round outline color="primary" icon="create" size="8px" class="q-mr-xs" @click="editMoneyTransferClicked(record)" />
+                        <q-btn round outline color="negative" icon="delete" size="8px" @click="deleteClicked(record)" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                <div class="primary-line">Transfer {{ record.moneyTransfer.fromWallet.name }} to {{ record.moneyTransfer.toWallet.name }}</div>
-
-                <div class="notes" v-if="record.notes">{{ record.notes }}</div>
-
-                <div class="row tags-line">
-                  <div class="record-type" :data-record-type="record.type">
-                    {{ record.typePrettified }}
-                  </div>
-                  <div
-                    class="tag"
-                    v-for="tag in record.tagList"
-                    v-bind:key="tag._id"
-                    :style="`background-color: ${tag.color}; color: ${guessFontColorCode(tag.color)}`"
-                  >
-                    {{ tag.name }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="amounts-section">
-                <div class="row amounts-section-row">
-                  <div class="amount-col amount-left-col">
-                    <div class="amount amount-out">Out {{ printAmount(record.moneyTransfer.fromAmount, record.moneyTransfer.fromCurrencyId) }}</div>
-                    <div class="wallet">({{ record.moneyTransfer.fromWallet.name }})</div>
-                  </div>
-                  <div class="amount-col amount-right-col">
-                    <div class="amount amount-in">In {{ printAmount(record.moneyTransfer.toAmount, record.moneyTransfer.toCurrencyId) }}</div>
-                    <div class="wallet">({{ record.moneyTransfer.toWallet.name }})</div>
-                  </div>
-                </div>
-
-                <div class="controls">
-                  <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editMoneyTransferClicked(record)" />
-                  <q-btn class="control-button" round color="negative" icon="delete" size="8px" @click="deleteClicked(record)" />
-                  <div class="username" v-if="record.modifiedByUsername">
-                    <q-icon name="account_circle"></q-icon>
-                    {{ record.modifiedByUsername }}
-                  </div>
-                </div>
-              </div>
-            </div>
+              </q-card-section>
+            </q-card>
             <!-- Money Transfer -->
 
             <div class="misc-row" v-else :data-index="index">{{ record }}</div>
@@ -755,6 +766,10 @@ body.body--dark .record-row .details-section .tags-line .record-type[data-record
     margin-right: 12px;
   }
 
+  td {
+    vertical-align: top;
+  }
+
   @media (max-width: $breakpoint-xs-max) {
     .amount-left-col {
       margin-right: 0px;
@@ -779,11 +794,11 @@ body.body--dark .record-row .details-section .tags-line .record-type[data-record
 }
 
 .amount-in {
-  color: rgb(7, 112, 7);
+  color: #4caf50;
 }
 
 .amount-out {
-  color: rgb(112, 7, 7);
+  color: #ef5350;
 }
 
 .quick-summary-title {

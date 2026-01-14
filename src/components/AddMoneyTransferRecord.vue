@@ -10,7 +10,7 @@
       <q-card-section class="col scroll" style="min-height: 0">
         <q-form class="q-gutter-md" ref="recordForm">
           <date-time-input v-model="transactionEpoch" label="Date & Time"></date-time-input>
-          <select-wallet v-model="recordFromWalletId" label="From Wallet (Source)"> </select-wallet>
+          <select-wallet v-model="recordFromWalletId" label="From Wallet (Source)" :rules="validators.required"> </select-wallet>
           <q-input
             input-class="text-h6"
             type="number"
@@ -25,7 +25,7 @@
             </template>
           </q-input>
 
-          <select-wallet v-model="recordToWalletId" label="To Wallet (Destination)"> </select-wallet>
+          <select-wallet v-model="recordToWalletId" label="To Wallet (Destination)" :rules="validators.required"> </select-wallet>
           <q-input
             input-class="text-h6"
             type="number"
@@ -100,12 +100,12 @@ const recordForm = ref<QForm | null>(null);
 
 const recordType = RecordType.MONEY_TRANSFER;
 
-const recordFromAmount = ref<number>(0);
+const recordFromAmount = ref<number>();
 const recordFromCurrencyId = ref<string | null>(null);
 const recordFromWalletId = ref<string | null>(null);
 const recordFromCurrencySign = ref<string | null>(null);
 
-const recordToAmount = ref<number>(0);
+const recordToAmount = ref<number>();
 const recordToCurrencyId = ref<string | null>(null);
 const recordToWalletId = ref<string | null>(null);
 const recordToCurrencySign = ref<string | null>(null);

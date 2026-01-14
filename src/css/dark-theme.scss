@@ -10,16 +10,16 @@ body.body--dark {
   --primary-dark-opacity-8: rgba(var(--primary-dark-rgb), 0.08);
 }
 body.body--dark {
-  // background: linear-gradient(180deg, #0f1419 0%, #1a1f2e 20%, #1e2538 40%, #1a1f2e 60%, #0f1419 100%);
   background-attachment: fixed;
   min-height: 100vh;
   background-color: #1a1f2e;
   // color: #e2e8f0;
+  color-scheme: dark;
 }
 
 // Cards and surfaces in dark mode
 body.body--dark .q-card {
-  background-color: #1e2538; // Slightly lighter than dark surface for depth
+  background-color: #242c42; // Slightly lighter than dark surface for depth
   color: #e2e8f0;
   border: 1px solid rgba(255, 255, 255, 0.05); // Subtle border for definition
 }

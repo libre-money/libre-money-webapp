@@ -23,19 +23,19 @@
         </div>
 
         <!-- Conditional fields based on record types -->
-        <div v-if="hasExpenseType" style="margin-top: -20px">
+        <div v-if="hasExpenseType" style="margin-top: 20px">
           <select-expense-avenue v-model="recordFilters.expenseAvenueId" :mandatory="false"></select-expense-avenue>
         </div>
 
-        <div v-if="hasIncomeType" style="margin-top: -20px">
+        <div v-if="hasIncomeType" style="margin-top: 20px">
           <select-income-source v-model="recordFilters.incomeSourceId" :mandatory="false"></select-income-source>
         </div>
 
-        <div v-if="hasAssetType" style="margin-top: -20px">
+        <div v-if="hasAssetType" style="margin-top: 20px">
           <select-asset v-model="recordFilters.assetId" :mandatory="false"></select-asset>
         </div>
 
-        <div style="margin-top: -20px">
+        <div style="margin-top: 20px">
           <select-party v-model="recordFilters.partyId" :mandatory="false"></select-party>
         </div>
         <div style="margin-top: -20px">
