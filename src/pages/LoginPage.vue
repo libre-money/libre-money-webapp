@@ -32,11 +32,12 @@
                 color="grey"
                 :label="isSelfHosted ? 'Hide Self-hosted Options' : 'Self-hosted Options'"
                 icon="dns"
+                size="sm"
                 @click="isSelfHosted = !isSelfHosted"
                 type="button"
               />
               <div class="spacer"></div>
-              <q-btn label="Login" type="submit" color="primary" :loading="isLoading" />
+              <q-btn label="Login" type="submit" color="secondary" :loading="isLoading" padding="sm xl" />
             </div>
           </q-form>
         </q-card-section>
@@ -53,7 +54,7 @@
             </div>
           </div>
 
-          <q-btn unelevated color="secondary" label="Start In Offline Mode" icon="offline_bolt" class="full-width" @click="startOfflineSession" />
+          <q-btn unelevated color="primary" label="Start In Offline Mode" icon="offline_bolt" class="full-width" @click="startOfflineSession" />
         </q-card-section>
 
         <!-- Reset Local Data Option -->
@@ -88,24 +89,40 @@
 
           <div class="session-info q-mb-lg">
             <div class="text-subtitle2 q-mb-sm text-grey-8">Session Information</div>
-            <div class="session-details">
-              <div class="detail-item">
-                <q-icon name="person" color="primary" size="16px" />
-                <span class="q-ml-sm">{{ previousSession?.user.username }}</span>
-              </div>
-              <div class="detail-item" v-if="previousSession?.user.domain">
-                <q-icon name="domain" color="primary" size="16px" />
-                <span class="q-ml-sm">{{ previousSession.user.domain }}</span>
-              </div>
-              <div class="detail-item" v-if="previousSession?.user.serverUrl">
-                <q-icon name="cloud" color="primary" size="16px" />
-                <span class="q-ml-sm text-caption">{{ previousSession.user.serverUrl }}</span>
-              </div>
-              <div class="detail-item">
-                <q-icon name="schedule" color="primary" size="16px" />
-                <span class="q-ml-sm text-caption">Last active: {{ logoutTimeFormatted }}</span>
-              </div>
-            </div>
+            <q-list class="session-details" separator>
+              <q-item>
+                <q-item-section side>
+                  <q-icon name="person" color="primary" size="16px" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ previousSession?.user.username }}</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item v-if="previousSession?.user.domain">
+                <q-item-section side>
+                  <q-icon name="domain" color="primary" size="16px" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ previousSession.user.domain }}</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item v-if="previousSession?.user.serverUrl">
+                <q-item-section side>
+                  <q-icon name="cloud" color="primary" size="16px" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-caption">{{ previousSession.user.serverUrl }}</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section side>
+                  <q-icon name="schedule" color="primary" size="16px" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="text-caption">Last active: {{ logoutTimeFormatted }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
           </div>
 
           <!-- Password input for online sessions -->
@@ -132,7 +149,7 @@
 
           <div class="text-center">
             <div class="text-caption text-grey-7 q-mb-sm">Need to sign in with different credentials?</div>
-            <q-btn flat color="primary" label="Sign In with Different Account" @click="useDifferentCredentialsClicked" />
+            <q-btn outline color="primary" label="Sign In with Different Account" @click="useDifferentCredentialsClicked" />
           </div>
         </q-card-section>
       </template>
@@ -396,23 +413,8 @@ function useDifferentCredentialsClicked() {
 .previous-session-section {
   .session-info {
     .session-details {
-      .detail-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 6px;
-        padding: 10px 12px;
-        background-color: #f8f9fa;
-        border-radius: 6px;
-        transition: background-color 0.2s;
-
-        &:hover {
-          background-color: #e9ecef;
-        }
-
-        .q-icon {
-          flex-shrink: 0;
-        }
-      }
+      padding: 0;
+      border-radius: 12px;
     }
   }
 

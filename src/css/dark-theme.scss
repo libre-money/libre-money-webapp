@@ -17,6 +17,10 @@ body.body--dark {
   color-scheme: dark;
 }
 
+body.body--dark .text-primary {
+  color: #526acb !important;
+}
+
 // Cards and surfaces in dark mode
 body.body--dark .q-card {
   background-color: #21283b; // Slightly lighter than dark surface for depth
@@ -127,13 +131,22 @@ body.body--dark .negative-balance {
   color: #f87171;
 }
 
-body.body--dark .q-field__native {
+.q-field--standout.q-field--dark.q-field--highlighted .q-field__native,
+.q-field--standout.q-field--dark.q-field--highlighted .q-field__prefix,
+.q-field--standout.q-field--dark.q-field--highlighted .q-field__suffix,
+.q-field--standout.q-field--dark.q-field--highlighted .q-field__prepend,
+.q-field--standout.q-field--dark.q-field--highlighted .q-field__append,
+.q-field--standout.q-field--dark.q-field--highlighted .q-field__input {
   color: #e2e8f0 !important;
 }
 
-body.body--dark .q-field--focused .q-field__label {
-  color: var(--text-white);
+.q-field--standout.q-field--dark.q-field--highlighted .q-field__control {
+  background-color: var(--color-primary-dark);
 }
+
+// body.body--dark .q-field--focused .q-field__label {
+//   color: var(--text-white);
+// }
 
 // Toggle/Switch in dark mode
 // body.body--dark .q-toggle__track {
