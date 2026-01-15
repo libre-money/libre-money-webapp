@@ -16,6 +16,7 @@
             standout="bg-primary text-white"
             v-model.number="recordAmount"
             label="Expense Amount"
+            type="number"
             lazy-rules
             :rules="validators.balance"
           >

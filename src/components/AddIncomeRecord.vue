@@ -139,7 +139,7 @@ const paymentType = ref<string>("full");
 const recordType = RecordType.INCOME;
 
 const recordIncomeSourceId = ref<string | null>(null);
-const recordAmount = ref<number>(0);
+const recordAmount = ref<number>();
 const recordCurrencyId = ref<string | null>(null);
 const recordCurrencySign = ref<string | null>(null);
 const recordPartyId = ref<string | null>(null);

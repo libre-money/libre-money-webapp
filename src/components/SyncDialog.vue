@@ -1,13 +1,13 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss>
-    <q-card class="sync-dialog-card">
+    <q-card class="">
       <!-- Header Section -->
-      <q-card-section class="sync-header">
-        <div class="row items-center q-mb-md q-pb-md">
+      <q-card-section class="">
+        <div class="row items-center">
           <q-icon name="sync" size="32px" color="primary" class="q-mr-md" />
           <div>
             <div class="text-h6 text-weight-medium">{{ dialogTitle }}</div>
-            <div class="text-caption text-grey-7">{{ dialogSubtitle }}</div>
+            <div class="text-caption">{{ dialogSubtitle }}</div>
           </div>
         </div>
       </q-card-section>
@@ -81,10 +81,9 @@
       </q-card-section>
 
       <!-- Actions -->
-      <q-card-actions class="sync-actions">
-        <q-btn flat label="Cancel" color="grey-7" @click="cancelClicked" class="q-mr-sm" />
-        <div class="spacer"></div>
-        <q-btn v-if="needsPasswordInput" unelevated label="Continue" color="primary" @click="onSubmit" icon="sync" />
+      <q-card-actions class="justify-end">
+        <q-btn flat label="Cancel" @click="cancelClicked" class="q-mr-sm" />
+        <q-btn v-if="needsPasswordInput" rounded label="Continue" color="primary" @click="onSubmit" icon="sync" />
       </q-card-actions>
     </q-card>
   </q-dialog>

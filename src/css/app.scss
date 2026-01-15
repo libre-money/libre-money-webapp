@@ -183,22 +183,22 @@ body.body--dark ::-webkit-scrollbar-thumb:hover {
 // --------------------------------------------------
 
 // Cards and surfaces in dark mode
-body.body--dark .q-card {
-  background-color: #1e2538; // Slightly lighter than dark surface for depth
-  color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.05); // Subtle border for definition
-}
+// body.body--dark .q-card {
+//   background-color: #1e2538; // Slightly lighter than dark surface for depth
+//   color: #e2e8f0;
+//   border: 1px solid rgba(255, 255, 255, 0.05); // Subtle border for definition
+// }
 
 // Input fields in dark mode
-body.body--dark .q-field--standout .q-field__control {
-  background-color: var(--primary-dark-opacity-1);
-  border: 1px solid var(--primary-dark-opacity-2);
-}
+// body.body--dark .q-field--standout .q-field__control {
+//   background-color: var(--primary-dark-opacity-1);
+//   border: 1px solid var(--primary-dark-opacity-2);
+// }
 
-body.body--dark .q-field--standout .q-field__control:hover {
-  background-color: var(--primary-dark-opacity-15);
-  border-color: var(--primary-dark-opacity-3);
-}
+// body.body--dark .q-field--standout .q-field__control:hover {
+//   background-color: var(--primary-dark-opacity-15);
+//   border-color: var(--primary-dark-opacity-3);
+// }
 
 // Tabs in dark mode
 body.body--dark .q-tabs {
@@ -211,25 +211,6 @@ body.body--dark .q-tab {
 
 body.body--dark .q-tab--active {
   color: var(--primary-dark);
-}
-
-// Tables in dark mode
-body.body--dark .q-table {
-  background-color: transparent;
-}
-
-body.body--dark .q-table thead th {
-  background-color: rgba(30, 37, 56, 0.8);
-  color: #cbd5e1; // slate-300
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-body.body--dark .q-table tbody tr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-body.body--dark .q-table tbody tr:hover {
-  background-color: var(--primary-dark-opacity-8);
 }
 
 // Drawer/Sidebar in dark mode
@@ -315,17 +296,17 @@ body.body--dark .q-dialog__inner .q-card {
 }
 
 // Input field enhancements
-body.body--dark .q-field__label {
-  color: #94a3b8;
-}
+// body.body--dark .q-field__label {
+//   color: #94a3b8;
+// }
 
-body.body--dark .q-field__native {
-  color: #e2e8f0;
-}
+// body.body--dark .q-field__native {
+//   color: #e2e8f0;
+// }
 
-body.body--dark .q-field--focused .q-field__label {
-  color: var(--primary-dark);
-}
+// body.body--dark .q-field--focused .q-field__label {
+//   color: var(--primary-dark);
+// }
 
 // Toggle/Switch in dark mode
 body.body--dark .q-toggle__track {
