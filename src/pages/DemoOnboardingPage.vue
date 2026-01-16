@@ -139,6 +139,17 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+.onboarding-card1 {
+  width: 100%;
+  max-width: 600px;
+  margin: 8px;
+
+  @media (min-width: 616px) {
+    width: 600px;
+    margin: 8px auto;
+  }
+}
+
 .onboarding-page {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;

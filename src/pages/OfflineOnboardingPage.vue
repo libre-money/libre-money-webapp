@@ -479,7 +479,14 @@ async function goToDashboard() {
 
 <style scoped lang="scss">
 .onboarding-card {
-  min-width: 360px;
+  width: 100%;
+  max-width: 600px;
+  margin: 8px;
+
+  @media (min-width: 616px) {
+    width: 600px;
+    margin: 8px auto;
+  }
 }
 
 .onboarding-page {
