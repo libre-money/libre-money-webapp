@@ -89,6 +89,9 @@
           <div @click="verionClicked" style="cursor: pointer">
             <div style="font-size: 16px">Libre Money</div>
             <div style="font-size: 10px; color: rgb(187, 186, 186)">Version: {{ APP_VERSION }} (Alpha)</div>
+            <div v-if="userStore.currentUser?.domain" style="font-size: 10px; color: rgb(187, 186, 186); margin-top: 4px">
+              Domain: {{ userStore.currentUser.domain }}
+            </div>
           </div>
         </div>
       </div>
