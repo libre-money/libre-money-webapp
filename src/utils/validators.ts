@@ -77,4 +77,11 @@ export const validators = {
       }
     },
   ],
+  email: [
+    (val: string) => {
+      if (!val || val.length === 0) return "Please enter your email address";
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(val) || "Please enter a valid email address";
+    },
+  ],
 };

@@ -9,4 +9,6 @@ export type User = {
   isDemoUser?: boolean;
   hasCompletedOnboarding?: boolean;
   selectedCurrencyId?: string;
+  hasSignedUpForCloudAccount?: boolean;
+  cloudAccountEmail?: string;
 };

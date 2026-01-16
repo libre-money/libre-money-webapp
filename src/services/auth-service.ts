@@ -17,6 +17,11 @@ export interface AuthServerResponse {
   username: string;
 }
 
+export interface LaunchPromoSignupResponse {
+  message: string;
+  wasAlreadyRegistered: boolean;
+}
+
 export const authService = {
   /**
    * Authenticates with the auth server using username and password.
@@ -56,6 +61,48 @@ export const authService = {
         }
       }
       return [false, null, "Unable to authenticate. Please try again."];
+    }
+  },
+
+  /**
+   * Submits a launch promo signup request with email and fullname.
+   * Returns the response if successful.
+   */
+  async submitLaunchPromoSignup(email: string, fullname: string): Promise<[boolean, LaunchPromoSignupResponse | null, string | null]> {
+    try {
+      const response = await axios.post<LaunchPromoSignupResponse>(
+        `${AUTH_SERVER_URL}/ephemeral/launch-promo-signup`,
+        {
+          email: email.trim().toLowerCase(),
+          fullname: fullname.trim(),
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200 && response.data) {
+        return [true, response.data, null];
+      }
+
+      return [false, null, "Invalid response from server."];
+    } catch (error) {
+      console.error(error);
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 400) {
+          const errorMessage = error.response.data?.error || "Invalid request. Please check your information.";
+          return [false, null, errorMessage];
+        }
+        if (error.response?.status) {
+          return [false, null, `Server error: ${error.response.status}`];
+        }
+        if (error.code === "ERR_NETWORK" || error.code === "ECONNREFUSED") {
+          return [false, null, "Unable to connect to server. Please check your connection."];
+        }
+      }
+      return [false, null, "Unable to submit signup. Please try again."];
     }
   },
 
