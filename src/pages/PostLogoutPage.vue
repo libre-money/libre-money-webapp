@@ -73,7 +73,7 @@
       <!-- Footer -->
       <q-card-section class="post-logout-footer">
         <div class="row items-center justify-center q-gutter-md">
-          <q-btn flat color="grey-6" size="sm" @click="goToAbout"> About Libre Money </q-btn>
+          <q-btn flat color="grey-6" size="sm" @click="goToAbout"> Libre Money </q-btn>
         </div>
       </q-card-section>
     </q-card>
@@ -110,7 +110,7 @@ async function clearLocalData() {
 }
 
 async function goToAbout() {
-  await router.push({ name: "about" });
+  window.open("https://libre.money/", "_blank");
 }
 
 async function showVersionInfo() {
