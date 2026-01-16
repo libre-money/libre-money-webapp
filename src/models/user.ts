@@ -6,6 +6,7 @@ export type User = {
   username: string;
   loginAt: number;
   isOfflineUser?: boolean;
+  isDemoUser?: boolean;
   hasCompletedOnboarding?: boolean;
   selectedCurrencyId?: string;
 };

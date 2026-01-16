@@ -21,7 +21,7 @@ export const useUserStore = defineStore("user", {
   getters: {
     isUserLoggedIn(state): boolean {
       if (!state.user) return false;
-      if (state.user.isOfflineUser && state.user.hasCompletedOnboarding) return true;
+      if ((state.user.isOfflineUser || state.user.isDemoUser) && state.user.hasCompletedOnboarding) return true;
       if (!state.user.isOfflineUser) return true;
       return false;
     },

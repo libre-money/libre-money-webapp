@@ -29,10 +29,22 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuthentication: false, title: null },
       },
       {
+        path: "demo-onboarding",
+        name: "demo-onboarding",
+        component: () => import("pages/DemoOnboardingPage.vue"),
+        meta: { requiresAuthentication: false, title: null },
+      },
+      {
         path: "go-online",
         name: "go-online",
         component: () => import("pages/GoOnlinePage.vue"),
         meta: { requiresAuthentication: true, title: "Go Online" },
+      },
+      {
+        path: "get-account",
+        name: "get-account",
+        component: () => import("pages/GetAccountPage.vue"),
+        meta: { requiresAuthentication: true, title: "Get Your Account" },
       },
       // --- Core:
       {

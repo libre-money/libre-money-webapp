@@ -11,50 +11,118 @@
 
       <!-- login page mode : login - START -->
       <template v-if="loginPageMode === 'login'">
-        <q-card-section>
-          <q-form ref="loginForm" @submit="onLoginSubmit" class="q-gutter-sm">
-            <q-input standout="bg-primary text-white" v-model="username" label="Username" lazy-rules :rules="validators.username" />
-
-            <q-input type="password" standout="bg-primary text-white" v-model="password" label="Password" lazy-rules :rules="validators.password" />
-
-            <!-- Self-hosted options (shown when isSelfHosted is true) -->
-            <template v-if="isSelfHosted">
-              <q-input standout="bg-primary text-white" v-model="customServerUrl" label="Server URL" lazy-rules :rules="validators.url" />
-
-              <q-input standout="bg-primary text-white" v-model="domain" label="Domain" lazy-rules :rules="validators.domain" />
-            </template>
-
-            <q-checkbox v-model="shouldRememberPassword" label="Remember password on this device" />
-
-            <div class="row justify-end q-mt-md">
-              <q-btn
-                outline
-                color="grey"
-                :label="isSelfHosted ? 'Hide Self-hosted Options' : 'Self-hosted Options'"
-                icon="dns"
-                size="sm"
-                @click="isSelfHosted = !isSelfHosted"
-                type="button"
-              />
-              <div class="spacer"></div>
-              <q-btn label="Login" type="submit" color="secondary" :loading="isLoading" padding="sm xl" />
+        <!-- Login Section -->
+        <q-card-section class="login-section accordion-section" :class="{ expanded: expandedSection === 'login' }">
+          <transition name="collapse" mode="out-in">
+            <div v-if="expandedSection !== 'login'" key="collapsed" class="collapsed-section" @click="expandedSection = 'login'">
+              <div class="collapsed-content">
+                <div class="collapsed-description">
+                  <q-icon name="login" color="secondary" size="24px" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle1 text-weight-medium">Sign In</div>
+                    <div class="text-body2 text-grey-7">Access your existing account with your credentials</div>
+                  </div>
+                </div>
+                <q-btn unelevated color="secondary" label="Sign In" icon="arrow_forward" class="cta-button" />
+              </div>
             </div>
-          </q-form>
+            <div v-else key="expanded" class="expanded-section">
+              <div class="section-header q-mb-md">
+                <div class="text-h6">Sign In</div>
+              </div>
+              <q-form ref="loginForm" @submit="onLoginSubmit" class="q-gutter-sm">
+                <q-input standout="bg-primary text-white" v-model="username" label="Username" lazy-rules :rules="validators.username" />
+
+                <q-input type="password" standout="bg-primary text-white" v-model="password" label="Password" lazy-rules :rules="validators.password" />
+
+                <!-- Self-hosted options (shown when isSelfHosted is true) -->
+                <template v-if="isSelfHosted">
+                  <q-input standout="bg-primary text-white" v-model="customServerUrl" label="Server URL" lazy-rules :rules="validators.url" />
+
+                  <q-input standout="bg-primary text-white" v-model="domain" label="Domain" lazy-rules :rules="validators.domain" />
+                </template>
+
+                <q-checkbox v-model="shouldRememberPassword" label="Remember password on this device" />
+
+                <div class="row justify-end q-mt-md">
+                  <q-btn
+                    outline
+                    color="grey"
+                    :label="isSelfHosted ? 'Hide Self-hosted Options' : 'Self-hosted Options'"
+                    icon="dns"
+                    size="sm"
+                    @click="isSelfHosted = !isSelfHosted"
+                    type="button"
+                  />
+                  <div class="spacer"></div>
+                  <q-btn label="Login" type="submit" color="secondary" :loading="isLoading" padding="sm xl" />
+                </div>
+              </q-form>
+            </div>
+          </transition>
         </q-card-section>
 
-        <!-- Offline Mode Option -->
-        <q-card-section class="offline-option-section">
-          <q-separator class="q-mb-md" />
+        <q-separator />
 
-          <div class="text-center q-mb-md">
-            <div class="text-h6 q-mb-sm">Try Libre Money Offline</div>
-            <div class="text-body2 text-grey-7">
-              Start using Libre Money immediately with full offline functionality. Your data is stored securely on your device. You can sync to the cloud later
-              or continue using offline mode.
+        <!-- Offline Mode Section -->
+        <q-card-section class="offline-section accordion-section" :class="{ expanded: expandedSection === 'offline' }">
+          <transition name="collapse" mode="out-in">
+            <div v-if="expandedSection !== 'offline'" key="collapsed" class="collapsed-section" @click="expandedSection = 'offline'">
+              <div class="collapsed-content">
+                <div class="collapsed-description">
+                  <q-icon name="offline_bolt" color="primary" size="24px" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle1 text-weight-medium">Start Offline</div>
+                    <div class="text-body2 text-grey-7">Use Libre Money immediately with full offline functionality</div>
+                  </div>
+                </div>
+                <q-btn unelevated color="primary" label="Start Offline" icon="arrow_forward" class="cta-button" />
+              </div>
             </div>
-          </div>
+            <div v-else key="expanded" class="expanded-section">
+              <div class="section-header q-mb-md">
+                <div class="text-h6">Try Libre Money Offline</div>
+              </div>
+              <div class="text-center q-mb-md">
+                <div class="text-body2 text-grey-7 q-mb-md">
+                  Start using Libre Money immediately with full offline functionality. Your data is stored securely on your device. You can sync to the cloud
+                  later or continue using offline mode.
+                </div>
+                <q-btn unelevated color="primary" label="Start In Offline Mode" icon="offline_bolt" class="full-width" @click="startOfflineSession" />
+              </div>
+            </div>
+          </transition>
+        </q-card-section>
 
-          <q-btn unelevated color="primary" label="Start In Offline Mode" icon="offline_bolt" class="full-width" @click="startOfflineSession" />
+        <q-separator />
+
+        <!-- Demo Section -->
+        <q-card-section class="demo-section accordion-section" :class="{ expanded: expandedSection === 'demo' }">
+          <transition name="collapse" mode="out-in">
+            <div v-if="expandedSection !== 'demo'" key="collapsed" class="collapsed-section" @click="expandedSection = 'demo'">
+              <div class="collapsed-content">
+                <div class="collapsed-description">
+                  <q-icon name="play_circle" color="purple" size="24px" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle1 text-weight-medium">Explore Demo</div>
+                    <div class="text-body2 text-grey-7">Try Libre Money with sample data - no sign-up required</div>
+                  </div>
+                </div>
+                <q-btn unelevated color="purple" label="Start Demo" icon="arrow_forward" class="cta-button" />
+              </div>
+            </div>
+            <div v-else key="expanded" class="expanded-section">
+              <div class="section-header q-mb-md">
+                <div class="text-h6">Explore Libre Money Demo</div>
+              </div>
+              <div class="text-center q-mb-md">
+                <div class="text-body2 text-grey-7 q-mb-md">
+                  Try Libre Money with a fully populated demo account. Explore all features with sample data - no sign-up required!
+                </div>
+                <q-btn unelevated color="purple" label="Start Demo" icon="play_circle" class="full-width" @click="startDemoSession" />
+              </div>
+            </div>
+          </transition>
         </q-card-section>
 
         <!-- Reset Local Data Option -->
@@ -188,6 +256,9 @@ const loginPageMode = computed(() => {
 
 const isLoading = ref(false);
 
+// Section expansion state - always have one expanded, default to 'login'
+const expandedSection = ref<"login" | "offline" | "demo">("login");
+
 // ------------------- login page mode : login -------------------
 
 const loginForm = ref<QForm | null>(null);
@@ -311,6 +382,10 @@ async function startOfflineSession() {
   await router.push({ name: "offline-onboarding" });
 }
 
+async function startDemoSession() {
+  await router.push({ name: "demo-onboarding" });
+}
+
 async function resumePreviousSession() {
   if (!previousSession.value) return;
 
@@ -402,6 +477,85 @@ function useDifferentCredentialsClicked() {
   max-width: 500px;
   width: 100%;
   margin: 12px;
+}
+
+.accordion-section {
+  transition: background-color 0.3s ease, border-radius 0.3s ease;
+  cursor: pointer;
+  overflow: hidden;
+
+  &.expanded {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+  }
+
+  .collapsed-section {
+    cursor: pointer;
+    padding: 12px 0;
+
+    .collapsed-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+
+      .collapsed-description {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        gap: 12px;
+
+        .q-icon {
+          flex-shrink: 0;
+        }
+      }
+
+      .cta-button {
+        font-weight: 500;
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  .expanded-section {
+    padding-top: 8px;
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .q-btn {
+      font-weight: 500;
+    }
+  }
+}
+
+// Smooth expand/collapse transition
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.collapse-enter-from {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.collapse-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.collapse-enter-to,
+.collapse-leave-from {
+  max-height: 2000px;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .offline-option-section {

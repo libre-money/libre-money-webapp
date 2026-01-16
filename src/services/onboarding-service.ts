@@ -40,8 +40,11 @@ class OnboardingService {
 
   /**
    * Sets up default accounts and entities for offline user
+   * @param selectedCurrency - Optional currency to use, defaults to USD
+   * @param progressCallback - Optional callback for progress updates
+   * @param delay - Optional delay in milliseconds to simulate work (default: 300ms)
    */
-  async setupDefaultAccounts(selectedCurrency?: Currency, progressCallback?: (progress: OnboardingProgress) => void): Promise<void> {
+  async setupDefaultAccounts(selectedCurrency?: Currency, progressCallback?: (progress: OnboardingProgress) => void, delay = 300): Promise<void> {
     const steps = [
       { message: "Creating default currency...", weight: 10 },
       { message: "Setting up expense categories...", weight: 15 },
@@ -66,7 +69,7 @@ class OnboardingService {
         });
       }
 
-      await sleep(300); // Simulate work being done
+      await sleep(delay); // Simulate work being done
 
       switch (i) {
         case 0:

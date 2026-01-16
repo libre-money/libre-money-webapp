@@ -19,7 +19,7 @@ const userStore = useUserStore();
 
 const LOCAL_DB_NAME = "libre-money-main";
 
-const pouchdb = new PouchDB(LOCAL_DB_NAME);
+let pouchdb = new PouchDB(LOCAL_DB_NAME);
 
 let collectionIndexCreated = false;
 async function createCollectionIndexIfNeeded() {
@@ -59,6 +59,10 @@ async function delayIntentionally() {
 }
 
 export const pouchdbService = {
+  reinitializePouchdb() {
+    pouchdb = new PouchDB(LOCAL_DB_NAME);
+  },
+
   getDb() {
     return pouchdb;
   },
