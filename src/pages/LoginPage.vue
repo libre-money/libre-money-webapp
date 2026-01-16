@@ -3,11 +3,7 @@
     <q-card class="login-card">
       <div class="app-name q-pa-xs"><img class="logo" src="icons/logo.png" alt="LM" />Libre Money</div>
 
-      <div class="title q-pa-md">{{ loginPageMode === "resume" ? "Resume Session" : "Sign In" }}</div>
-
-      <!-- <div v-if="loginPageMode === 'login' && currentStep === 1" class="subtitle q-px-md q-pb-md">
-        <div class="text-body2 text-grey-7 text-center">Choose where your data is stored, or start using the app offline.</div>
-      </div> -->
+      <div class="title q-pa-md" v-if="loginPageMode === 'resume'">Resume Session</div>
 
       <!-- login page mode : login - START -->
       <template v-if="loginPageMode === 'login'">
@@ -20,10 +16,10 @@
                   <q-icon name="login" color="secondary" size="24px" class="q-mr-sm" />
                   <div>
                     <div class="text-subtitle1 text-weight-medium">Sign In</div>
-                    <div class="text-body2 text-grey-7">Access your existing account with your credentials</div>
+                    <div class="text-body2 text-grey-7">Sign in to take control of your finances and track your progress</div>
                   </div>
                 </div>
-                <q-btn unelevated color="secondary" label="Sign In" icon="arrow_forward" class="cta-button" />
+                <q-btn unelevated color="secondary" icon="arrow_forward" class="cta-button" />
               </div>
             </div>
             <div v-else key="expanded" class="expanded-section">
@@ -72,23 +68,35 @@
                 <div class="collapsed-description">
                   <q-icon name="offline_bolt" color="primary" size="24px" class="q-mr-sm" />
                   <div>
-                    <div class="text-subtitle1 text-weight-medium">Start Offline</div>
-                    <div class="text-body2 text-grey-7">Use Libre Money immediately with full offline functionality</div>
+                    <div class="text-subtitle1 text-weight-medium">Start using Libre Money</div>
+                    <div class="text-body2 text-grey-7">It's free, offline and private to get started.</div>
                   </div>
                 </div>
-                <q-btn unelevated color="primary" label="Start Offline" icon="arrow_forward" class="cta-button" />
+                <q-btn unelevated color="primary" icon="arrow_forward" class="cta-button" />
               </div>
             </div>
             <div v-else key="expanded" class="expanded-section">
               <div class="section-header q-mb-md">
-                <div class="text-h6">Try Libre Money Offline</div>
+                <div class="text-h6">Start using Libre Money</div>
               </div>
-              <div class="text-center q-mb-md">
+              <div class="q-mb-md">
                 <div class="text-body2 text-grey-7 q-mb-md">
-                  Start using Libre Money immediately with full offline functionality. Your data is stored securely on your device. You can sync to the cloud
-                  later or continue using offline mode.
+                  Start using Libre Money immediately with full functionality offline.
+                  <ul>
+                    <li>It's free, offline and private to get started.</li>
+                    <li>You can opt in to sign up for a cloud account now or later.</li>
+                    <li>Self-hosted options are available as well.</li>
+                  </ul>
                 </div>
-                <q-btn unelevated color="primary" label="Start In Offline Mode" icon="offline_bolt" class="full-width" @click="startOfflineSession" />
+                <q-btn
+                  unelevated
+                  color="primary"
+                  label="Start Your Journey"
+                  icon="offline_bolt"
+                  class="full-width"
+                  @click="startOfflineSession"
+                  style="margin-top: 8px"
+                />
               </div>
             </div>
           </transition>
@@ -104,22 +112,22 @@
                 <div class="collapsed-description">
                   <q-icon name="play_circle" color="purple" size="24px" class="q-mr-sm" />
                   <div>
-                    <div class="text-subtitle1 text-weight-medium">Explore Demo</div>
-                    <div class="text-body2 text-grey-7">Try Libre Money with sample data - no sign-up required</div>
+                    <div class="text-subtitle1 text-weight-medium">Explore Demo Playground</div>
+                    <div class="text-body2 text-grey-7">Look around and decide if Libre Money is right for you.</div>
                   </div>
                 </div>
-                <q-btn unelevated color="purple" label="Start Demo" icon="arrow_forward" class="cta-button" />
+                <q-btn unelevated color="purple" icon="arrow_forward" class="cta-button" />
               </div>
             </div>
             <div v-else key="expanded" class="expanded-section">
               <div class="section-header q-mb-md">
-                <div class="text-h6">Explore Libre Money Demo</div>
+                <div class="text-h6">Explore Libre Money</div>
               </div>
               <div class="text-center q-mb-md">
                 <div class="text-body2 text-grey-7 q-mb-md">
                   Try Libre Money with a fully populated demo account. Explore all features with sample data - no sign-up required!
                 </div>
-                <q-btn unelevated color="purple" label="Start Demo" icon="play_circle" class="full-width" @click="startDemoSession" />
+                <q-btn unelevated color="purple" label="Start Demo" icon="play_circle" class="full-width" @click="startDemoSession" style="margin-top: 8px" />
               </div>
             </div>
           </transition>
@@ -148,7 +156,6 @@
                 size="32px"
               />
             </template>
-            <div class="text-h6 q-mb-sm">Previous Session Detected</div>
             <div class="text-body2">
               A previous {{ previousSession?.user.isOfflineUser ? "offline" : "online" }} session was found. You can resume it or sign in with different
               credentials.

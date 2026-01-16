@@ -1,6 +1,6 @@
 <template>
   <q-page class="row items-center justify-evenly onboarding-page">
-    <q-card class="onboarding-card1">
+    <q-card class="onboarding-card">
       <!-- Header -->
       <div class="app-name q-pa-md">
         <img class="logo" src="icons/logo.png" alt="CK" />
@@ -203,11 +203,11 @@
             <div class="text-h6 q-mb-md">Setting Up Your Account</div>
             <div class="text-body2 text-grey-7 q-mb-lg">We're creating your default accounts and categories. This will only take a moment.</div>
           </template>
-
+          <!--
           <template v-if="setupComplete">
             <div class="text-h6 q-mb-md">Account Setup Complete</div>
             <div class="text-body2 text-grey-7 q-mb-lg">You can now start using Libre Money.</div>
-          </template>
+          </template> -->
 
           <!-- Progress Display -->
           <div class="progress-display q-mb-lg">
@@ -225,13 +225,6 @@
 
           <!-- Setup Complete -->
           <div v-if="setupComplete" class="setup-complete">
-            <q-banner class="bg-green-1 text-green-9 q-mb-lg" rounded>
-              <template v-slot:avatar>
-                <q-icon name="check_circle" color="green" size="32px" />
-              </template>
-              <div class="text-body1"><strong>Setup Complete!</strong> Your Libre Money account is ready to use.</div>
-            </q-banner>
-
             <div class="completion-summary q-mb-lg">
               <div class="text-subtitle1 q-mb-sm">What we've set up for you:</div>
               <div class="summary-grid">
@@ -476,6 +469,10 @@ async function goToDashboard() {
 </script>
 
 <style scoped lang="scss">
+.onboarding-card {
+  min-width: 360px;
+}
+
 .onboarding-page {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;

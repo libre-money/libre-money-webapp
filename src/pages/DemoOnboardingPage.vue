@@ -45,13 +45,6 @@
 
           <!-- Setup Complete -->
           <div v-if="setupComplete" class="setup-complete">
-            <q-banner class="bg-green-1 text-green-9 q-mb-lg" rounded>
-              <template v-slot:avatar>
-                <q-icon name="check_circle" color="green" size="32px" />
-              </template>
-              <div class="text-body1"><strong>Demo Setup Complete!</strong> You're ready to explore Libre Money.</div>
-            </q-banner>
-
             <div class="completion-summary q-mb-lg">
               <div class="text-subtitle1 q-mb-sm">What's included in your demo:</div>
               <div class="summary-grid">
@@ -94,7 +87,7 @@
       </q-card-section>
 
       <!-- Actions -->
-      <q-card-section class="step-actions row">
+      <q-card-section class="step-actions row" style="margin-top: -40px">
         <div class="spacer"></div>
         <q-btn v-if="setupComplete" unelevated color="primary" label="Go to Dashboard" @click="goToDashboard" icon-right="dashboard" size="md" />
       </q-card-section>
