@@ -50,6 +50,15 @@
               <q-item-label>{{ APP_BUILD_DATE }}</q-item-label>
             </q-item-section>
           </q-item>
+
+          <q-item v-if="userStore.isUserLoggedIn && userStore.currentUser?.domain">
+            <q-item-section>
+              <q-item-label class="text-weight-medium">Domain</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-item-label>{{ userStore.currentUser.domain }}</q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
 
         <div v-if="!isLoading" class="q-mt-md">
@@ -74,11 +83,13 @@ import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
 import { dialogService } from "src/services/dialog-service";
 import { localDataService } from "src/services/local-data-service";
+import { useUserStore } from "src/stores/user";
 import { getCurrentYear, sleep } from "src/utils/misc-utils";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
+const userStore = useUserStore();
 const isLoading = ref(false);
 const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
