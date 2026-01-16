@@ -286,7 +286,16 @@
         />
 
         <!-- Step 4 Dashboard Button -->
-        <q-btn v-if="setupComplete" unelevated color="primary" label="Go to Dashboard" @click="goToDashboard" icon-right="dashboard" size="md" />
+        <q-btn
+          v-if="setupComplete"
+          unelevated
+          color="primary"
+          label="Go to Dashboard"
+          @click="goToDashboard"
+          icon-right="dashboard"
+          size="md"
+          style="margin-top: -40px"
+        />
       </q-card-section>
     </q-card>
   </q-page>
