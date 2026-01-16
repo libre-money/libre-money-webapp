@@ -51,79 +51,81 @@
     </q-header>
 
     <q-drawer :dark="isDarkMode" v-model="leftDrawerOpen" show-if-above bordered v-if="userStore.isUserLoggedIn">
-      <q-list>
-        <q-item-label header> CORE </q-item-label>
-        <EssentialLink v-for="link in operationList" :key="link.title" v-bind="link" />
-      </q-list>
+      <div class="drawer-content">
+        <q-list>
+          <q-item-label header> CORE </q-item-label>
+          <EssentialLink v-for="link in operationList" :key="link.title" v-bind="link" />
+        </q-list>
 
-      <q-list>
-        <q-item-label header> ENTITIES </q-item-label>
-        <EssentialLink v-for="link in entityList" :key="link.title" v-bind="link" />
-      </q-list>
+        <q-list>
+          <q-item-label header> ENTITIES </q-item-label>
+          <EssentialLink v-for="link in entityList" :key="link.title" v-bind="link" />
+        </q-list>
 
-      <q-list>
-        <q-item clickable @click="toggleReportsExpanded" class="accounting-header">
-          <q-item-section>
-            <q-item-label header>REPORTS</q-item-label>
-          </q-item-section>
-          <q-item-section side>
-            <q-icon :name="userInterfaceStore.reportsExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
-          </q-item-section>
-        </q-item>
-        <transition name="slide-down">
-          <div v-show="userInterfaceStore.reportsExpanded">
-            <EssentialLink v-for="link in reportList" :key="link.title" v-bind="link" />
-          </div>
-        </transition>
-      </q-list>
+        <q-list>
+          <q-item clickable @click="toggleReportsExpanded" class="accounting-header">
+            <q-item-section>
+              <q-item-label header>REPORTS</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-icon :name="userInterfaceStore.reportsExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+            </q-item-section>
+          </q-item>
+          <transition name="slide-down">
+            <div v-show="userInterfaceStore.reportsExpanded">
+              <EssentialLink v-for="link in reportList" :key="link.title" v-bind="link" />
+            </div>
+          </transition>
+        </q-list>
 
-      <q-list>
-        <q-item clickable @click="toggleAccountingExpanded" class="accounting-header">
-          <q-item-section>
-            <q-item-label header>ACCOUNTING</q-item-label>
-          </q-item-section>
-          <q-item-section side>
-            <q-icon :name="userInterfaceStore.accountingExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
-          </q-item-section>
-        </q-item>
-        <transition name="slide-down">
-          <div v-show="userInterfaceStore.accountingExpanded">
-            <EssentialLink v-for="link in accountingList" :key="link.title" v-bind="link" />
-          </div>
-        </transition>
-      </q-list>
+        <q-list>
+          <q-item clickable @click="toggleAccountingExpanded" class="accounting-header">
+            <q-item-section>
+              <q-item-label header>ACCOUNTING</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-icon :name="userInterfaceStore.accountingExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+            </q-item-section>
+          </q-item>
+          <transition name="slide-down">
+            <div v-show="userInterfaceStore.accountingExpanded">
+              <EssentialLink v-for="link in accountingList" :key="link.title" v-bind="link" />
+            </div>
+          </transition>
+        </q-list>
 
-      <q-list>
-        <q-item clickable @click="toggleAdvancedExpanded" class="accounting-header">
-          <q-item-section>
-            <q-item-label header>ADVANCED</q-item-label>
-          </q-item-section>
-          <q-item-section side>
-            <q-icon :name="userInterfaceStore.advancedExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
-          </q-item-section>
-        </q-item>
-        <transition name="slide-down">
-          <div v-show="userInterfaceStore.advancedExpanded">
-            <EssentialLink v-for="link in advancedList" :key="link.title" v-bind="link" />
-          </div>
-        </transition>
-      </q-list>
+        <q-list>
+          <q-item clickable @click="toggleAdvancedExpanded" class="accounting-header">
+            <q-item-section>
+              <q-item-label header>ADVANCED</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-icon :name="userInterfaceStore.advancedExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+            </q-item-section>
+          </q-item>
+          <transition name="slide-down">
+            <div v-show="userInterfaceStore.advancedExpanded">
+              <EssentialLink v-for="link in advancedList" :key="link.title" v-bind="link" />
+            </div>
+          </transition>
+        </q-list>
 
-      <q-list>
-        <q-item-label header> MISC </q-item-label>
-        <EssentialLink v-for="link in miscList" :key="link.title" v-bind="link" />
-      </q-list>
+        <q-list>
+          <q-item-label header> MISC </q-item-label>
+          <EssentialLink v-for="link in miscList" :key="link.title" v-bind="link" />
+        </q-list>
 
-      <div style="flex: 1"></div>
+        <div style="flex: 1"></div>
 
-      <div class="drawer-bottom">
-        <div class="app-version">
-          <img class="logo" src="icons/android-chrome-192x192.png" alt="LM" />
-          <div @click="verionClicked" style="cursor: pointer">
-            <div style="font-size: 16px">Libre Money</div>
-            <div style="font-size: 10px; color: rgb(187, 186, 186)">Version: {{ APP_VERSION }}</div>
-            <div v-if="userStore.currentUser?.domain" style="font-size: 10px; color: rgb(187, 186, 186); margin-top: 4px">
-              Domain: {{ userStore.currentUser.domain }}
+        <div class="drawer-bottom">
+          <div class="app-version">
+            <img class="logo" src="icons/android-chrome-192x192.png" alt="LM" />
+            <div @click="verionClicked" style="cursor: pointer">
+              <div style="font-size: 16px">Libre Money</div>
+              <div style="font-size: 10px; color: rgb(187, 186, 186)">Version: {{ APP_VERSION }}</div>
+              <div v-if="userStore.currentUser?.domain" style="font-size: 10px; color: rgb(187, 186, 186); margin-top: 4px">
+                Domain: {{ userStore.currentUser.domain }}
+              </div>
             </div>
           </div>
         </div>
@@ -581,6 +583,13 @@ body.body--dark .drawer-bottom {
 .accounting-chevron {
   font-size: 20px;
   opacity: 0.7;
+}
+
+.drawer-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100%;
 }
 
 .slide-down-enter-active {
