@@ -8,8 +8,15 @@
           {{ $route.meta.title || "Libre Money" }}
         </q-toolbar-title>
 
+        <!-- Demo Mode Indicator -->
+        <div v-if="userStore.currentUser?.isDemoUser" class="demo-indicator-container" @click="goToGetAccountPage">
+          <q-icon name="play_circle" color="purple" size="20px" />
+          <span class="demo-indicator-text">Demo</span>
+          <q-tooltip>Get your own account</q-tooltip>
+        </div>
+
         <!-- Offline Indicator -->
-        <div v-if="userStore.currentUser?.isOfflineUser" class="offline-indicator-container" @click="goToOnlinePage">
+        <div v-else-if="userStore.currentUser?.isOfflineUser" class="offline-indicator-container" @click="goToOnlinePage">
           <q-icon name="offline_bolt" color="orange" size="20px" />
           <span class="offline-indicator-text">Offline</span>
           <q-tooltip>Click to go online and sync across devices</q-tooltip>
@@ -22,7 +29,10 @@
         </div>
 
         <div v-if="$route.meta.title && !isDevDatabase && !isDevMachine">Libre Money</div>
-        <div class="dev-mode-notification" v-if="isDevDatabase">DEV DB</div>
+        <div class="dev-mode-notification" v-if="isDevDatabase || isDevMachine">
+          <div v-if="isDevDatabase">DEV DB</div>
+          <div v-if="isDevMachine">DEV ENV</div>
+        </div>
         <div class="dev-mode-warning" v-if="!isDevDatabase && isDevMachine">PROD DB in DEV ENV</div>
 
         <!-- Theme Toggle -->
@@ -155,6 +165,7 @@ import { useUserInterfaceStore } from "src/stores/user-interface-store";
 import { useUserStore } from "src/stores/user";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { OFFLINE_DOMAIN } from "src/constants/auth-constants";
 
 const route = useRoute();
 
@@ -299,7 +310,7 @@ const advancedList = computed(() => {
       link: "#/text-import-rules",
     },
   ];
-  if (userStore.currentUser?.isOfflineUser) {
+  if (userStore.currentUser?.isOfflineUser && !userStore.currentUser?.isDemoUser) {
     list.push({
       title: "Go Online",
       caption: "",
@@ -366,7 +377,8 @@ function toggleDarkMode() {
 function checkIfInDevMode() {
   isDevDatabase.value = false;
   isDevMachine.value = false;
-  if (userStore.user && userStore.user.domain.indexOf("test") > -1) {
+  const testDomainStrings = ["test", "debug", "sit-", "dev", OFFLINE_DOMAIN];
+  if (userStore.user && userStore.user.domain && testDomainStrings.some((testDomainString) => String(userStore.user?.domain).indexOf(testDomainString) > -1)) {
     isDevDatabase.value = true;
   }
 
@@ -449,6 +461,10 @@ async function goToOnlinePage() {
   await router.push({ name: "go-online" });
 }
 
+async function goToGetAccountPage() {
+  await router.push({ name: "get-account" });
+}
+
 function handleRouteChange(newPath: string, oldPath: string | null) {
   const newRoute = route;
   const oldRoute = router.resolve(oldPath || "/");
@@ -487,6 +503,28 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
+.demo-indicator-container {
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: rgba(156, 39, 176, 0.2);
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(156, 39, 176, 0.3);
+  }
+}
+
+.demo-indicator-text {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .offline-indicator-container {
   display: flex;
   align-items: center;
@@ -554,6 +592,9 @@ body.body--dark .drawer-bottom {
   color: black;
   padding: 0px 8px;
   font-weight: bold;
+  font-size: 10px;
+  text-align: center;
+  border-radius: 4px;
 }
 
 .dev-mode-warning {

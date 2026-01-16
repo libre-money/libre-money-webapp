@@ -3,15 +3,22 @@ import { authService } from "./auth-service";
 import { pouchdbService } from "./pouchdb-service";
 
 class LocalDataService {
-  async removeLocalData() {
-    const answer = await dialogService.confirm("Remove Local Data", "Are you sure you want to remove all local data? Any un-synced data will be lost forever.");
-    if (!answer) return;
+  async removeLocalData(promptUser = true, reloadWindow = true, targetPath = "") {
+    if (promptUser) {
+      const answer = await dialogService.confirm(
+        "Remove Local Data",
+        "Are you sure you want to remove all local data? Any un-synced data will be lost forever."
+      );
+      if (!answer) return;
+    }
 
     try {
       await pouchdbService.getDb().destroy();
     } catch (error) {
       console.error(error);
     }
+
+    pouchdbService.reinitializePouchdb();
 
     try {
       await authService.logout();
@@ -22,10 +29,12 @@ class LocalDataService {
     localStorage.clear();
     sessionStorage.clear();
 
-    window.location.hash = "";
+    window.location.hash = targetPath || "";
 
-    // @ts-ignore
-    window.location.reload(true);
+    if (reloadWindow) {
+      // @ts-ignore
+      window.location.reload(true);
+    }
   }
 }
 
