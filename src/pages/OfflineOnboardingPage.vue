@@ -307,10 +307,14 @@ import { CURRENCY_MAP, CURRENCY_OPTIONS } from "src/constants/onboarding-constan
 import { Currency } from "src/models/currency";
 import { dialogService } from "src/services/dialog-service";
 import { OnboardingProgress, onboardingService } from "src/services/onboarding-service";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { useQuasar } from "quasar";
+import { useUserStore } from "src/stores/user";
 
 const router = useRouter();
+const $q = useQuasar();
+const userStore = useUserStore();
 
 // Step management
 const currentStep = ref(1);

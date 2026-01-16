@@ -54,10 +54,32 @@
             </q-item>
           </q-list>
 
-          <div class="action-buttons q-gutter-md q-pa-md">
-            <q-btn unelevated color="primary" label="Get Online Credentials" icon="cloud_upload" @click="getOnlineCredentials" class="full-width" />
+          <!-- Message for users who have already signed up -->
+          <div v-if="userStore.currentUser?.isOfflineUser && userStore.currentUser?.hasSignedUpForCloudAccount" class="q-pa-md">
+            <q-banner class="bg-green-1 text-green-9 q-mb-md" rounded>
+              <template v-slot:avatar>
+                <q-icon name="check_circle" color="green" size="24px" />
+              </template>
+              <div class="text-body1 text-weight-medium q-mb-sm">Request Submitted</div>
+              <div class="text-body2">
+                Your cloud account request has been submitted. You should expect an email at
+                <strong>{{ userStore.currentUser?.cloudAccountEmail }}</strong> within two working days with your account details.
+              </div>
+            </q-banner>
+          </div>
 
-            <q-btn outline color="secondary" label="Self-Host Options" icon="dns" @click="getSelfHostOptions" class="full-width" />
+          <div class="action-buttons q-gutter-md q-pa-md">
+            <q-btn
+              v-if="userStore.currentUser?.isOfflineUser && !userStore.currentUser?.hasSignedUpForCloudAccount"
+              unelevated
+              color="positive"
+              label="Sign Up for a Cloud Account"
+              icon="cloud"
+              @click="showCloudAccountSignup"
+              class="full-width"
+            />
+
+            <q-btn outline color="secondary" label="Self-Hosting Options" icon="dns" @click="getSelfHostOptions" class="full-width" />
 
             <q-separator class="q-my-md" />
 
@@ -121,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { validators } from "src/utils/validators";
 import { offlineToOnlineMigrationService } from "src/services/offline-to-online-migration-service";
@@ -129,11 +151,14 @@ import { dialogService, NotificationType } from "src/services/dialog-service";
 import { GO_ONLINE_REGISTRATION_URL, GO_ONLINE_SELF_HOST_URL } from "src/constants/config-constants";
 import { authService } from "src/services/auth-service";
 import { useQuasar } from "quasar";
+import { useUserStore } from "src/stores/user";
+import CloudAccountSignupDialog from "src/components/CloudAccountSignupDialog.vue";
 
 type ViewType = "benefits" | "credentials";
 
 const router = useRouter();
 const $q = useQuasar();
+const userStore = useUserStore();
 
 // State
 const currentView = ref<ViewType>("benefits");
@@ -156,12 +181,14 @@ function goToBenefitsView() {
   currentView.value = "benefits";
 }
 
-function getOnlineCredentials() {
-  window.open(GO_ONLINE_REGISTRATION_URL, "_blank");
-}
-
 function getSelfHostOptions() {
   window.open(GO_ONLINE_SELF_HOST_URL, "_blank");
+}
+
+function showCloudAccountSignup() {
+  $q.dialog({
+    component: CloudAccountSignupDialog,
+  });
 }
 
 async function onMigrationSubmit() {
