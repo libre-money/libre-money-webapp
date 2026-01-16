@@ -10,7 +10,7 @@
         <div class="step-title">{{ stepTitle }}</div>
         <div class="step-indicator">
           <q-linear-progress :value="stepProgress" color="primary" size="4px" class="q-mt-sm" />
-          <div class="text-caption text-center q-mt-xs">Step {{ currentStep }} of 4</div>
+          <div class="text-caption text-center q-mt-xs">Step {{ currentStep }} of 5</div>
         </div>
       </div>
 
@@ -196,8 +196,38 @@
         </div>
       </q-card-section>
 
-      <!-- Step 4: Setup Progress -->
+      <!-- Step 4: Optional Telemetry -->
       <q-card-section v-if="currentStep === 4" class="step-content">
+        <div class="telemetry-section">
+          <div class="text-h6 q-mb-md">One-time Telemetry (Optional)</div>
+          <div class="text-body2 text-grey-7 q-mb-lg">
+            This is <strong>entirely optional</strong>. If you agree, it'll allow us know that we have a new user and motivate us to improve Libre Money.
+          </div>
+
+          <q-form class="telemetry-form">
+            <q-checkbox v-model="allowOneTimeTelemetry" label="Allow one-time telemetry" class="q-mb-md" />
+
+            <div class="text-body2 text-grey-7 q-mb-lg">You can optionally provide your email address if you want to hear from us in the future.</div>
+
+            <q-input
+              standout="bg-primary text-white"
+              v-model="telemetryEmail"
+              label="Email Address (Optional)"
+              placeholder="Enter your email"
+              type="email"
+              :rules="telemetryEmailRules"
+              class="q-mb-md"
+            >
+              <template v-slot:prepend>
+                <q-icon name="email" />
+              </template>
+            </q-input>
+          </q-form>
+        </div>
+      </q-card-section>
+
+      <!-- Step 5: Setup Progress -->
+      <q-card-section v-if="currentStep === 5" class="step-content">
         <div class="setup-section">
           <template v-if="!setupComplete">
             <div class="text-h6 q-mb-md">Setting Up Your Account</div>
@@ -280,10 +310,11 @@
           unelevated
           color="primary"
           label="Continue"
-          @click="proceedToSetup"
+          @click="proceedToTelemetry"
           :disabled="!isCurrencyValid"
           icon-right="arrow_forward"
         />
+        <q-btn v-if="currentStep === 4" unelevated color="primary" label="Continue" @click="proceedToSetup" icon-right="arrow_forward" />
 
         <!-- Step 4 Dashboard Button -->
         <q-btn
@@ -311,6 +342,7 @@ import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 import { useUserStore } from "src/stores/user";
+import { authService, TelemetryCurrency } from "src/services/auth-service";
 
 const router = useRouter();
 const $q = useQuasar();
@@ -345,6 +377,8 @@ const stepTitle = computed(() => {
     case 3:
       return "Select Currency";
     case 4:
+      return "Help Us Improve";
+    case 5:
       return "Account Setup";
     default:
       return "Libre Money";
@@ -352,7 +386,7 @@ const stepTitle = computed(() => {
 });
 
 const stepProgress = computed(() => {
-  return currentStep.value / 4;
+  return currentStep.value / 5;
 });
 
 function validateUsername(username: string): string | null {
@@ -386,9 +420,22 @@ const usernameRules = [(val: string) => validateUsername(val) || true];
 // Custom currency validation rules
 const customCurrencyRules = [(val: string) => (val && val.trim()) || "This field is required"];
 
+// Telemetry email validation rules (optional - only validate if provided)
+const telemetryEmailRules = [
+  (val: string) => {
+    if (!val || val.trim() === "") return true; // Optional field
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(val) || "Please enter a valid email address";
+  },
+];
+
+// Telemetry
+const telemetryEmail = ref("");
+const allowOneTimeTelemetry = ref(false);
+
 // Methods
 function nextStep() {
-  if (currentStep.value < 4) {
+  if (currentStep.value < 5) {
     currentStep.value++;
   }
 }
@@ -425,6 +472,18 @@ function createCurrencyObject(): Currency {
   }
 }
 
+function createTelemetryCurrency(): TelemetryCurrency {
+  if (selectedCurrency.value === "custom") {
+    return {
+      name: customCurrencyName.value.trim(),
+      sign: customCurrencySign.value.trim(),
+    };
+  } else {
+    // Return the currency code as a string for predefined currencies
+    return selectedCurrency.value;
+  }
+}
+
 async function createAccount() {
   const validation = validateUsername(username.value);
   if (validation) {
@@ -447,14 +506,47 @@ async function createAccount() {
   }
 }
 
-async function proceedToSetup() {
+async function proceedToTelemetry() {
   if (!isCurrencyValid.value) {
     return;
   }
 
+  // Move to telemetry step
+  currentStep.value = 4;
+}
+
+async function proceedToSetup() {
   try {
+    // Store email in user store if provided
+    if (telemetryEmail.value.trim()) {
+      const currentUser = userStore.currentUser;
+      if (currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          cloudAccountEmail: telemetryEmail.value.trim().toLowerCase(),
+        };
+        userStore.setUser(updatedUser);
+      }
+    }
+
+    // Submit telemetry if user consented
+    if (allowOneTimeTelemetry.value) {
+      const telemetryCurrency = createTelemetryCurrency();
+      const telemetryPayload = {
+        username: username.value,
+        currency: telemetryCurrency,
+        ...(telemetryEmail.value.trim() && { email: telemetryEmail.value }),
+      };
+
+      // Submit telemetry (fire and forget - don't block on errors)
+      authService.submitTelemetry(telemetryPayload).catch((error) => {
+        console.error("Telemetry submission error (non-blocking):", error);
+        // Silently fail - don't interrupt user flow
+      });
+    }
+
     // Move to setup step
-    currentStep.value = 4;
+    currentStep.value = 5;
 
     // Create currency object
     const currency = createCurrencyObject();
@@ -625,6 +717,18 @@ async function goToDashboard() {
       &:last-child {
         margin-bottom: 0;
       }
+    }
+  }
+}
+
+// Step 4 - Telemetry
+.telemetry-section {
+  max-width: 500px;
+  margin: 0 auto;
+
+  .telemetry-form {
+    .q-input {
+      margin-bottom: 16px;
     }
   }
 }

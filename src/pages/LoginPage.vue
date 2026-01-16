@@ -20,7 +20,7 @@
                     <q-icon name="login" color="secondary" size="24px" class="q-mr-sm" />
                     <div>
                       <div class="text-subtitle1 text-weight-medium">Sign In</div>
-                      <div class="text-body2 text-grey-7">Sign in to take control of your finances and track your progress</div>
+                      <div class="text-body2 text-grey-7">Sign in if you are already a member of our cloud service.</div>
                     </div>
                   </div>
                   <q-btn unelevated color="secondary" icon="arrow_forward" class="cta-button" />
@@ -82,7 +82,7 @@
                 </div>
                 <div class="q-mb-md">
                   <div class="text-body2 text-grey-7 q-mb-md">
-                    Start using Libre Money immediately with full functionality offline.
+                    Start using Libre Money to take control of your finances.
                     <ul>
                       <li>It's free, offline and private to get started.</li>
                       <li>You can opt in to sign up for a cloud account now or later.</li>
@@ -263,17 +263,13 @@ const loginPageMode = computed(() => {
 
 const isLoading = ref(false);
 
-// Section expansion state - always have one expanded, default to 'login'
-const expandedSection = ref<"login" | "offline" | "demo">("login");
+// Section expansion state - always have one expanded, default to 'offline'
+const expandedSection = ref<"login" | "offline" | "demo">("offline");
 
 // Computed property to reorder sections so expanded section is always first
 const orderedSections = computed(() => {
-  const sections: Array<"login" | "offline" | "demo"> = ["login", "offline", "demo"];
-  return sections.sort((a, b) => {
-    if (a === expandedSection.value) return -1;
-    if (b === expandedSection.value) return 1;
-    return 0;
-  });
+  const sections: Array<"login" | "offline" | "demo"> = ["offline", "login", "demo"];
+  return sections;
 });
 
 // ------------------- login page mode : login -------------------
@@ -537,7 +533,6 @@ function useDifferentCredentialsClicked() {
 
   .expanded-section {
     padding-top: 8px;
-    min-height: 320px;
 
     .section-header {
       display: flex;

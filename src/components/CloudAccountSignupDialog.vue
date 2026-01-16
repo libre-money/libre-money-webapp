@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { useUserStore } from "src/stores/user";
 import { dialogService, NotificationType } from "src/services/dialog-service";
@@ -83,6 +83,14 @@ const signupForm = ref<QForm | null>(null);
 const fullName = ref("");
 const email = ref("");
 const isSubmitting = ref(false);
+
+// Prefill email from user store if available
+onMounted(() => {
+  const currentUser = userStore.currentUser;
+  if (currentUser?.cloudAccountEmail) {
+    email.value = currentUser.cloudAccountEmail;
+  }
+});
 
 const isFormValid = computed(() => {
   return fullName.value.trim().length > 0 && email.value.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
@@ -107,10 +115,11 @@ async function onSubmit() {
     // Track that the user has signed up and store their email
     const currentUser = userStore.currentUser;
     if (currentUser) {
+      const emailValue = email.value.trim().toLowerCase();
       const updatedUser = {
         ...currentUser,
         hasSignedUpForCloudAccount: true,
-        cloudAccountEmail: email.value.trim().toLowerCase(),
+        cloudAccountEmail: emailValue,
       };
       userStore.setUser(updatedUser);
     }
