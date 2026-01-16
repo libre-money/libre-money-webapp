@@ -62,18 +62,51 @@
       </q-list>
 
       <q-list>
-        <q-item-label header> REPORTS </q-item-label>
-        <EssentialLink v-for="link in reportList" :key="link.title" v-bind="link" />
+        <q-item clickable @click="toggleReportsExpanded" class="accounting-header">
+          <q-item-section>
+            <q-item-label header>REPORTS</q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-icon :name="userInterfaceStore.reportsExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+          </q-item-section>
+        </q-item>
+        <transition name="slide-down">
+          <div v-show="userInterfaceStore.reportsExpanded">
+            <EssentialLink v-for="link in reportList" :key="link.title" v-bind="link" />
+          </div>
+        </transition>
       </q-list>
 
       <q-list>
-        <q-item-label header> ACCOUNTING </q-item-label>
-        <EssentialLink v-for="link in accountingList" :key="link.title" v-bind="link" />
+        <q-item clickable @click="toggleAccountingExpanded" class="accounting-header">
+          <q-item-section>
+            <q-item-label header>ACCOUNTING</q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-icon :name="userInterfaceStore.accountingExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+          </q-item-section>
+        </q-item>
+        <transition name="slide-down">
+          <div v-show="userInterfaceStore.accountingExpanded">
+            <EssentialLink v-for="link in accountingList" :key="link.title" v-bind="link" />
+          </div>
+        </transition>
       </q-list>
 
       <q-list>
-        <q-item-label header> ADVANCED </q-item-label>
-        <EssentialLink v-for="link in advancedList" :key="link.title" v-bind="link" />
+        <q-item clickable @click="toggleAdvancedExpanded" class="accounting-header">
+          <q-item-section>
+            <q-item-label header>ADVANCED</q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-icon :name="userInterfaceStore.advancedExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+          </q-item-section>
+        </q-item>
+        <transition name="slide-down">
+          <div v-show="userInterfaceStore.advancedExpanded">
+            <EssentialLink v-for="link in advancedList" :key="link.title" v-bind="link" />
+          </div>
+        </transition>
       </q-list>
 
       <q-list>
@@ -116,6 +149,7 @@ import { globalErrorService } from "src/services/global-error-service";
 import { syncService } from "src/services/sync-service";
 import { setCssVar } from "quasar";
 import { useSettingsStore } from "src/stores/settings";
+import { useUserInterfaceStore } from "src/stores/user-interface-store";
 import { useUserStore } from "src/stores/user";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -313,6 +347,7 @@ const isDevMachine = ref(false);
 
 const userStore = useUserStore();
 const settingsStore = useSettingsStore();
+const userInterfaceStore = useUserInterfaceStore();
 const $q = useQuasar();
 const router = useRouter();
 
@@ -394,6 +429,18 @@ async function verionClicked() {
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
+}
+
+function toggleAccountingExpanded() {
+  userInterfaceStore.setAccountingExpanded(!userInterfaceStore.accountingExpanded);
+}
+
+function toggleReportsExpanded() {
+  userInterfaceStore.setReportsExpanded(!userInterfaceStore.reportsExpanded);
+}
+
+function toggleAdvancedExpanded() {
+  userInterfaceStore.setAdvancedExpanded(!userInterfaceStore.advancedExpanded);
 }
 
 async function goToOnlinePage() {
@@ -512,5 +559,53 @@ body.body--dark .drawer-bottom {
   color: black;
   padding: 0px 8px;
   font-weight: bold;
+}
+
+.accounting-header {
+  padding: 0;
+  min-height: auto;
+
+  .q-item__section {
+    padding: 0;
+  }
+
+  .q-item__section--main {
+    flex: 1;
+  }
+
+  .q-item__section--side {
+    padding-right: 16px;
+  }
+}
+
+.accounting-chevron {
+  font-size: 20px;
+  opacity: 0.7;
+}
+
+.slide-down-enter-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.slide-down-leave-active {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  max-height: 0;
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.slide-down-enter-to,
+.slide-down-leave-from {
+  opacity: 1;
+  max-height: 500px;
 }
 </style>
