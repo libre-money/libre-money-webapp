@@ -43,6 +43,12 @@ export default route(function (/* { store, ssrContext } */) {
     }
 
     const isUserLoggedIn = useUserStore().isUserLoggedIn;
+
+    // Redirect logged-in users away from the login page
+    if (isUserLoggedIn && to.name === "login") {
+      return next({ path: "/" });
+    }
+
     const doesRouteRequireAuthentication = to.matched.some((record) => record.meta.requiresAuthentication);
     if (doesRouteRequireAuthentication && !isUserLoggedIn) {
       return next({ name: "login", query: { next: to.fullPath } });
