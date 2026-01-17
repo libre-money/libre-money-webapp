@@ -225,7 +225,7 @@
                 <div class="summary-item">
                   <q-icon name="attach_money" color="green" />
                   <span>Selected currency ({{ selectedCurrency === "custom" ? customCurrencySign : selectedCurrency
-                    }})</span>
+                  }})</span>
                 </div>
                 <div class="summary-item">
                   <q-icon name="category" color="blue" />
@@ -373,7 +373,7 @@ const telemetryEmailRules = [
 
 // Telemetry
 const telemetryEmail = ref("");
-const allowOneTimeTelemetry = ref(false);
+const allowOneTimeTelemetry = ref(true);
 
 // Methods
 function nextStep() {
