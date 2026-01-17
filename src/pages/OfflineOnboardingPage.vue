@@ -196,14 +196,14 @@
             <div class="text-body2 text-grey-7 q-mb-lg">We're creating your default accounts and categories. This will
               only take a moment.</div>
           </template>
-          <!--
+
           <template v-if="setupComplete">
             <div class="text-h6 q-mb-md">Account Setup Complete</div>
             <div class="text-body2 text-grey-7 q-mb-lg">You can now start using Libre Money.</div>
-          </template> -->
+          </template>
 
           <!-- Progress Display -->
-          <div class="progress-display q-mb-lg">
+          <div v-if="!setupComplete" class="progress-display q-mb-lg">
             <div class="text-center q-mb-md">
               <q-circular-progress :value="progressValue" size="80px" :thickness="0.15" color="primary"
                 track-color="grey-3" class="q-ma-md">
@@ -240,12 +240,8 @@
                   <span>7 income sources</span>
                 </div>
                 <div class="summary-item">
-                  <q-icon name="business" color="red" />
-                  <span>Sample parties</span>
-                </div>
-                <div class="summary-item">
                   <q-icon name="label" color="pink" />
-                  <span>Useful tags</span>
+                  <span>Useful tags and parties</span>
                 </div>
               </div>
             </div>
@@ -256,22 +252,22 @@
       <!-- Actions -->
       <q-card-section class="step-actions row">
         <q-btn v-if="currentStep > 1 && !setupComplete && !isCreatingAccount" flat label="Back" color="grey-7"
-          @click="goBack" />
+          @click="goBack" class="back-button" />
         <div class="spacer"></div>
 
         <!-- Step 1, 2, 3 Next Buttons -->
         <q-btn v-if="currentStep === 1" unelevated color="primary" label="Get Started" @click="nextStep"
-          icon-right="arrow_forward" />
+          icon-right="arrow_forward" class="primary-button" />
         <q-btn v-if="currentStep === 2" unelevated color="primary" label="Create Account" @click="createAccount"
-          :disabled="!isUsernameValid" :loading="isCreatingAccount" icon-right="arrow_forward" />
+          :disabled="!isUsernameValid" :loading="isCreatingAccount" icon-right="arrow_forward" class="primary-button" />
         <q-btn v-if="currentStep === 3" unelevated color="primary" label="Continue" @click="proceedToTelemetry"
-          :disabled="!isCurrencyValid" icon-right="arrow_forward" />
+          :disabled="!isCurrencyValid" icon-right="arrow_forward" class="primary-button" />
         <q-btn v-if="currentStep === 4" unelevated color="primary" label="Continue" @click="proceedToSetup"
-          icon-right="arrow_forward" />
+          icon-right="arrow_forward" class="primary-button" />
 
         <!-- Step 4 Dashboard Button -->
         <q-btn v-if="setupComplete" unelevated color="primary" label="Go to Dashboard" @click="goToDashboard"
-          icon-right="dashboard" size="md" style="margin-top: -40px" />
+          icon-right="dashboard" class="primary-button dashboard-button" />
       </q-card-section>
     </q-card>
   </q-page>
@@ -1013,6 +1009,31 @@ async function goToDashboard() {
     @media (max-width: 600px) {
       width: 100%;
       font-size: 16px;
+    }
+  }
+
+  // Reverse order on mobile: primary buttons first, back button last
+  .primary-button {
+    @media (max-width: 600px) {
+      order: 1;
+    }
+  }
+
+  .back-button {
+    @media (max-width: 600px) {
+      order: 2;
+    }
+  }
+
+  .dashboard-button {
+    margin-top: -20px;
+
+    // Reset to normal size on desktop (remove md size effect)
+    @media (min-width: 601px) {
+      margin-top: 0px;
+      min-height: 36px;
+      padding: 8px 16px;
+      font-size: 14px;
     }
   }
 
