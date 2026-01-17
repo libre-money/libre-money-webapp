@@ -60,9 +60,9 @@
         <q-separator />
 
         <!-- Offline Mode Section -->
-        <q-card-section class="offline-section accordion-section" :class="{ expanded: expandedSection === 'offline' }">
+        <q-card-section class="offline-section accordion-section" :class="{ expanded: expandedSection === 'offline', disabled: isLoading }">
           <transition name="collapse" mode="out-in">
-            <div v-if="expandedSection !== 'offline'" key="collapsed" class="collapsed-section" @click="expandedSection = 'offline'">
+            <div v-if="expandedSection !== 'offline'" key="collapsed" class="collapsed-section" @click="isLoading ? null : expandedSection = 'offline'">
               <div class="collapsed-content">
                 <div class="collapsed-description">
                   <q-icon name="offline_bolt" color="primary" size="24px" class="q-mr-sm" />
@@ -104,9 +104,9 @@
         <q-separator />
 
         <!-- Demo Section -->
-        <q-card-section class="demo-section accordion-section" :class="{ expanded: expandedSection === 'demo' }">
+        <q-card-section class="demo-section accordion-section" :class="{ expanded: expandedSection === 'demo', disabled: isLoading }">
           <transition name="collapse" mode="out-in">
-            <div v-if="expandedSection !== 'demo'" key="collapsed" class="collapsed-section" @click="expandedSection = 'demo'">
+            <div v-if="expandedSection !== 'demo'" key="collapsed" class="collapsed-section" @click="isLoading ? null : expandedSection = 'demo'">
               <div class="collapsed-content">
                 <div class="collapsed-description">
                   <q-icon name="play_circle" color="purple" size="24px" class="q-mr-sm" />
@@ -486,13 +486,19 @@ function useDifferentCredentialsClicked() {
 }
 
 .accordion-section {
-  transition: background-color 0.3s ease, border-radius 0.3s ease;
+  transition: background-color 0.3s ease, border-radius 0.3s ease, opacity 0.3s ease;
   cursor: pointer;
 
   &.expanded {
     background-color: rgba(0, 0, 0, 0.02);
     border-radius: 8px;
     cursor: default;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
   }
 
   .collapsed-section {
