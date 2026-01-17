@@ -16,7 +16,8 @@
         </div>
 
         <!-- Offline Indicator -->
-        <div v-else-if="userStore.currentUser?.isOfflineUser" class="offline-indicator-container" @click="goToOnlinePage">
+        <div v-else-if="userStore.currentUser?.isOfflineUser" class="offline-indicator-container"
+          @click="goToOnlinePage">
           <q-icon name="offline_bolt" color="orange" size="20px" />
           <span class="offline-indicator-text">Offline</span>
           <q-tooltip>Click to go online and sync across devices</q-tooltip>
@@ -28,12 +29,14 @@
           <span class="sync-spinner-text">Syncing...</span>
         </div>
 
-        <div v-if="$route.meta.title && !isDevDatabase && !isDevMachine">Libre Money</div>
-        <div class="dev-mode-notification" v-if="isDevDatabase || isDevMachine">
+        <div v-if="$route.meta.title && !isDevDatabase && !isDevEnvironment">Libre Money</div>
+        <div class="dev-mode-notification" @click="hideDevModeNotificationClicked"
+          v-if="(isDevDatabase || isDevEnvironment || isSitEnvironment) && !hideDevModeNotification">
           <div v-if="isDevDatabase">DEV DB</div>
-          <div v-if="isDevMachine">DEV ENV</div>
+          <div v-if="isDevEnvironment">DEV ENV</div>
+          <div v-if="isSitEnvironment">SIT</div>
         </div>
-        <div class="dev-mode-warning" v-if="!isDevDatabase && isDevMachine">PROD DB in DEV ENV</div>
+        <div class="dev-mode-warning" v-if="!isDevDatabase && isDevEnvironment">PROD DB in DEV ENV</div>
 
         <!-- Theme Toggle -->
         <q-btn flat dense round :icon="isDarkMode ? 'light_mode' : 'dark_mode'" @click="toggleDarkMode">
@@ -78,7 +81,8 @@
               <q-item-label header>REPORTS</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-icon :name="userInterfaceStore.reportsExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+              <q-icon :name="userInterfaceStore.reportsExpanded ? 'expand_less' : 'expand_more'"
+                class="accounting-chevron" />
             </q-item-section>
           </q-item>
           <transition name="slide-down">
@@ -94,7 +98,8 @@
               <q-item-label header>ACCOUNTING</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-icon :name="userInterfaceStore.accountingExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+              <q-icon :name="userInterfaceStore.accountingExpanded ? 'expand_less' : 'expand_more'"
+                class="accounting-chevron" />
             </q-item-section>
           </q-item>
           <transition name="slide-down">
@@ -110,7 +115,8 @@
               <q-item-label header>ADVANCED</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-icon :name="userInterfaceStore.advancedExpanded ? 'expand_less' : 'expand_more'" class="accounting-chevron" />
+              <q-icon :name="userInterfaceStore.advancedExpanded ? 'expand_less' : 'expand_more'"
+                class="accounting-chevron" />
             </q-item-section>
           </q-item>
           <transition name="slide-down">
@@ -133,7 +139,8 @@
             <div @click="verionClicked" style="cursor: pointer">
               <div style="font-size: 16px">Libre Money</div>
               <div style="font-size: 10px; color: rgb(187, 186, 186)">Version: {{ APP_VERSION }}</div>
-              <div v-if="userStore.currentUser?.domain" style="font-size: 10px; color: rgb(187, 186, 186); margin-top: 4px">
+              <div v-if="userStore.currentUser?.domain"
+                style="font-size: 10px; color: rgb(187, 186, 186); margin-top: 4px">
                 Domain: {{ userStore.currentUser.domain }}
               </div>
             </div>
@@ -356,7 +363,9 @@ const miscList = [
 
 const leftDrawerOpen = ref(false);
 const isDevDatabase = ref(false);
-const isDevMachine = ref(false);
+const isDevEnvironment = ref(false);
+const isSitEnvironment = ref(false);
+const hideDevModeNotification = ref(false);
 
 const userStore = useUserStore();
 const settingsStore = useSettingsStore();
@@ -376,14 +385,25 @@ function toggleDarkMode() {
 
 function checkIfInDevMode() {
   isDevDatabase.value = false;
-  isDevMachine.value = false;
+  isDevEnvironment.value = false;
   const testDomainStrings = ["test", "debug", "sit-", "dev", OFFLINE_DOMAIN];
   if (userStore.user && userStore.user.domain && testDomainStrings.some((testDomainString) => String(userStore.user?.domain).indexOf(testDomainString) > -1)) {
     isDevDatabase.value = true;
   }
 
   if (window.location.host.indexOf("localhost") > -1 || window.location.host.indexOf("127.0.0.1") > -1) {
-    isDevMachine.value = true;
+    isDevEnvironment.value = true;
+  }
+
+  if (window.location.host.indexOf("labs") > -1) {
+    isSitEnvironment.value = true;
+  }
+}
+
+async function hideDevModeNotificationClicked() {
+  const result = await dialogService.confirm("Hide Dev Mode Notification", "Hide the dev mode notification for this session? You will need to refresh the page to see it again.");
+  if (result) {
+    hideDevModeNotification.value = true;
   }
 }
 
