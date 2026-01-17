@@ -16,67 +16,70 @@
 
       <!-- Step 1: Welcome -->
       <q-card-section v-if="currentStep === 1" class="step-content">
-        <div class="welcome-section q-px-xl">
-          <!-- Congratulations -->
-          <q-banner class="bg-green-1 text-green-9 q-mb-lg" rounded>
-            <template v-slot:avatar>
-              <q-icon name="celebration" color="green" size="32px" />
-            </template>
-            <div class="text-h6 q-mb-sm">Congratulations!</div>
-            <div class="text-body1">You've chosen Libre Money, the only personal finance & budgeting app that makes sense.</div>
-          </q-banner>
-
-          <!-- How Libre Money Works -->
-          <div class="info-section q-mb-lg q-px-md">
-            <div class="text-h6 q-mb-md">How Libre Money Works</div>
-
-            <div class="feature-list">
-              <div class="feature-item q-mb-md">
-                <q-icon name="account_balance_wallet" size="24px" color="primary" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle1">Track Everything</div>
-                  <div class="text-body2 text-grey-7">Monitor your income, expenses, assets, and debts all in one place</div>
+        <div class="welcome-section">
+          <q-carousel v-model="welcomeSlide" swipeable animated arrows control-color="pink" navigation padding
+            height="100%" class="welcome-carousel">
+            <!-- Slide 1: Welcome -->
+            <q-carousel-slide name="welcome" class="column items-center justify-center">
+              <div class="slide-content welcome-slide-content">
+                <div class="welcome-icon-wrapper">
+                  <q-icon name="celebration" color="primary" :size="$q.screen.lt.sm ? '64px' : '80px'" />
                 </div>
+                <div class="text-h5 q-mt-lg q-mb-md text-center welcome-title">Congratulations!</div>
+                <div class="text-body1 text-center welcome-message">You've chosen Libre Money, the only personal finance
+                  & budgeting app that
+                  makes sense.</div>
               </div>
+            </q-carousel-slide>
 
-              <div class="feature-item q-mb-md">
-                <q-icon name="insights" size="24px" color="primary" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle1">Smart Analytics</div>
-                  <div class="text-body2 text-grey-7">Get detailed reports and insights about your spending patterns</div>
+            <!-- Slide 2: Track Everything -->
+            <q-carousel-slide name="track" class="column items-center justify-center">
+              <div class="slide-content welcome-slide-content">
+                <div class="welcome-icon-wrapper">
+                  <q-icon name="account_balance_wallet" color="primary" :size="$q.screen.lt.sm ? '64px' : '80px'" />
                 </div>
+                <div class="text-h5 q-mt-lg q-mb-md text-center welcome-title">Track Everything</div>
+                <div class="text-body1 text-center welcome-message">Monitor your income, expenses, assets, and debts all
+                  in one place. Get a complete picture of your financial health.</div>
               </div>
+            </q-carousel-slide>
 
-              <div class="feature-item q-mb-md">
-                <q-icon name="offline_bolt" size="24px" color="primary" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle1">Works Offline</div>
-                  <div class="text-body2 text-grey-7">Your data stays on your device - no internet required</div>
+            <!-- Slide 3: Analytics and Budgeting -->
+            <q-carousel-slide name="analytics" class="column items-center justify-center">
+              <div class="slide-content welcome-slide-content">
+                <div class="welcome-icon-wrapper">
+                  <q-icon name="insights" color="primary" :size="$q.screen.lt.sm ? '64px' : '80px'" />
                 </div>
+                <div class="text-h5 q-mt-lg q-mb-md text-center welcome-title">Analytics and Budgeting</div>
+                <div class="text-body1 text-center welcome-message">Get detailed reports and insights about your
+                  spending patterns. Create and manage budgets that actually work for you.</div>
               </div>
-            </div>
-          </div>
+            </q-carousel-slide>
 
-          <!-- Offline Trial Info -->
-          <div class="trial-info-section">
-            <div class="upgrade-options q-mb-md">
-              <div class="text-subtitle1 q-mb-sm">Future Upgrade Options</div>
-              <div class="text-body2 text-grey-7 q-mb-sm">When you're ready, you can optionally upgrade to sync your data across devices:</div>
+            <!-- Slide 4: Works Offline -->
+            <q-carousel-slide name="offline" class="column items-center justify-center">
+              <div class="slide-content welcome-slide-content">
+                <div class="welcome-icon-wrapper">
+                  <q-icon name="offline_bolt" color="primary" :size="$q.screen.lt.sm ? '64px' : '80px'" />
+                </div>
+                <div class="text-h5 q-mt-lg q-mb-md text-center welcome-title">Works Offline</div>
+                <div class="text-body1 text-center welcome-message">Your data stays on your device - no internet
+                  required. Access your finances anytime, even without connectivity.</div>
+              </div>
+            </q-carousel-slide>
 
-              <ul class="upgrade-list text-body2 text-grey-7">
-                <li><strong>Managed Hosting:</strong> We'll provide a secure server for you</li>
-                <li><strong>Self-Hosting:</strong> Host your own server with our guides</li>
-                <li><strong>Complete Freedom:</strong> Stay offline forever if you prefer</li>
-              </ul>
-            </div>
-
-            <q-banner class="bg-purple-1 text-purple-9" rounded>
-              <template v-slot:avatar>
-                <q-icon name="school" color="purple" />
-              </template>
-              <div class="text-body2">We provide detailed text and video guides for both hosting options when you're ready to upgrade.</div>
-            </q-banner>
-          </div>
+            <!-- Slide 5: Privacy Respecting Optional Cloud -->
+            <q-carousel-slide name="privacy" class="column items-center justify-center">
+              <div class="slide-content welcome-slide-content">
+                <div class="welcome-icon-wrapper">
+                  <q-icon name="lock" color="primary" :size="$q.screen.lt.sm ? '64px' : '80px'" />
+                </div>
+                <div class="text-h5 q-mt-lg q-mb-md text-center welcome-title">Cloud Account (Optional)</div>
+                <div class="text-body1 text-center welcome-message">When you're ready, optionally sync your data across
+                  devices with managed or self-hosted solutions. Your privacy is always respected.</div>
+              </div>
+            </q-carousel-slide>
+          </q-carousel>
         </div>
       </q-card-section>
 
@@ -87,19 +90,10 @@
           <div class="text-body2 text-grey-7 q-mb-lg">This will be your identifier within Libre Money.</div>
 
           <q-form @submit="createAccount" class="username-form">
-            <q-input
-              standout="bg-primary text-white"
-              v-model="username"
-              label="Username"
-              placeholder="Enter your username"
-              hint="6-20 characters, letters and numbers only"
-              lazy-rules
-              :rules="usernameRules"
-              :error="!!usernameError"
-              :error-message="usernameError"
-              autofocus
-              @input="clearUsernameError"
-            >
+            <q-input standout="bg-primary text-white" v-model="username" label="Username"
+              placeholder="Enter your username" hint="6-20 characters, letters and numbers only" lazy-rules
+              :rules="usernameRules" :error="!!usernameError" :error-message="usernameError" autofocus
+              @input="clearUsernameError">
               <template v-slot:prepend>
                 <q-icon name="person" />
               </template>
@@ -109,27 +103,18 @@
               <div class="text-caption text-grey-6">Requirements:</div>
               <div class="requirement-list">
                 <div class="requirement-item" :class="{ met: username.length >= 6 }">
-                  <q-icon
-                    :name="username.length >= 6 ? 'check_circle' : 'radio_button_unchecked'"
-                    :color="username.length >= 6 ? 'positive' : 'grey'"
-                    size="16px"
-                  />
+                  <q-icon :name="username.length >= 6 ? 'check_circle' : 'radio_button_unchecked'"
+                    :color="username.length >= 6 ? 'positive' : 'grey'" size="16px" />
                   <span class="q-ml-xs">At least 6 characters</span>
                 </div>
                 <div class="requirement-item" :class="{ met: username.length <= 20 }">
-                  <q-icon
-                    :name="username.length <= 20 ? 'check_circle' : 'radio_button_unchecked'"
-                    :color="username.length <= 20 ? 'positive' : 'grey'"
-                    size="16px"
-                  />
+                  <q-icon :name="username.length <= 20 ? 'check_circle' : 'radio_button_unchecked'"
+                    :color="username.length <= 20 ? 'positive' : 'grey'" size="16px" />
                   <span class="q-ml-xs">Maximum 20 characters</span>
                 </div>
                 <div class="requirement-item" :class="{ met: /^[a-zA-Z0-9]*$/.test(username) }">
-                  <q-icon
-                    :name="/^[a-zA-Z0-9]*$/.test(username) ? 'check_circle' : 'radio_button_unchecked'"
-                    :color="/^[a-zA-Z0-9]*$/.test(username) ? 'positive' : 'grey'"
-                    size="16px"
-                  />
+                  <q-icon :name="/^[a-zA-Z0-9]*$/.test(username) ? 'check_circle' : 'radio_button_unchecked'"
+                    :color="/^[a-zA-Z0-9]*$/.test(username) ? 'positive' : 'grey'" size="16px" />
                   <span class="q-ml-xs">Letters and numbers only</span>
                 </div>
               </div>
@@ -145,17 +130,9 @@
           <div class="text-body2 text-grey-7 q-mb-lg">Choose the currency you'll use for tracking your finances.</div>
 
           <q-form class="currency-form">
-            <q-select
-              standout="bg-primary text-white"
-              v-model="selectedCurrency"
-              :options="currencyOptions"
-              label="Currency"
-              option-label="label"
-              option-value="value"
-              emit-value
-              map-options
-              :rules="[(v) => !!v || 'Please select a currency']"
-            >
+            <q-select standout="bg-primary text-white" v-model="selectedCurrency" :options="currencyOptions"
+              label="Currency" option-label="label" option-value="value" emit-value map-options
+              :rules="[(v) => !!v || 'Please select a currency']">
               <template v-slot:prepend>
                 <q-icon name="attach_money" />
               </template>
@@ -165,28 +142,16 @@
             <div v-if="selectedCurrency === 'custom'" class="custom-currency-section q-mt-md">
               <div class="text-subtitle2 q-mb-md">Custom Currency Details</div>
 
-              <q-input
-                standout="bg-primary text-white"
-                v-model="customCurrencyName"
-                label="Currency Name"
-                placeholder="e.g., Euro, Bitcoin"
-                hint="Full name of your currency"
-                :rules="customCurrencyRules"
-                class="q-mb-md"
-              >
+              <q-input standout="bg-primary text-white" v-model="customCurrencyName" label="Currency Name"
+                placeholder="e.g., Euro, Bitcoin" hint="Full name of your currency" :rules="customCurrencyRules"
+                class="q-mb-md">
                 <template v-slot:prepend>
                   <q-icon name="label" />
                 </template>
               </q-input>
 
-              <q-input
-                standout="bg-primary text-white"
-                v-model="customCurrencySign"
-                label="Currency Sign/Abbreviation"
-                placeholder="e.g., EUR, BTC"
-                hint="Short symbol or abbreviation"
-                :rules="customCurrencyRules"
-              >
+              <q-input standout="bg-primary text-white" v-model="customCurrencySign" label="Currency Sign/Abbreviation"
+                placeholder="e.g., EUR, BTC" hint="Short symbol or abbreviation" :rules="customCurrencyRules">
                 <template v-slot:prepend>
                   <q-icon name="code" />
                 </template>
@@ -201,23 +166,20 @@
         <div class="telemetry-section">
           <div class="text-h6 q-mb-md">One-time Telemetry (Optional)</div>
           <div class="text-body2 text-grey-7 q-mb-lg">
-            This is <strong>entirely optional</strong>. If you agree, it'll allow us know that we have a new user and motivate us to improve Libre Money.
+            This is <strong>entirely optional</strong>. If you agree, it'll allow us know that we have a new user and
+            motivate
+            us to improve Libre Money.
           </div>
 
           <q-form class="telemetry-form">
             <q-checkbox v-model="allowOneTimeTelemetry" label="Allow one-time telemetry" class="q-mb-md" />
 
-            <div class="text-body2 text-grey-7 q-mb-lg">You can optionally provide your email address if you want to hear from us in the future.</div>
+            <div class="text-body2 text-grey-7 q-mb-lg">You can optionally provide your email address if you want to
+              hear from
+              us in the future.</div>
 
-            <q-input
-              standout="bg-primary text-white"
-              v-model="telemetryEmail"
-              label="Email Address (Optional)"
-              placeholder="Enter your email"
-              type="email"
-              :rules="telemetryEmailRules"
-              class="q-mb-md"
-            >
+            <q-input standout="bg-primary text-white" v-model="telemetryEmail" label="Email Address (Optional)"
+              placeholder="Enter your email" type="email" :rules="telemetryEmailRules" class="q-mb-md">
               <template v-slot:prepend>
                 <q-icon name="email" />
               </template>
@@ -231,7 +193,8 @@
         <div class="setup-section">
           <template v-if="!setupComplete">
             <div class="text-h6 q-mb-md">Setting Up Your Account</div>
-            <div class="text-body2 text-grey-7 q-mb-lg">We're creating your default accounts and categories. This will only take a moment.</div>
+            <div class="text-body2 text-grey-7 q-mb-lg">We're creating your default accounts and categories. This will
+              only take a moment.</div>
           </template>
           <!--
           <template v-if="setupComplete">
@@ -242,7 +205,8 @@
           <!-- Progress Display -->
           <div class="progress-display q-mb-lg">
             <div class="text-center q-mb-md">
-              <q-circular-progress :value="progressValue" size="80px" :thickness="0.15" color="primary" track-color="grey-3" class="q-ma-md">
+              <q-circular-progress :value="progressValue" size="80px" :thickness="0.15" color="primary"
+                track-color="grey-3" class="q-ma-md">
                 <div class="text-h6">{{ Math.round(progressValue) }}%</div>
               </q-circular-progress>
             </div>
@@ -260,7 +224,8 @@
               <div class="summary-grid">
                 <div class="summary-item">
                   <q-icon name="attach_money" color="green" />
-                  <span>Selected currency ({{ selectedCurrency === "custom" ? customCurrencySign : selectedCurrency }})</span>
+                  <span>Selected currency ({{ selectedCurrency === "custom" ? customCurrencySign : selectedCurrency
+                    }})</span>
                 </div>
                 <div class="summary-item">
                   <q-icon name="category" color="blue" />
@@ -290,43 +255,23 @@
 
       <!-- Actions -->
       <q-card-section class="step-actions row">
-        <q-btn v-if="currentStep > 1 && !setupComplete && !isCreatingAccount" flat label="Back" color="grey-7" @click="goBack" />
+        <q-btn v-if="currentStep > 1 && !setupComplete && !isCreatingAccount" flat label="Back" color="grey-7"
+          @click="goBack" />
         <div class="spacer"></div>
 
         <!-- Step 1, 2, 3 Next Buttons -->
-        <q-btn v-if="currentStep === 1" unelevated color="primary" label="Get Started" @click="nextStep" icon-right="arrow_forward" />
-        <q-btn
-          v-if="currentStep === 2"
-          unelevated
-          color="primary"
-          label="Create Account"
-          @click="createAccount"
-          :disabled="!isUsernameValid"
-          :loading="isCreatingAccount"
-          icon-right="arrow_forward"
-        />
-        <q-btn
-          v-if="currentStep === 3"
-          unelevated
-          color="primary"
-          label="Continue"
-          @click="proceedToTelemetry"
-          :disabled="!isCurrencyValid"
-          icon-right="arrow_forward"
-        />
-        <q-btn v-if="currentStep === 4" unelevated color="primary" label="Continue" @click="proceedToSetup" icon-right="arrow_forward" />
+        <q-btn v-if="currentStep === 1" unelevated color="primary" label="Get Started" @click="nextStep"
+          icon-right="arrow_forward" />
+        <q-btn v-if="currentStep === 2" unelevated color="primary" label="Create Account" @click="createAccount"
+          :disabled="!isUsernameValid" :loading="isCreatingAccount" icon-right="arrow_forward" />
+        <q-btn v-if="currentStep === 3" unelevated color="primary" label="Continue" @click="proceedToTelemetry"
+          :disabled="!isCurrencyValid" icon-right="arrow_forward" />
+        <q-btn v-if="currentStep === 4" unelevated color="primary" label="Continue" @click="proceedToSetup"
+          icon-right="arrow_forward" />
 
         <!-- Step 4 Dashboard Button -->
-        <q-btn
-          v-if="setupComplete"
-          unelevated
-          color="primary"
-          label="Go to Dashboard"
-          @click="goToDashboard"
-          icon-right="dashboard"
-          size="md"
-          style="margin-top: -40px"
-        />
+        <q-btn v-if="setupComplete" unelevated color="primary" label="Go to Dashboard" @click="goToDashboard"
+          icon-right="dashboard" size="md" style="margin-top: -40px" />
       </q-card-section>
     </q-card>
   </q-page>
@@ -350,6 +295,7 @@ const userStore = useUserStore();
 
 // Step management
 const currentStep = ref(1);
+const welcomeSlide = ref("welcome");
 const username = ref("");
 const usernameError = ref("");
 const isCreatingAccount = ref(false);
@@ -578,16 +524,27 @@ async function goToDashboard() {
   width: 100%;
   max-width: 600px;
   margin: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
   @media (min-width: 616px) {
     width: 600px;
     margin: 8px auto;
+  }
+
+  @media (max-width: 600px) {
+    margin: 4px;
+    border-radius: 8px;
   }
 }
 
 .onboarding-page {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
+  padding: 8px;
+
+  @media (max-width: 600px) {
+    padding: 4px;
+  }
 }
 
 .app-name {
@@ -600,27 +557,44 @@ async function goToDashboard() {
   align-items: center;
   justify-content: center;
 
+  @media (max-width: 600px) {
+    font-size: 18px;
+    padding: 12px 8px;
+  }
+
   .logo {
     margin-right: 8px;
     margin-bottom: 4px;
     width: 40px;
     height: 40px;
+
+    @media (max-width: 600px) {
+      width: 32px;
+      height: 32px;
+      margin-right: 6px;
+    }
   }
 }
 
 .step-header {
-  // background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-
   .step-title {
     text-align: center;
     font-size: 24px;
     font-weight: 500;
-    // color: #2c3e50;
+
+    @media (max-width: 600px) {
+      font-size: 20px;
+    }
   }
 
   .step-indicator {
     max-width: 300px;
     margin: 0 auto;
+
+    @media (max-width: 600px) {
+      max-width: 100%;
+      padding: 0 8px;
+    }
   }
 }
 
@@ -629,20 +603,166 @@ async function goToDashboard() {
   min-height: 400px;
 
   @media (max-width: 600px) {
-    padding: 24px 16px;
+    padding: 20px 12px;
+    min-height: 350px;
   }
 }
 
 // Step 1 - Welcome
 .welcome-section {
-  .q-banner {
-    border-left: 4px solid var(--q-green);
+  width: 100%;
+  height: 100%;
+
+  .welcome-carousel {
+    min-height: 400px;
+
+    @media (max-width: 600px) {
+      min-height: 350px;
+    }
+
+    :deep(.q-carousel__slide) {
+      padding: 16px 8px;
+
+      @media (max-width: 600px) {
+        padding: 12px 4px;
+      }
+    }
+
+    :deep(.q-carousel__navigation) {
+      bottom: 8px;
+
+      @media (max-width: 600px) {
+        bottom: 4px;
+      }
+    }
+
+    :deep(.q-carousel__arrow) {
+      @media (max-width: 600px) {
+        padding: 4px;
+        font-size: 20px;
+      }
+    }
+  }
+
+  .slide-content {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0 8px;
+
+    @media (max-width: 600px) {
+      padding: 0 4px;
+    }
+  }
+
+  .welcome-slide-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px 0;
+
+    @media (max-width: 600px) {
+      padding: 16px 0;
+    }
+  }
+
+  .welcome-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    margin-bottom: 8px;
+
+    @media (max-width: 600px) {
+      width: 100px;
+      height: 100px;
+    }
+  }
+
+  .welcome-title {
+    font-weight: 600;
+    color: var(--q-primary);
+  }
+
+  .welcome-message {
+    max-width: 400px;
+    line-height: 1.6;
+    color: rgb(72, 75, 132);
+
+    @media (max-width: 600px) {
+      max-width: 100%;
+      padding: 0 8px;
+    }
   }
 
   .feature-list {
+    width: 100%;
+    max-width: 450px;
+    margin: 0 auto;
+
     .feature-item {
       display: flex;
       align-items: flex-start;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      background-color: rgba(0, 0, 0, 0.02);
+      transition: background-color 0.2s;
+
+      @media (max-width: 600px) {
+        padding: 10px;
+        margin-bottom: 12px;
+      }
+
+      .feature-icon {
+        margin-top: 2px;
+        flex-shrink: 0;
+        margin-right: 12px;
+
+        @media (max-width: 600px) {
+          margin-right: 10px;
+        }
+      }
+
+      .feature-content {
+        flex: 1;
+      }
+    }
+  }
+
+  .upgrade-options {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .upgrade-list {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+
+    @media (max-width: 600px) {
+      margin: 12px 0;
+    }
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding: 8px;
+      border-radius: 6px;
+      background-color: rgba(0, 0, 0, 0.02);
+
+      @media (max-width: 600px) {
+        margin-bottom: 10px;
+        padding: 6px;
+        font-size: 14px;
+      }
 
       .q-icon {
         margin-top: 2px;
@@ -651,11 +771,28 @@ async function goToDashboard() {
     }
   }
 
-  .upgrade-list {
-    margin-left: 16px;
+  .upgrade-note {
+    width: 100%;
+    margin-top: 24px;
+    padding: 16px;
+    border-radius: 8px;
+    background-color: rgba(118, 75, 162, 0.05);
+    border-left: 3px solid var(--q-primary);
 
-    li {
-      margin-bottom: 4px;
+    @media (max-width: 600px) {
+      margin-top: 20px;
+      padding: 12px;
+    }
+
+    .upgrade-note-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+
+      .q-icon {
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
     }
   }
 }
@@ -664,22 +801,47 @@ async function goToDashboard() {
 .username-section {
   max-width: 400px;
   margin: 0 auto;
+  width: 100%;
+
+  .text-h6 {
+    @media (max-width: 600px) {
+      font-size: 18px;
+    }
+  }
 
   .username-form {
     .q-input {
       margin-bottom: 16px;
+
+      @media (max-width: 600px) {
+        margin-bottom: 12px;
+        font-size: 16px; // Prevents zoom on iOS
+      }
     }
   }
 
   .username-requirements {
+    margin-top: 16px;
+
+    @media (max-width: 600px) {
+      margin-top: 12px;
+    }
+
     .requirement-list {
       .requirement-item {
         display: flex;
         align-items: center;
         margin-bottom: 8px;
-        padding: 4px 8px;
+        padding: 8px 12px;
         border-radius: 4px;
         transition: all 0.2s ease;
+        min-height: 44px; // Touch target size
+
+        @media (max-width: 600px) {
+          padding: 6px 10px;
+          margin-bottom: 6px;
+          font-size: 14px;
+        }
 
         &.met {
           background-color: #e8f5e8;
@@ -698,10 +860,22 @@ async function goToDashboard() {
 .currency-section {
   max-width: 500px;
   margin: 0 auto;
+  width: 100%;
+
+  .text-h6 {
+    @media (max-width: 600px) {
+      font-size: 18px;
+    }
+  }
 
   .currency-form {
     .q-select {
       margin-bottom: 16px;
+
+      @media (max-width: 600px) {
+        margin-bottom: 12px;
+        font-size: 16px; // Prevents zoom on iOS
+      }
     }
   }
 
@@ -711,8 +885,17 @@ async function goToDashboard() {
     border-radius: 8px;
     border-left: 4px solid var(--q-primary);
 
+    @media (max-width: 600px) {
+      padding: 12px;
+    }
+
     .q-input {
       margin-bottom: 16px;
+      font-size: 16px; // Prevents zoom on iOS
+
+      @media (max-width: 600px) {
+        margin-bottom: 12px;
+      }
 
       &:last-child {
         margin-bottom: 0;
@@ -725,22 +908,54 @@ async function goToDashboard() {
 .telemetry-section {
   max-width: 500px;
   margin: 0 auto;
+  width: 100%;
+
+  .text-h6 {
+    @media (max-width: 600px) {
+      font-size: 18px;
+    }
+  }
 
   .telemetry-form {
     .q-input {
       margin-bottom: 16px;
+      font-size: 16px; // Prevents zoom on iOS
+
+      @media (max-width: 600px) {
+        margin-bottom: 12px;
+      }
+    }
+
+    .q-checkbox {
+      min-height: 44px; // Touch target size
+
+      @media (max-width: 600px) {
+        font-size: 14px;
+      }
     }
   }
 }
 
-// Step 4 - Setup
+// Step 5 - Setup
 .setup-section {
   text-align: center;
+  width: 100%;
+
+  .text-h6 {
+    @media (max-width: 600px) {
+      font-size: 18px;
+    }
+  }
 
   .progress-display {
     .progress-message {
       max-width: 300px;
       margin: 0 auto;
+
+      @media (max-width: 600px) {
+        max-width: 100%;
+        padding: 0 8px;
+      }
     }
   }
 
@@ -752,22 +967,29 @@ async function goToDashboard() {
         gap: 12px;
         margin-top: 16px;
 
+        @media (max-width: 600px) {
+          grid-template-columns: 1fr;
+          gap: 10px;
+          margin-top: 12px;
+        }
+
         .summary-item {
           display: flex;
           align-items: center;
-          padding: 8px 12px;
-          // background-color: #f8f9fa;
+          padding: 10px 12px;
           border-radius: 6px;
           text-align: left;
+          min-height: 44px; // Touch target size
+
+          @media (max-width: 600px) {
+            padding: 8px 10px;
+            font-size: 14px;
+          }
 
           .q-icon {
             margin-right: 8px;
             flex-shrink: 0;
           }
-        }
-
-        @media (max-width: 600px) {
-          grid-template-columns: 1fr;
         }
       }
     }
@@ -776,22 +998,29 @@ async function goToDashboard() {
 
 .step-actions {
   padding: 16px 24px;
-  // background-color: #f8f9fa;
-  // border-top: 1px solid #e9ecef;
+  min-height: 60px; // Ensure consistent height
+
+  @media (max-width: 600px) {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+  }
 
   .q-btn {
     font-weight: 500;
-  }
-}
+    min-height: 44px; // Touch target size
 
-// Responsive adjustments
-@media (max-width: 600px) {
-  .step-actions {
-    flex-direction: column;
-    gap: 12px;
-
-    .q-btn {
+    @media (max-width: 600px) {
       width: 100%;
+      font-size: 16px;
+    }
+  }
+
+  .spacer {
+    flex: 1;
+
+    @media (max-width: 600px) {
+      display: none;
     }
   }
 }
