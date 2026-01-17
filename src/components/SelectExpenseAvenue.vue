@@ -4,7 +4,13 @@ import { ExpenseAvenue } from "src/models/expense-avenue";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref } from "vue";
 
-const props = defineProps(["modelValue"]);
+const props = defineProps({
+  modelValue: {},
+  mandatory: {
+    type: Boolean,
+    default: true,
+  },
+});
 const emit = defineEmits(["update:modelValue"]);
 
 const value = computed({
@@ -29,7 +35,9 @@ async function loadData() {
   isLoading.value = false;
   setTimeout(() => {
     if (fullWalletExpenseAvenueList.value.length && !value.value) {
-      value.value = fullWalletExpenseAvenueList.value[0]._id;
+      if (props.mandatory) {
+        value.value = fullWalletExpenseAvenueList.value[0]._id;
+      }
     }
   }, 10);
 }
@@ -67,5 +75,6 @@ function filterExpenseAvenueFn(val: string, update: any, abort: any) {
     hide-selected
     behavior="menu"
     v-if="!isLoading"
+    :clearable="!mandatory"
   />
 </template>

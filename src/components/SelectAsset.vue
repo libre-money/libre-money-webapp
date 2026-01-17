@@ -4,7 +4,15 @@ import { Asset } from "src/models/asset";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref } from "vue";
 
-const props = defineProps(["modelValue", "label", "limitByCurrencyId"]);
+const props = defineProps({
+  modelValue: {},
+  label: String,
+  limitByCurrencyId: {},
+  mandatory: {
+    type: Boolean,
+    default: true,
+  },
+});
 const emit = defineEmits(["update:modelValue"]);
 
 const value = computed({
@@ -52,7 +60,9 @@ async function loadData() {
   isLoading.value = false;
   setTimeout(() => {
     if (fullAssetAssetList.value.length && !value.value) {
-      value.value = fullAssetAssetList.value[0]._id;
+      if (props.mandatory) {
+        value.value = fullAssetAssetList.value[0]._id;
+      }
     }
   }, 10);
 }
@@ -90,5 +100,6 @@ function filterAssetFn(val: string, update: any, abort: any) {
     option-label="name"
     hide-selected
     v-if="!isLoading"
+    :clearable="!mandatory"
   />
 </template>
