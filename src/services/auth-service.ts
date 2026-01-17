@@ -222,6 +222,7 @@ export const authService = {
         serverUrl,
         username,
         loginAt: Date.now(),
+        isInitialSyncComplete: false,
       };
 
       userStore.setUser(user);

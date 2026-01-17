@@ -30,7 +30,8 @@
         <div v-if="!needsPasswordInput" class="sync-progress">
           <div class="text-center q-mb-md">
             <q-spinner-dots v-if="syncProgress.percentage === 0" color="primary" size="48px" />
-            <q-circular-progress v-else :value="syncProgress.percentage" size="64px" :thickness="0.1" color="primary" track-color="grey-3" class="text-primary">
+            <q-circular-progress v-else :value="syncProgress.percentage" size="64px" :thickness="0.1" color="primary"
+              track-color="grey-3" class="text-primary">
               <div class="text-body2 text-weight-bold">{{ syncProgress.percentage }}%</div>
             </q-circular-progress>
           </div>
@@ -43,13 +44,18 @@
             <div v-if="syncProgress.totalDocs > 0" class="progress-details q-mt-sm">
               <div class="text-caption text-grey-7">
                 {{ syncProgress.docsSynced }} of {{ syncProgress.totalDocs }} documents
-                <span v-if="syncProgress.bytesTransferred > 0"> • {{ formatBytes(syncProgress.bytesTransferred) }} transferred </span>
+                <span v-if="syncProgress.bytesTransferred > 0"> • {{ formatBytes(syncProgress.bytesTransferred) }}
+                  transferred
+                </span>
               </div>
-              <div v-if="syncProgress.errorCount > 0" class="text-caption text-negative">{{ syncProgress.errorCount }} error(s) encountered</div>
+              <div v-if="syncProgress.errorCount > 0" class="text-caption text-negative">{{ syncProgress.errorCount }}
+                error(s)
+                encountered</div>
             </div>
           </div>
 
-          <q-linear-progress :value="syncProgress.percentage" :indeterminate="syncProgress.percentage === 0" color="primary" class="q-mt-md" rounded />
+          <q-linear-progress :value="syncProgress.percentage" :indeterminate="syncProgress.percentage === 0"
+            color="primary" class="q-mt-md" rounded />
         </div>
 
         <!-- Password Input Form -->
@@ -62,16 +68,9 @@
           </q-banner>
 
           <q-form @submit="onSubmit" class="q-gutter-md">
-            <q-input
-              type="password"
-              standout="bg-primary text-white"
-              v-model="password"
-              :label="`Password for ${username}`"
-              placeholder="Enter your password"
-              lazy-rules
-              :rules="validators.password"
-              autofocus
-            >
+            <q-input type="password" standout="bg-primary text-white" v-model="password"
+              :label="`Password for ${username}`" placeholder="Enter your password" lazy-rules
+              :rules="validators.password" autofocus>
               <template v-slot:prepend>
                 <q-icon name="lock" />
               </template>
@@ -255,11 +254,23 @@ async function sync() {
     await sleep(500);
     await updateSyncStatus("Complete!", "Your data is now up to date");
 
+    // Mark initial sync as complete for online users after successful full sync
+    // This applies to both initial login sync and migration sync
+    if (userStore.currentUser && !userStore.currentUser.isOfflineUser && !userStore.currentUser.isDemoUser) {
+      const updatedUser = {
+        ...userStore.currentUser,
+        isInitialSyncComplete: true,
+      };
+      userStore.setUser(updatedUser);
+    }
+
     if (props.reloadWindowAfterSync ?? true) {
       await sleep(1000);
       window.location.reload();
     } else {
-      onDialogCancel();
+      try {
+        onDialogCancel();
+      } catch (ignored) { }
     }
   } catch (error) {
     console.error("Sync error:", error);
@@ -376,9 +387,11 @@ function cancelClicked() {
   0% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.6;
   }
+
   100% {
     opacity: 1;
   }

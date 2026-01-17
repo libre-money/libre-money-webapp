@@ -42,11 +42,40 @@ export default route(function (/* { store, ssrContext } */) {
       }
     }
 
-    const isUserLoggedIn = useUserStore().isUserLoggedIn;
+    const userStore = useUserStore();
+    const isUserLoggedIn = userStore.isUserLoggedIn;
+    const currentUser = userStore.currentUser;
 
     // Redirect logged-in users away from the login page
     if (isUserLoggedIn && to.name === "login") {
       return next({ path: "/" });
+    }
+
+    // If user exists but is not offline/demo and initial sync is not complete, redirect to initial-sync
+    // (unless they're already on the initial-sync page)
+    if (
+      currentUser &&
+      !currentUser.isOfflineUser &&
+      !currentUser.isDemoUser &&
+      currentUser.isInitialSyncComplete !== true &&
+      to.name !== "initial-sync" &&
+      to.name !== "login" &&
+      to.name !== "post-logout"
+    ) {
+      return next({ name: "initial-sync" });
+    }
+
+    // Allow access to initial-sync page only if user needs it
+    if (to.name === "initial-sync") {
+      if (!currentUser) {
+        return next({ name: "login" });
+      }
+      if (currentUser.isOfflineUser || currentUser.isDemoUser) {
+        return next({ name: "overview" });
+      }
+      if (currentUser.isInitialSyncComplete === true) {
+        return next({ name: "overview" });
+      }
     }
 
     const doesRouteRequireAuthentication = to.matched.some((record) => record.meta.requiresAuthentication);

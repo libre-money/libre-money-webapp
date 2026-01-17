@@ -21,8 +21,12 @@ export const useUserStore = defineStore("user", {
   getters: {
     isUserLoggedIn(state): boolean {
       if (!state.user) return false;
+      // For offline/demo users, check if onboarding is complete
       if ((state.user.isOfflineUser || state.user.isDemoUser) && state.user.hasCompletedOnboarding) return true;
-      if (!state.user.isOfflineUser) return true;
+      // For online users, require both user exists and initial sync is complete
+      if (!state.user.isOfflineUser && !state.user.isDemoUser) {
+        return state.user.isInitialSyncComplete === true;
+      }
       return false;
     },
     currentUser(state): User | null {
