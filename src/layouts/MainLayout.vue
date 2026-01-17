@@ -615,6 +615,7 @@ body.body--dark .drawer-bottom {
   font-size: 10px;
   text-align: center;
   border-radius: 4px;
+  cursor: pointer;
 }
 
 .dev-mode-warning {
