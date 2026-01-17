@@ -304,12 +304,8 @@ async function processLogin(serverUrl: string, domain: string, username: string,
 
   dialogService.notify(NotificationType.LOGIN, "Successfully logged in.");
 
-  try {
-    await syncService.doFullSync($q, false, "LoginPage");
-  } catch (error) {
-    console.error(error);
-    await dialogService.alert("Sync Error", "Unable to sync data. Please try again later.");
-  }
+  // Initial sync will be handled by InitialSyncPage
+  // No need to sync here - the router will redirect to initial-sync if needed
 
   return [true, null];
 }

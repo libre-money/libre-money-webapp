@@ -46,6 +46,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import("pages/GetAccountPage.vue"),
         meta: { requiresAuthentication: true, title: "Get Your Account" },
       },
+      {
+        path: "initial-sync",
+        name: "initial-sync",
+        component: () => import("pages/InitialSyncPage.vue"),
+        meta: { requiresAuthentication: false, title: "Initial Sync" },
+      },
       // --- Core:
       {
         path: "overview",

@@ -5,7 +5,7 @@ import { useUserStore } from "src/stores/user";
 import { QVueGlobals } from "quasar";
 import { auditLogService } from "./audit-log-service";
 
-export type SyncInvocationOrigin = "background" | "LoginPage" | "GoOnlinePage" | "MainLayout";
+export type SyncInvocationOrigin = "background" | "LoginPage" | "GoOnlinePage" | "MainLayout" | "InitialSyncPage";
 
 export interface SyncStatus {
   isBackgroundSyncing: boolean;

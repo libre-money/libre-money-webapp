@@ -58,6 +58,7 @@ class OfflineToOnlineMigrationService {
         username,
         loginAt: Date.now(),
         isOfflineUser: false, // This is the key change
+        isInitialSyncComplete: false, // Will be set to true after sync completes
       };
 
       userStore.setUser(onlineUser);

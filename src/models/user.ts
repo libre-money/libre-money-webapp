@@ -11,4 +11,5 @@ export type User = {
   selectedCurrencyId?: string;
   hasSignedUpForCloudAccount?: boolean;
   cloudAccountEmail?: string;
+  isInitialSyncComplete?: boolean;
 };
