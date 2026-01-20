@@ -89,6 +89,10 @@ export const RecordType = {
   BORROWING: "borrowing", // incoming loan (payable)
   REPAYMENT_GIVEN: "repayment-given",
   REPAYMENT_RECEIVED: "repayment-received",
+  PAYABLE_PAYMENT: "payable-payment", // Paying off an unpaid expense/purchase
+  RECEIVABLE_RECEIPT: "receivable-receipt", // Receiving payment for unpaid income/sale
+  LOAN_FORGIVENESS_GIVEN: "loan-forgiveness-given", // You forgive a loan you gave
+  LOAN_FORGIVENESS_RECEIVED: "loan-forgiveness-received", // Debt forgiveness you received
 };
 
 export const defaultTagColor = "#444444";
