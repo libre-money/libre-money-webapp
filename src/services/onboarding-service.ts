@@ -1,5 +1,6 @@
 import { User } from "src/models/user";
 import { useUserStore } from "src/stores/user";
+import { useSettingsStore } from "src/stores/settings";
 import { pouchdbService } from "./pouchdb-service";
 import { Collection } from "src/constants/constants";
 import { Currency } from "src/schemas/currency";
@@ -13,6 +14,7 @@ import { sleep } from "src/utils/misc-utils";
 import { OFFLINE_DOMAIN, OFFLINE_SERVER_URL } from "src/constants/auth-constants";
 
 const userStore = useUserStore();
+const settingsStore = useSettingsStore();
 
 export type OnboardingProgress = {
   step: string;
@@ -135,6 +137,9 @@ class OnboardingService {
       currentUser.selectedCurrencyId = result.id;
       userStore.setUser(currentUser);
     }
+
+    // Update settings store with default currency ID
+    settingsStore.setDefaultCurrencyId(result.id);
   }
 
   /**
