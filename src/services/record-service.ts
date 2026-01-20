@@ -27,6 +27,10 @@ class RecordService {
       (await this.inferBorrowing(inferredRecord)) ||
       (await this.inferRepaymentGiven(inferredRecord)) ||
       (await this.inferRepaymentReceived(inferredRecord)) ||
+      (await this.inferPayablePayment(inferredRecord)) ||
+      (await this.inferReceivableReceipt(inferredRecord)) ||
+      (await this.inferLoanForgivenessGiven(inferredRecord)) ||
+      (await this.inferLoanForgivenessReceived(inferredRecord)) ||
       (await this.inferAssetPurchase(inferredRecord)) ||
       (await this.inferAssetSale(inferredRecord)) ||
       (await this.inferAssetAppreciationDepreciation(inferredRecord));
@@ -132,6 +136,56 @@ class RecordService {
 
     if (inferredRecord.repaymentReceived.walletId) {
       inferredRecord.repaymentReceived.wallet = await entityService.getWallet(inferredRecord.repaymentReceived.walletId);
+    }
+
+    return true;
+  }
+
+  private async inferPayablePayment(inferredRecord: InferredRecord) {
+    if (!(inferredRecord.type === RecordType.PAYABLE_PAYMENT && inferredRecord.payablePayment)) return false;
+
+    if (inferredRecord.payablePayment.partyId) {
+      inferredRecord.payablePayment.party = await entityService.getParty(inferredRecord.payablePayment.partyId);
+    }
+
+    // Only infer wallet if it's not a write-off
+    if (inferredRecord.payablePayment.walletId && inferredRecord.payablePayment.walletId !== "write-off") {
+      inferredRecord.payablePayment.wallet = await entityService.getWallet(inferredRecord.payablePayment.walletId);
+    }
+
+    return true;
+  }
+
+  private async inferReceivableReceipt(inferredRecord: InferredRecord) {
+    if (!(inferredRecord.type === RecordType.RECEIVABLE_RECEIPT && inferredRecord.receivableReceipt)) return false;
+
+    if (inferredRecord.receivableReceipt.partyId) {
+      inferredRecord.receivableReceipt.party = await entityService.getParty(inferredRecord.receivableReceipt.partyId);
+    }
+
+    // Only infer wallet if it's not a write-off
+    if (inferredRecord.receivableReceipt.walletId && inferredRecord.receivableReceipt.walletId !== "write-off") {
+      inferredRecord.receivableReceipt.wallet = await entityService.getWallet(inferredRecord.receivableReceipt.walletId);
+    }
+
+    return true;
+  }
+
+  private async inferLoanForgivenessGiven(inferredRecord: InferredRecord) {
+    if (!(inferredRecord.type === RecordType.LOAN_FORGIVENESS_GIVEN && inferredRecord.loanForgivenessGiven)) return false;
+
+    if (inferredRecord.loanForgivenessGiven.partyId) {
+      inferredRecord.loanForgivenessGiven.party = await entityService.getParty(inferredRecord.loanForgivenessGiven.partyId);
+    }
+
+    return true;
+  }
+
+  private async inferLoanForgivenessReceived(inferredRecord: InferredRecord) {
+    if (!(inferredRecord.type === RecordType.LOAN_FORGIVENESS_RECEIVED && inferredRecord.loanForgivenessReceived)) return false;
+
+    if (inferredRecord.loanForgivenessReceived.partyId) {
+      inferredRecord.loanForgivenessReceived.party = await entityService.getParty(inferredRecord.loanForgivenessReceived.partyId);
     }
 
     return true;
@@ -265,6 +319,28 @@ class RecordService {
         }
         if (inferredRecord.repaymentReceived.walletId) {
           inferredRecord.repaymentReceived.wallet = map.get(Collection.WALLET + "-" + inferredRecord.repaymentReceived.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.PAYABLE_PAYMENT && inferredRecord.payablePayment) {
+        if (inferredRecord.payablePayment.partyId) {
+          inferredRecord.payablePayment.party = map.get(Collection.PARTY + "-" + inferredRecord.payablePayment.partyId) as Party;
+        }
+        if (inferredRecord.payablePayment.walletId && inferredRecord.payablePayment.walletId !== "write-off") {
+          inferredRecord.payablePayment.wallet = map.get(Collection.WALLET + "-" + inferredRecord.payablePayment.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.RECEIVABLE_RECEIPT && inferredRecord.receivableReceipt) {
+        if (inferredRecord.receivableReceipt.partyId) {
+          inferredRecord.receivableReceipt.party = map.get(Collection.PARTY + "-" + inferredRecord.receivableReceipt.partyId) as Party;
+        }
+        if (inferredRecord.receivableReceipt.walletId && inferredRecord.receivableReceipt.walletId !== "write-off") {
+          inferredRecord.receivableReceipt.wallet = map.get(Collection.WALLET + "-" + inferredRecord.receivableReceipt.walletId) as Wallet;
+        }
+      } else if (inferredRecord.type === RecordType.LOAN_FORGIVENESS_GIVEN && inferredRecord.loanForgivenessGiven) {
+        if (inferredRecord.loanForgivenessGiven.partyId) {
+          inferredRecord.loanForgivenessGiven.party = map.get(Collection.PARTY + "-" + inferredRecord.loanForgivenessGiven.partyId) as Party;
+        }
+      } else if (inferredRecord.type === RecordType.LOAN_FORGIVENESS_RECEIVED && inferredRecord.loanForgivenessReceived) {
+        if (inferredRecord.loanForgivenessReceived.partyId) {
+          inferredRecord.loanForgivenessReceived.party = map.get(Collection.PARTY + "-" + inferredRecord.loanForgivenessReceived.partyId) as Party;
         }
       } else if (inferredRecord.type === RecordType.ASSET_PURCHASE && inferredRecord.assetPurchase) {
         if (inferredRecord.assetPurchase.assetId) {

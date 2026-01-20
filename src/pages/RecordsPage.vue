@@ -571,6 +571,10 @@ function isSingleAmountType(record: InferredRecord) {
     (record.type === RecordType.BORROWING && record.borrowing) ||
     (record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven) ||
     (record.type === RecordType.REPAYMENT_RECEIVED && record.repaymentReceived) ||
+    (record.type === RecordType.PAYABLE_PAYMENT && record.payablePayment) ||
+    (record.type === RecordType.RECEIVABLE_RECEIPT && record.receivableReceipt) ||
+    (record.type === RecordType.LOAN_FORGIVENESS_GIVEN && record.loanForgivenessGiven) ||
+    (record.type === RecordType.LOAN_FORGIVENESS_RECEIVED && record.loanForgivenessReceived) ||
     (record.type === RecordType.ASSET_SALE && record.assetSale) ||
     (record.type === RecordType.ASSET_PURCHASE && record.assetPurchase) ||
     (record.type === RecordType.ASSET_APPRECIATION_DEPRECIATION && record.assetAppreciationDepreciation)
@@ -584,6 +588,10 @@ function getInnerKey(record: InferredRecord, key: string) {
   if (record.type === RecordType.BORROWING && record.borrowing) return (record.borrowing as any)[key];
   if (record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven) return (record.repaymentGiven as any)[key];
   if (record.type === RecordType.REPAYMENT_RECEIVED && record.repaymentReceived) return (record.repaymentReceived as any)[key];
+  if (record.type === RecordType.PAYABLE_PAYMENT && record.payablePayment) return (record.payablePayment as any)[key];
+  if (record.type === RecordType.RECEIVABLE_RECEIPT && record.receivableReceipt) return (record.receivableReceipt as any)[key];
+  if (record.type === RecordType.LOAN_FORGIVENESS_GIVEN && record.loanForgivenessGiven) return (record.loanForgivenessGiven as any)[key];
+  if (record.type === RecordType.LOAN_FORGIVENESS_RECEIVED && record.loanForgivenessReceived) return (record.loanForgivenessReceived as any)[key];
   if (record.type === RecordType.ASSET_SALE && record.assetSale) return (record.assetSale as any)[key];
   if (record.type === RecordType.ASSET_PURCHASE && record.assetPurchase) return (record.assetPurchase as any)[key];
   if (record.type === RecordType.ASSET_APPRECIATION_DEPRECIATION && record.assetAppreciationDepreciation)

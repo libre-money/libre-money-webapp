@@ -95,6 +95,37 @@ const routes: RouteRecordRaw[] = [
         component: () => import("pages/LoansAndDebtsPage.vue"),
         meta: { requiresAuthentication: true, title: "Loans & Debts", rememberable: true },
       },
+      // --- Payables & Receivables:
+      {
+        path: "payables",
+        name: "payables",
+        component: () => import("pages/PayablesPage.vue"),
+        meta: { requiresAuthentication: true, title: "Payables", rememberable: true },
+      },
+      {
+        path: "receivables",
+        name: "receivables",
+        component: () => import("pages/ReceivablesPage.vue"),
+        meta: { requiresAuthentication: true, title: "Receivables", rememberable: true },
+      },
+      {
+        path: "loans-given",
+        name: "loans-given",
+        component: () => import("pages/LoansGivenPage.vue"),
+        meta: { requiresAuthentication: true, title: "Loans Given", rememberable: true },
+      },
+      {
+        path: "loans-taken",
+        name: "loans-taken",
+        component: () => import("pages/LoansTakenPage.vue"),
+        meta: { requiresAuthentication: true, title: "Loans Taken", rememberable: true },
+      },
+      {
+        path: "payables-receivables-consolidated",
+        name: "payables-receivables-consolidated",
+        component: () => import("pages/ConsolidatedPayablesReceivablesPage.vue"),
+        meta: { requiresAuthentication: true, title: "Consolidated View", rememberable: true },
+      },
       {
         path: "rolling-budgets",
         name: "rolling-budgets",
