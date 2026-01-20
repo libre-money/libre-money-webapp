@@ -7,6 +7,7 @@ function serializeValue(localStorageKey: string, value: any) {
 const LOCAL_STORAGE_KEY__ACCOUNTING_EXPANDED = "--lm-ui--accounting-expanded";
 const LOCAL_STORAGE_KEY__REPORTS_EXPANDED = "--lm-ui--reports-expanded";
 const LOCAL_STORAGE_KEY__ADVANCED_EXPANDED = "--lm-ui--advanced-expanded";
+const LOCAL_STORAGE_KEY__PAYABLES_RECEIVABLES_EXPANDED = "--lm-ui--payables-receivables-expanded";
 
 function deserializeBoolean(localStorageKey: string, defaultValue = false) {
   const value = localStorage.getItem(localStorageKey);
@@ -23,6 +24,7 @@ export const useUserInterfaceStore = defineStore("userInterfaceStore", {
     accountingExpanded: deserializeBoolean(LOCAL_STORAGE_KEY__ACCOUNTING_EXPANDED, false),
     reportsExpanded: deserializeBoolean(LOCAL_STORAGE_KEY__REPORTS_EXPANDED, false),
     advancedExpanded: deserializeBoolean(LOCAL_STORAGE_KEY__ADVANCED_EXPANDED, false),
+    payablesReceivablesExpanded: deserializeBoolean(LOCAL_STORAGE_KEY__PAYABLES_RECEIVABLES_EXPANDED, true),
   }),
 
   getters: {},
@@ -39,6 +41,10 @@ export const useUserInterfaceStore = defineStore("userInterfaceStore", {
     setAdvancedExpanded(value: boolean) {
       serializeValue(LOCAL_STORAGE_KEY__ADVANCED_EXPANDED, value);
       this.advancedExpanded = value;
+    },
+    setPayablesReceivablesExpanded(value: boolean) {
+      serializeValue(LOCAL_STORAGE_KEY__PAYABLES_RECEIVABLES_EXPANDED, value);
+      this.payablesReceivablesExpanded = value;
     },
   },
 });

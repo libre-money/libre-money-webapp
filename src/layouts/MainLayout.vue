@@ -67,7 +67,28 @@
       <div class="drawer-content">
         <q-list>
           <q-item-label header> CORE </q-item-label>
-          <EssentialLink v-for="link in operationList" :key="link.title" v-bind="link" />
+          <EssentialLink v-for="link in operationList.filter(l => !l.isExpandable)" :key="link.title" v-bind="link" />
+        </q-list>
+
+        <q-list>
+          <q-item clickable @click="togglePayablesReceivablesExpanded" class="accounting-header">
+            <q-item-section>
+              <q-item-label header>PAYABLES & RECEIVABLES</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-icon :name="userInterfaceStore.payablesReceivablesExpanded ? 'expand_less' : 'expand_more'"
+                class="accounting-chevron" />
+            </q-item-section>
+          </q-item>
+          <transition name="slide-down">
+            <div v-show="userInterfaceStore.payablesReceivablesExpanded">
+              <template v-for="link in operationList" :key="link.title">
+                <template v-if="link.isExpandable && link.children">
+                  <EssentialLink v-for="child in link.children" :key="child.title" v-bind="child" />
+                </template>
+              </template>
+            </div>
+          </transition>
         </q-list>
 
         <q-list>
@@ -208,10 +229,48 @@ const operationList = [
     link: "#/assets",
   },
   {
-    title: "Loans & Debts",
-    caption: "Receivables and Payables",
+    title: "Payables & Receivables",
+    caption: "Money Owed",
     icon: "request_quote",
-    link: "#/loans-and-debts",
+    isExpandable: true,
+    children: [
+      {
+        title: "Payables",
+        caption: "Bills to Pay",
+        icon: "credit_card",
+        link: "#/payables",
+      },
+      {
+        title: "Receivables",
+        caption: "Money to Collect",
+        icon: "payments",
+        link: "#/receivables",
+      },
+      {
+        title: "Loans Given",
+        caption: "You lent",
+        icon: "arrow_upward",
+        link: "#/loans-given",
+      },
+      {
+        title: "Loans Taken",
+        caption: "You borrowed",
+        icon: "arrow_downward",
+        link: "#/loans-taken",
+      },
+      {
+        title: "Consolidated View",
+        caption: "All Outstanding",
+        icon: "dashboard",
+        link: "#/payables-receivables-consolidated",
+      },
+      {
+        title: "Loans & Debts (Old)",
+        caption: "Legacy view",
+        icon: "history",
+        link: "#/loans-and-debts",
+      },
+    ],
   },
   {
     title: "Rolling Budgets",
@@ -485,6 +544,10 @@ function toggleReportsExpanded() {
 
 function toggleAdvancedExpanded() {
   userInterfaceStore.setAdvancedExpanded(!userInterfaceStore.advancedExpanded);
+}
+
+function togglePayablesReceivablesExpanded() {
+  userInterfaceStore.setPayablesReceivablesExpanded(!userInterfaceStore.payablesReceivablesExpanded);
 }
 
 async function goToOnlinePage() {
