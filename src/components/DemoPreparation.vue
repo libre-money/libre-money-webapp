@@ -10,7 +10,8 @@
 
       <q-card-section>
         <div class="text-body1 q-mb-md">
-          This component is designed for demo purposes and contains various tools and configurations to help prepare and showcase the application.
+          This component is designed for demo purposes and contains various tools and configurations to help prepare and
+          showcase the application.
         </div>
 
         <q-separator class="q-my-md" />
@@ -26,7 +27,8 @@
               </div>
               <div class="text-caption q-mb-md">Generate additional demo data that complements onboarding data</div>
               <div class="row q-gutter-sm">
-                <q-btn color="primary" label="Generate Additional Demo Data" @click="generateSampleData" :loading="generatingData" />
+                <q-btn color="primary" label="Generate Additional Demo Data" @click="generateSampleData"
+                  :loading="generatingData" />
                 <q-btn color="negative" label="Clear Demo Data" @click="clearDemoData" :loading="clearingData" />
               </div>
             </q-card-section>
@@ -71,7 +73,7 @@
 import { ref, computed } from "vue";
 import { useQuasar } from "quasar";
 import { DEMO_PREPARATION_ENABLED } from "src/constants/config-constants";
-import { demoPreparationServiceV2 as demoPreparationService } from "src/services/demo-perparation-service-2";
+import { demoPreparationService } from "src/services/demo-preparation-service";
 
 // Props and emits
 defineEmits<{
