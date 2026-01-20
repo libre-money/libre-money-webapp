@@ -1,11 +1,15 @@
 <template>
   <q-page class="row items-center justify-evenly">
     <q-card class="std-card">
-      <div class="title-row q-pa-md q-gutter-sm">
+      <div class="title-row q-pa-md">
         <div class="title">Audit Log</div>
-        <div class="row items-center q-gutter-sm">
-          <q-btn color="secondary" text-color="white" label="Sync Logs" icon="sync" @click="syncAuditLogs" :loading="isSyncing" />
-          <q-btn color="primary" text-color="white" label="Refresh" icon="refresh" @click="loadData" :loading="isLoading" />
+        <div class="button-group">
+          <q-btn color="secondary" text-color="white" label="Push Logs" icon="sync" @click="syncAuditLogs"
+            :loading="isSyncing" />
+          <q-btn color="negative" text-color="white" label="Cleanup" icon="delete_sweep" @click="cleanupOldLogs"
+            :loading="isCleaning" />
+          <q-btn color="primary" text-color="white" label="Refresh" icon="refresh" @click="loadData"
+            :loading="isLoading" />
         </div>
       </div>
 
@@ -14,7 +18,8 @@
         <q-expansion-item icon="filter_alt" label="Filters" header-class="text-primary">
           <div class="row q-gutter-md q-pa-md">
             <div class="col-md-3 col-sm-6 col-xs-12">
-              <q-select v-model="selectedAction" :options="actionOptions" label="Action" emit-value map-options clearable outlined dense />
+              <q-select v-model="selectedAction" :options="actionOptions" label="Action" emit-value map-options
+                clearable outlined dense />
             </div>
             <div class="col-md-3 col-sm-6 col-xs-12">
               <q-input v-model="usernameFilter" label="Username" outlined dense clearable />
@@ -31,21 +36,10 @@
 
       <!-- Data Table -->
       <div class="q-pa-md">
-        <q-table
-          :loading="isLoading"
-          title="Audit Entries"
-          :rows="rows"
-          :columns="columns"
-          row-key="_id"
-          flat
-          bordered
-          :rows-per-page-options="rowsPerPageOptions"
-          binary-state-sort
-          v-model:pagination="pagination"
-          @request="dataForTableRequested"
-          class="std-table-non-morphing"
-          style="font-family: 'Courier New', Courier, monospace"
-        >
+        <q-table :loading="isLoading" title="Audit Entries" :rows="rows" :columns="columns" row-key="_id" flat bordered
+          :rows-per-page-options="rowsPerPageOptions" binary-state-sort v-model:pagination="pagination"
+          @request="dataForTableRequested" class="std-table-non-morphing"
+          style="font-family: 'Courier New', Courier, monospace">
           <template v-slot:body-cell-timestamp="props">
             <q-td :props="props" style="max-width: 100px">
               {{ formatTimestamp(props.value) }}
@@ -66,40 +60,21 @@
 
           <template v-slot:body-cell-documentData="props">
             <q-td :props="props" style="min-width: 120px">
-              <div v-if="props.row.action === 'upsert' && (props.row.oldDocumentData || props.row.newDocumentData)" class="q-gutter-xs">
+              <div v-if="props.row.action === 'upsert' && (props.row.oldDocumentData || props.row.newDocumentData)"
+                class="q-gutter-xs">
                 <div class="row q-gutter-xs">
-                  <q-btn
-                    v-if="props.row.oldDocumentData"
-                    flat
-                    dense
-                    color="orange"
-                    label="Old"
-                    @click="viewDocumentData(props.row.oldDocumentData, 'Old Document')"
-                    size="sm"
-                  />
-                  <q-btn
-                    v-if="props.row.newDocumentData"
-                    flat
-                    dense
-                    color="green"
-                    label="New"
-                    @click="viewDocumentData(props.row.newDocumentData, 'New Document')"
-                    size="sm"
-                  />
+                  <q-btn v-if="props.row.oldDocumentData" flat dense color="orange" label="Old"
+                    @click="viewDocumentData(props.row.oldDocumentData, 'Old Document')" size="sm" />
+                  <q-btn v-if="props.row.newDocumentData" flat dense color="green" label="New"
+                    @click="viewDocumentData(props.row.newDocumentData, 'New Document')" size="sm" />
                 </div>
                 <div v-if="props.row.oldDocumentData && props.row.newDocumentData" class="q-mt-xs">
-                  <q-btn
-                    flat
-                    dense
-                    color="purple"
-                    label="Diff"
-                    icon="compare"
-                    @click="showDiff(props.row.oldDocumentData, props.row.newDocumentData)"
-                    size="sm"
-                  />
+                  <q-btn flat dense color="purple" label="Diff" icon="compare"
+                    @click="showDiff(props.row.oldDocumentData, props.row.newDocumentData)" size="sm" />
                 </div>
               </div>
-              <q-btn v-else-if="props.value" flat dense color="primary" label="View" @click="viewDocumentData(props.value, 'Document Data')" />
+              <q-btn v-else-if="props.value" flat dense color="primary" label="View"
+                @click="viewDocumentData(props.value, 'Document Data')" />
               <span v-else>-</span>
             </q-td>
           </template>
@@ -108,7 +83,8 @@
             <q-td :props="props" style="max-width: 200px">
               <div v-if="props.value" class="text-caption">
                 <div class="text-weight-medium text-negative">{{ props.value }}</div>
-                <q-btn v-if="props.row.errorDetails" flat dense color="orange" label="Details" @click="viewErrorDetails(props.row.errorDetails)" size="xs" />
+                <q-btn v-if="props.row.errorDetails" flat dense color="orange" label="Details"
+                  @click="viewErrorDetails(props.row.errorDetails)" size="xs" />
               </div>
             </q-td>
           </template>
@@ -153,6 +129,7 @@ import DocumentDiffViewer from "src/components/DocumentDiffViewer.vue";
 
 const isLoading = ref(false);
 const isSyncing = ref(false);
+const isCleaning = ref(false);
 const isRemoteEnabled = ref(false);
 const rows = ref<AuditLogEntry[]>([]);
 const showDocumentDialog = ref(false);
@@ -452,6 +429,35 @@ async function syncAuditLogs() {
   }
 }
 
+async function cleanupOldLogs() {
+  const confirmed = await dialogService.confirm(
+    "Cleanup Old Audit Logs",
+    "This will permanently delete all audit log entries older than 30 days. This action cannot be undone. Do you want to continue?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    isCleaning.value = true;
+    const result = await auditLogService.cleanupOldLogs(30);
+
+    if (result.deletedCount > 0) {
+      dialogService.alert("Cleanup Complete", `Successfully deleted ${result.deletedCount} old audit log entries.`);
+      // Refresh the data after cleanup
+      loadData();
+    } else {
+      dialogService.alert("Cleanup Complete", "No old audit log entries found to delete.");
+    }
+  } catch (error) {
+    console.error("Cleanup error:", error);
+    dialogService.alert("Cleanup Error", "An unexpected error occurred during cleanup.");
+  } finally {
+    isCleaning.value = false;
+  }
+}
+
 function viewErrorDetails(errorDetails: any) {
   selectedDocumentData.value = errorDetails;
   selectedDocumentTitle.value = "Error Details";
@@ -496,11 +502,40 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .title {
   font-size: 1.5rem;
   font-weight: 500;
   color: #1976d2;
+
+  @media (max-width: 600px) {
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+  }
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  @media (max-width: 600px) {
+    width: 100%;
+    flex-direction: column;
+
+    .q-btn {
+      width: 100%;
+      min-height: 44px; // Better touch target
+    }
+  }
 }
 </style>
