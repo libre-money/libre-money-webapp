@@ -322,6 +322,18 @@ const advancedList = computed(() => {
       icon: "backup",
       link: "#/backup-restore",
     },
+    {
+      title: "Audit Log",
+      caption: "",
+      icon: "history",
+      link: "#/audit-log",
+    },
+    {
+      title: "Debug",
+      caption: "",
+      icon: "bug_report",
+      link: "#/debug",
+    },
   ];
   if (userStore.currentUser?.isOfflineUser && !userStore.currentUser?.isDemoUser) {
     list.push({
@@ -346,18 +358,6 @@ const miscList = [
     caption: "",
     icon: "settings",
     link: "#/settings",
-  },
-  {
-    title: "Audit Log",
-    caption: "",
-    icon: "history",
-    link: "#/audit-log",
-  },
-  {
-    title: "Debug",
-    caption: "",
-    icon: "bug_report",
-    link: "#/debug",
   },
   {
     title: "About",
