@@ -192,8 +192,10 @@ watch(recordWalletId, async (newWalletId: any) => {
     wallet.potentialBalance = 0;
     selectedWallet.value = wallet;
     let currency = await entityService.getCurrency(wallet.currencyId);
+    recordCurrencyId.value = currency._id!;
     recordCurrencySign.value = currency.sign;
   } else {
+    recordCurrencyId.value = null;
     recordCurrencySign.value = null;
     selectedWallet.value = null;
   }

@@ -301,6 +301,11 @@ watch(recordWalletId, async (newWalletId: any) => {
     await computationService.computeBalancesForWallets([wallet]);
     wallet.potentialBalance = 0;
     selectedWallet.value = wallet;
+    
+    // Auto-set currency from wallet
+    let currency = await entityService.getCurrency(wallet.currencyId);
+    recordCurrencyId.value = currency._id!;
+    recordCurrencySign.value = currency.sign;
   } else {
     selectedWallet.value = null;
   }
