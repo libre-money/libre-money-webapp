@@ -42,6 +42,12 @@
           <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'"
             :limitByCurrencyId="recordCurrencyId">
           </select-wallet>
+          <div class="wallet-balance-container"
+            v-if="(paymentType == 'full' || paymentType == 'partial') && selectedWallet">
+            <div>Balance in wallet: {{ printAmount(selectedWallet._balance!) }}</div>
+            <div style="margin-top: 8px">Balance afterwards will be: {{ printAmount(selectedWallet.potentialBalance) }}
+            </div>
+          </div>
 
           <q-input type="number" standout="bg-primary text-white" v-model="recordAmountPaid" label="Amount Paid"
             lazy-rules :rules="validators.balance" v-if="paymentType == 'partial'" />
@@ -78,16 +84,18 @@
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Collection, RecordType } from "src/constants/constants";
 import { Record } from "src/schemas/record";
+import { WalletWithPotentialBalance } from "src/schemas/wallet";
+import { Currency } from "src/schemas/currency";
+import { computationService } from "src/services/computation-service";
 import { NotificationType, dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
-import { asAmount } from "src/utils/de-facto-utils";
-import { deepClone } from "src/utils/misc-utils";
+import { asAmount, printAmount as printAmountUtil } from "src/utils/de-facto-utils";
+import { deepClone, isNullOrUndefined } from "src/utils/misc-utils";
 import { validators } from "src/utils/validators";
 import { onMounted, ref, watch, Ref } from "vue";
 import DateTimeInput from "./lib/DateTimeInput.vue";
-import { Currency } from "src/schemas/currency";
 import SelectCurrency from "./SelectCurrency.vue";
 import SelectIncomeSource from "./SelectIncomeSource.vue";
 import SelectParty from "./SelectParty.vue";
@@ -126,6 +134,8 @@ const recordAmountPaid = ref<number>(0);
 const recordAmountUnpaid = ref<number>(0);
 const recordTagIdList = ref<string[]>([]);
 const recordNotes = ref<string | null>(null);
+
+const selectedWallet = ref<WalletWithPotentialBalance | null>(null);
 
 const transactionEpoch = ref<number>(Date.now());
 
@@ -279,6 +289,23 @@ async function saveAsTemplateClicked() {
   onDialogCancel();
 }
 
+// Print amount
+function printAmount(amount: number) {
+  return printAmountUtil(amount, recordCurrencyId.value);
+}
+
+// Watch wallet selection
+watch(recordWalletId, async (newWalletId: any) => {
+  if (newWalletId) {
+    let wallet = (await entityService.getWallet(newWalletId)) as WalletWithPotentialBalance;
+    await computationService.computeBalancesForWallets([wallet]);
+    wallet.potentialBalance = 0;
+    selectedWallet.value = wallet;
+  } else {
+    selectedWallet.value = null;
+  }
+});
+
 watch(recordCurrencyId, async (newCurrencyId: any) => {
   if (!newCurrencyId) {
     recordCurrencySign.value = null;
@@ -287,5 +314,70 @@ watch(recordCurrencyId, async (newCurrencyId: any) => {
   let currency = await entityService.getCurrency(newCurrencyId);
   recordCurrencySign.value = currency.sign;
 });
+
+// Watch amount and payment type to update potential balance
+watch([recordAmount, recordAmountPaid, selectedWallet, paymentType], async () => {
+  if (paymentType.value === "full") {
+    recordAmountPaid.value = recordAmount.value;
+  }
+  recordAmountUnpaid.value = asAmount(recordAmount.value) - asAmount(recordAmountPaid.value);
+
+  if (selectedWallet.value) {
+    // For income, money comes IN, so balance increases
+    selectedWallet.value.potentialBalance = asAmount(selectedWallet.value._balance) + asAmount(recordAmountPaid.value);
+    if (initialDoc && initialDoc.income?.walletId === selectedWallet.value._id) {
+      selectedWallet.value.potentialBalance -= asAmount(initialDoc.income?.amountPaid || 0);
+    }
+
+    selectedWallet.value._minimumBalanceState = "not-set";
+    if (!isNullOrUndefined(selectedWallet.value.minimumBalance)) {
+      selectedWallet.value._minimumBalanceState = "normal";
+    }
+    if (asAmount(selectedWallet.value.minimumBalance) * 0.8 > selectedWallet.value.potentialBalance) {
+      selectedWallet.value._minimumBalanceState = "warning";
+    }
+    if (asAmount(selectedWallet.value.minimumBalance) > selectedWallet.value.potentialBalance) {
+      selectedWallet.value._minimumBalanceState = "exceeded";
+    }
+  }
+});
 </script>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.wallet-balance-container {
+  color: #546e7a;
+  margin-top: -16px;
+  margin-bottom: 12px;
+  text-align: right;
+
+  .wallet-limit-normal {
+    color: #546e7a;
+  }
+
+  .wallet-limit-warning {
+    color: #546e7a;
+    border-bottom: 4px solid #ffd740;
+  }
+
+  .wallet-limit-exceeded {
+    color: #bf360c;
+  }
+}
+
+// Dark theme styling for wallet balance container
+:deep(body.body--dark) .wallet-balance-container {
+  color: #94a3b8; // slate-400 for better readability
+
+  .wallet-limit-normal {
+    color: #94a3b8;
+  }
+
+  .wallet-limit-warning {
+    color: #fbbf24; // Amber warning color for dark theme
+    border-bottom: 4px solid #fbbf24;
+  }
+
+  .wallet-limit-exceeded {
+    color: #f87171; // Soft red for exceeded limit
+  }
+}
+</style>
