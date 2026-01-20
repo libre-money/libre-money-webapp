@@ -90,13 +90,18 @@ function validateJson(val: string) {
 
   try {
     const parsed = JSON.parse(val);
-    const validation = TextImportRulesValidator.validate(parsed);
-    validationErrors.value = validation.errors;
+    const result = TextImportRulesSchema.safeParse(parsed);
 
-    if (validation.isValid) {
-      previewData.value = parsed;
+    if (result.success) {
+      validationErrors.value = [];
+      previewData.value = result.data;
       return true;
     } else {
+      // Convert Zod errors to string array
+      validationErrors.value = result.error.errors.map((err) => {
+        const path = err.path.join(".");
+        return path ? `${path}: ${err.message}` : err.message;
+      });
       previewData.value = null;
       return "Invalid rule configuration";
     }

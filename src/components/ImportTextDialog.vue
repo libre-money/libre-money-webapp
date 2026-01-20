@@ -218,7 +218,7 @@ const parseClicked = async () => {
     console.debug("Wallets list:", walletsList);
 
     for (const walletRule of rule.walletMatchRules) {
-      if (TextImportRulesValidator.matchValue(capturedWallet, walletRule)) {
+      if (matchValue(capturedWallet, walletRule)) {
         matchingWallet = walletsList.find((w) => w._id === walletRule.walletId) || null;
         if (matchingWallet) break;
       }
@@ -238,7 +238,7 @@ const parseClicked = async () => {
     console.debug("Expense avenues list:", expenseAvenuesList);
 
     for (const expenseAvenueRule of rule.expenseAvenueMatchRules) {
-      if (TextImportRulesValidator.matchValue(capturedExpenseAvenue, expenseAvenueRule)) {
+      if (matchValue(capturedExpenseAvenue, expenseAvenueRule)) {
         matchingExpenseAvenue = expenseAvenuesList.find((ea) => ea._id === expenseAvenueRule.expenseAvenueId) || null;
         if (matchingExpenseAvenue) break;
       }

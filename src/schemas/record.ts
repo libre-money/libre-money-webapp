@@ -8,7 +8,10 @@ import { Collection, RecordType } from "src/constants/constants";
 const ExpenseDataSchema = z.object({
   expenseAvenueId: z.string().min(1, "Expense avenue ID is required"),
   amount: z.coerce.number(),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
   partyId: z.string().nullable(),
   walletId: z.string().min(1, "Wallet ID is required"),
   amountPaid: z.coerce.number(),
@@ -23,7 +26,10 @@ const ExpenseDataSchema = z.object({
 const IncomeDataSchema = z.object({
   incomeSourceId: z.string().min(1, "Income source ID is required"),
   amount: z.coerce.number(),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
   partyId: z.string().nullable(),
   walletId: z.string().optional(),
   amountPaid: z.coerce.number(),
@@ -38,7 +44,10 @@ const IncomeDataSchema = z.object({
 const AssetPurchaseDataSchema = z.object({
   assetId: z.string().min(1, "Asset ID is required"),
   amount: z.coerce.number(),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
   partyId: z.string().nullable(),
   walletId: z.string().min(1, "Wallet ID is required"),
   amountPaid: z.coerce.number(),
@@ -51,7 +60,10 @@ const AssetPurchaseDataSchema = z.object({
 const AssetSaleDataSchema = z.object({
   assetId: z.string().min(1, "Asset ID is required"),
   amount: z.coerce.number(),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
   partyId: z.string().nullable(),
   walletId: z.string().min(1, "Wallet ID is required"),
   amountPaid: z.coerce.number(),
@@ -65,7 +77,10 @@ const AssetAppreciationDepreciationDataSchema = z.object({
   assetId: z.string().min(1, "Asset ID is required"),
   type: z.string(),
   amount: z.coerce.number(),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
 });
 
 /**
@@ -74,7 +89,10 @@ const AssetAppreciationDepreciationDataSchema = z.object({
 const LendingDataSchema = z.object({
   amount: z.coerce.number(),
   walletId: z.string().min(1, "Wallet ID is required"),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
   partyId: z.string().min(1, "Party ID is required"),
 });
 
@@ -84,7 +102,10 @@ const LendingDataSchema = z.object({
 const BorrowingDataSchema = z.object({
   amount: z.coerce.number(),
   walletId: z.string().min(1, "Wallet ID is required"),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
   partyId: z.string().min(1, "Party ID is required"),
 });
 
@@ -94,7 +115,10 @@ const BorrowingDataSchema = z.object({
 const RepaymentGivenDataSchema = z.object({
   amount: z.coerce.number(),
   walletId: z.string().min(1, "Wallet ID is required"),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
   partyId: z.string().min(1, "Party ID is required"),
 });
 
@@ -104,7 +128,10 @@ const RepaymentGivenDataSchema = z.object({
 const RepaymentReceivedDataSchema = z.object({
   amount: z.coerce.number(),
   walletId: z.string().min(1, "Wallet ID is required"),
-  currencyId: z.string().min(1, "Currency ID is required"),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
   partyId: z.string().min(1, "Party ID is required"),
 });
 
@@ -113,11 +140,17 @@ const RepaymentReceivedDataSchema = z.object({
  */
 const MoneyTransferDataSchema = z.object({
   fromWalletId: z.string().min(1, "From wallet ID is required"),
-  fromCurrencyId: z.string().min(1, "From currency ID is required"),
+  fromCurrencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "From currency ID is required")
+  ),
   fromAmount: z.coerce.number(),
   _fromCurrencySign: z.string().optional(),
   toWalletId: z.string().min(1, "To wallet ID is required"),
-  toCurrencyId: z.string().min(1, "To currency ID is required"),
+  toCurrencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "To currency ID is required")
+  ),
   toAmount: z.coerce.number(),
   _toCurrencySign: z.string().optional(),
 });
@@ -128,7 +161,10 @@ const MoneyTransferDataSchema = z.object({
  */
 export const RecordSchema = BaseDocumentSchema.extend({
   $collection: z.literal(Collection.RECORD),
-  notes: z.string(),
+  notes: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string()
+  ),
   type: z.string(),
   tagIdList: z.array(z.string()),
   transactionEpoch: z.coerce.number().int(),

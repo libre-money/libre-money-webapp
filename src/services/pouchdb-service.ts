@@ -5,6 +5,7 @@ import { deletionService } from "./deletion-service";
 import { dialogService } from "./dialog-service";
 import { configService } from "./config-service";
 import { auditLogService } from "./audit-log-service";
+import { validateOrThrow, ValidationError } from "src/utils/validation-utils";
 
 export interface SyncProgress {
   phase: "connecting" | "downloading" | "uploading" | "finalizing";
@@ -105,6 +106,58 @@ export const pouchdbService = {
     doc.modifiedByUsername = userStore.currentUser?.username;
     doc.modifiedEpoch = Date.now();
     stripTemporaryFields(doc);
+
+    // Validate document before saving
+    console.debug("[pouchdb-service.upsertDoc] Starting validation", {
+      collection: doc.$collection,
+      documentId: doc._id || "new document",
+      documentType: typeof doc,
+      hasMeta: !!meta,
+    });
+
+    try {
+      doc = validateOrThrow(doc, doc.$collection);
+      console.debug("[pouchdb-service.upsertDoc] Validation successful, proceeding with save", {
+        collection: doc.$collection,
+        documentId: doc._id || "new document",
+      });
+    } catch (error) {
+      console.debug("[pouchdb-service.upsertDoc] Validation failed", {
+        collection: doc.$collection,
+        documentId: doc._id || "new document",
+        errorType: error instanceof ValidationError ? "ValidationError" : typeof error,
+      });
+      if (error instanceof ValidationError) {
+        // Log validation error to audit log
+        console.error("Document validation failed:", error.toUserFriendlyMessage());
+
+        // Try to log to audit log (don't fail if audit log fails)
+        try {
+          await auditLogService.logUncaughtError(
+            error,
+            {
+              collection: error.collection,
+              documentId: error.documentId,
+              validationErrors: error.zodErrors.errors,
+            }
+          );
+        } catch (auditError) {
+          console.error("Failed to log validation error to audit log:", auditError);
+        }
+
+        // Show user-friendly error
+        await dialogService.alert(
+          "Validation Error",
+          `Failed to save document: ${error.getErrorSummary()}\n\nPlease check the data and try again.`
+        );
+
+        // Re-throw to prevent saving invalid data
+        throw error;
+      } else {
+        // Re-throw non-validation errors
+        throw error;
+      }
+    }
 
     let oldDoc: PouchDB.Core.PostDocument<any> | undefined = undefined;
     let res;

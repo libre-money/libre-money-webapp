@@ -209,6 +209,7 @@ onMounted(async () => {
 // Validation
 const validationErrors = computed(() => {
   const rule: Partial<TextImportRules> = {
+    $collection: "text-import-rules", // Required for schema validation
     name: ruleName.value,
     description: ruleDescription.value,
     regex: ruleRegex.value,
@@ -219,9 +220,19 @@ const validationErrors = computed(() => {
     dateFormat: dateFormat.value,
     walletMatchRules: walletMatchRules.value,
     expenseAvenueMatchRules: expenseAvenueMatchRules.value,
+    isActive: ruleIsActive.value,
   };
 
-  return TextImportRulesValidator.validate(rule).errors;
+  const result = TextImportRulesSchema.safeParse(rule);
+  if (result.success) {
+    return [];
+  } else {
+    // Convert Zod errors to string array
+    return result.error.errors.map((err) => {
+      const path = err.path.join(".");
+      return path ? `${path}: ${err.message}` : err.message;
+    });
+  }
 });
 
 function validateRegex(val: string) {
