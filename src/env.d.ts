@@ -16,5 +16,6 @@ declare global {
     readonly VITE_GO_ONLINE_SELF_HOST_URL: string;
     readonly VITE_DEMO_PREPARATION_ENABLED: string;
     readonly VITE_AUTH_SERVER_URL: string;
+    readonly VITE_AUDIT_LOG_FEATURE_ENABLED: string;
   }
 }

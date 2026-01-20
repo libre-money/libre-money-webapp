@@ -24,7 +24,10 @@ export interface AuditLogEntry {
   sessionId: string;
 }
 
-const IS_AUDIT_LOG_FEATURE_ENABLED = true;
+// Type assertion for Vite environment variables
+const env = (import.meta as any).env;
+// Default to true if not set to maintain backward compatibility
+const IS_AUDIT_LOG_FEATURE_ENABLED = env.VITE_AUDIT_LOG_FEATURE_ENABLED !== "false";
 const MAX_AUDIT_LOG_INCLUDED_DOCUMENT_SIZE_BYTES = 100_000; // 100KB
 const LOCAL_DB_NAME = "libre-money-audit-log";
 const DEBOUNCE_SYNC_DELAY_MS = 2000; // 2 seconds delay before syncing
