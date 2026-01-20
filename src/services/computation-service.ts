@@ -710,10 +710,10 @@ class ComputationService {
     );
   }
 
-  async computeQuickExpenseSummary(recordList: Record[]): Promise<{ currency: Currency; sum: number; summary: QuickExpenseSummary[] }[]> {
+  async computeQuickExpenseSummary(recordList: Record[]): Promise<{ currency: Currency; sum: number; summary: QuickExpenseSummary[]; }[]> {
     const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
 
-    const result: { currency: Currency; sum: number; summary: QuickExpenseSummary[] }[] = [];
+    const result: { currency: Currency; sum: number; summary: QuickExpenseSummary[]; }[] = [];
 
     for (const currency of currencyList) {
       const summary: QuickExpenseSummary[] = [];
