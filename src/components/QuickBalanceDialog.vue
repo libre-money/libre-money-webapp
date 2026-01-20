@@ -20,16 +20,16 @@
               <tr v-for="wallet in currencyWallets.wallets" v-bind:key="wallet._id">
                 <td>{{ wallet.name }}</td>
                 <td>
-                  {{ printAmount(enforceNonNegativeZero(wallet._balance || 0), currencyWallets.currency._id) }}
+                  {{ printAmount(enforceNonNegativeZero(wallet._balance || 0), currencyWallets.currency._id!) }}
                   <span class="wallet-limit" v-if="wallet._minimumBalanceState !== 'not-set'">
                     <span class="wallet-limit-warning" v-if="wallet._minimumBalanceState === 'warning'">
-                      (Approaching limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id) }})
+                      (Approaching limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id!) }})
                     </span>
                     <span class="wallet-limit-exceeded" v-else-if="wallet._minimumBalanceState === 'exceeded'">
-                      (Exceeded limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id) }})
+                      (Exceeded limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id!) }})
                     </span>
                     <span class="wallet-limit-normal" v-else-if="wallet._minimumBalanceState === 'normal'">
-                      (Limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id) }})
+                      (Limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id!) }})
                     </span>
                   </span>
                 </td>
@@ -43,7 +43,8 @@
               <tr>
                 <th>Grand Total</th>
                 <th colspan="2">
-                  {{ printAmount(enforceNonNegativeZero(currencyWallets.sumOfBalances), currencyWallets.currency._id) }}
+                  {{ printAmount(enforceNonNegativeZero(currencyWallets.sumOfBalances), currencyWallets.currency._id!)
+                  }}
                 </th>
               </tr>
             </tbody>
@@ -61,6 +62,7 @@ import { Collection } from "src/constants/constants";
 import { Currency } from "src/models/currency";
 import { Wallet } from "src/models/wallet";
 import { computationService } from "src/services/computation-service";
+import { currencyFormatService } from "src/services/currency-format-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
@@ -115,6 +117,9 @@ async function loadBalances() {
 
   const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
   const walletList = (await pouchdbService.listByCollection(Collection.WALLET)).docs as Wallet[];
+
+  // Ensure currency cache is updated for printAmount to work
+  await currencyFormatService.updateCurrencyCache();
 
   await computationService.computeBalancesForWallets(walletList);
 
