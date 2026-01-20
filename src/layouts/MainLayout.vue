@@ -264,12 +264,6 @@ const operationList = [
         icon: "dashboard",
         link: "#/payables-receivables-consolidated",
       },
-      {
-        title: "Loans & Debts (Old)",
-        caption: "Legacy view",
-        icon: "history",
-        link: "#/loans-and-debts",
-      },
     ],
   },
   {
