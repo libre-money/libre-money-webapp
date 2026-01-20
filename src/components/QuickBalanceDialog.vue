@@ -10,44 +10,40 @@
         <loading-indicator :is-loading="isLoading" :phases="4" ref="loadingIndicator"></loading-indicator>
 
         <div class="quick-balance-table-container">
-          <table class="overview-table" v-for="overviewAndCurrency in overviewAndCurrencyList" v-bind:key="overviewAndCurrency.currency._id">
+          <table class="overview-table" v-for="currencyWallets in currencyWalletsList"
+            v-bind:key="currencyWallets.currency._id">
             <tbody>
               <tr>
                 <th style="width: 140px">Wallet</th>
                 <th colspan="2">Balance</th>
               </tr>
-              <tr v-for="row in overviewAndCurrency.overview!.wallets.list" v-bind:key="row.walletId">
-                <td>{{ row.wallet.name }}</td>
+              <tr v-for="wallet in currencyWallets.wallets" v-bind:key="wallet._id">
+                <td>{{ wallet.name }}</td>
                 <td>
-                  {{ printAmount(enforceNonNegativeZero(row.balance), overviewAndCurrency.currency._id) }}
-                  <span class="wallet-limit" v-if="row.minimumBalanceState !== 'not-set'">
-                    <span class="wallet-limit-warning" v-if="row.minimumBalanceState === 'warning'">
-                      (Approaching limit {{ printAmount(row.wallet.minimumBalance!, overviewAndCurrency.currency._id) }})
+                  {{ printAmount(enforceNonNegativeZero(wallet._balance || 0), currencyWallets.currency._id) }}
+                  <span class="wallet-limit" v-if="wallet._minimumBalanceState !== 'not-set'">
+                    <span class="wallet-limit-warning" v-if="wallet._minimumBalanceState === 'warning'">
+                      (Approaching limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id) }})
                     </span>
-                    <span class="wallet-limit-exceeded" v-else-if="row.minimumBalanceState === 'exceeded'">
-                      (Exceeded limit {{ printAmount(row.wallet.minimumBalance!, overviewAndCurrency.currency._id) }})
+                    <span class="wallet-limit-exceeded" v-else-if="wallet._minimumBalanceState === 'exceeded'">
+                      (Exceeded limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id) }})
                     </span>
-                    <span class="wallet-limit-normal" v-else-if="row.minimumBalanceState === 'normal'">
-                      (Limit {{ printAmount(row.wallet.minimumBalance!, overviewAndCurrency.currency._id) }})
+                    <span class="wallet-limit-normal" v-else-if="wallet._minimumBalanceState === 'normal'">
+                      (Limit {{ printAmount(wallet.minimumBalance!, currencyWallets.currency._id) }})
                     </span>
                   </span>
                 </td>
                 <td>
-                  <q-btn v-if="intent === 'balances'" flat dense round icon="tune" @click="onCalibrateClick(row.walletId, row.balance)" class="q-ml-sm" />
-                  <q-btn
-                    v-else-if="intent === 'calibration'"
-                    color="primary"
-                    size="sm"
-                    label="Calibrate"
-                    @click="onCalibrateClick(row.walletId, row.balance)"
-                    class="q-ml-sm"
-                  />
+                  <q-btn v-if="intent === 'balances'" flat dense round icon="tune"
+                    @click="onCalibrateClick(wallet._id!, wallet._balance || 0)" class="q-ml-sm" />
+                  <q-btn v-else-if="intent === 'calibration'" color="primary" size="sm" label="Calibrate"
+                    @click="onCalibrateClick(wallet._id!, wallet._balance || 0)" class="q-ml-sm" />
                 </td>
               </tr>
               <tr>
                 <th>Grand Total</th>
                 <th colspan="2">
-                  {{ printAmount(enforceNonNegativeZero(overviewAndCurrency.overview!.wallets.sumOfBalances), overviewAndCurrency.currency._id) }}
+                  {{ printAmount(enforceNonNegativeZero(currencyWallets.sumOfBalances), currencyWallets.currency._id) }}
                 </th>
               </tr>
             </tbody>
@@ -63,14 +59,16 @@ import { useDialogPluginComponent, useQuasar } from "quasar";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { Collection } from "src/constants/constants";
 import { Currency } from "src/models/currency";
-import { Overview } from "src/models/inferred/overview";
+import { Wallet } from "src/models/wallet";
 import { computationService } from "src/services/computation-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useSettingsStore } from "src/stores/settings";
 import { setDateToTheFirstDateOfMonth } from "src/utils/date-utils";
+import { asAmount } from "src/utils/de-facto-utils";
 import { printAmount } from "src/utils/de-facto-utils";
 import { CodedError } from "src/utils/error-utils";
 import { enforceNonNegativeZero } from "src/utils/number-utils";
+import { isNullOrUndefined } from "src/utils/misc-utils";
 import { Ref, onMounted, ref } from "vue";
 import WalletCalibrationDialog from "./WalletCalibrationDialog.vue";
 
@@ -95,30 +93,57 @@ const settingsStore = useSettingsStore();
 const isLoading = ref(true);
 const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
-const startEpoch: Ref<number> = ref(setDateToTheFirstDateOfMonth(Date.now()));
-const endEpoch: Ref<number> = ref(Date.now());
+const currencyWalletsList: Ref<{ currency: Currency; wallets: Wallet[]; sumOfBalances: number; }[]> = ref([]);
 
-const overviewAndCurrencyList: Ref<{ overview: Overview | null; currency: Currency }[]> = ref([]);
+function calculateMinimumBalanceState(wallet: Wallet): string {
+  if (isNullOrUndefined(wallet.minimumBalance)) {
+    return "not-set";
+  }
+  const balance = asAmount(wallet._balance || 0);
+  const minimumBalance = asAmount(wallet.minimumBalance);
+  if (minimumBalance * 0.8 > balance) {
+    return "warning";
+  }
+  if (minimumBalance > balance) {
+    return "exceeded";
+  }
+  return "normal";
+}
 
-async function loadOverview() {
+async function loadBalances() {
   isLoading.value = true;
 
   const currencyList = (await pouchdbService.listByCollection(Collection.CURRENCY)).docs as Currency[];
-  overviewAndCurrencyList.value = await Promise.all(
-    currencyList.map(async (currency) => {
-      let newOverview = await computationService.computeOverview(startEpoch.value, endEpoch.value, currency._id!);
-      if (newOverview) {
-        newOverview.wallets.list.sort((a, b) => a.wallet.name.localeCompare(b.wallet.name));
-      }
-      return { overview: newOverview, currency };
-    })
-  );
+  const walletList = (await pouchdbService.listByCollection(Collection.WALLET)).docs as Wallet[];
+
+  await computationService.computeBalancesForWallets(walletList);
+
+  // Group wallets by currency and calculate minimum balance states
+  currencyWalletsList.value = currencyList.map((currency) => {
+    const wallets = walletList
+      .filter((wallet) => wallet.currencyId === currency._id)
+      .map((wallet) => {
+        wallet._minimumBalanceState = calculateMinimumBalanceState(wallet);
+        return wallet;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const sumOfBalances = wallets.reduce((sum, wallet) => sum + (wallet._balance || 0), 0);
+
+    return {
+      currency,
+      wallets,
+      sumOfBalances,
+    };
+  }).filter((item) => item.wallets.length > 0);
 
   isLoading.value = false;
 }
 
 async function onCalibrateClick(walletId: string, balance: number) {
-  const wallet = overviewAndCurrencyList.value.flatMap((oc) => oc.overview?.wallets.list || []).find((w) => w.walletId === walletId)?.wallet;
+  const wallet = currencyWalletsList.value
+    .flatMap((cw) => cw.wallets)
+    .find((w) => w._id === walletId);
 
   if (!wallet) {
     throw new CodedError("WALLET_NOT_FOUND", "Wallet not found");
@@ -134,7 +159,7 @@ async function onCalibrateClick(walletId: string, balance: number) {
 }
 
 onMounted(() => {
-  loadOverview();
+  loadBalances();
 });
 
 function cancelClicked() {
