@@ -234,6 +234,13 @@ watch(recordWalletId, async (newWalletId: any) => {
     await computationService.computeBalancesForWallets([wallet]);
     wallet.potentialBalance = 0;
     selectedWallet.value = wallet;
+    
+    // Update currency based on wallet if asset hasn't been selected yet
+    if (!recordAssetId.value) {
+      let currency = await entityService.getCurrency(wallet.currencyId);
+      recordCurrencyId.value = currency._id!;
+      recordCurrencySign.value = currency.sign;
+    }
   } else {
     selectedWallet.value = null;
   }
