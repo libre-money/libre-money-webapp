@@ -1,5 +1,5 @@
-import { ExpenseAvenue } from "../expense-avenue";
-import { Wallet } from "../wallet";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
+import { Wallet } from "src/schemas/wallet";
 
 export type ExpenseRecordSuggestion = {
   wallet?: Wallet;

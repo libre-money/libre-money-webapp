@@ -1,4 +1,4 @@
-import { Currency } from "../currency";
+import { Currency } from "src/schemas/currency";
 import { AccAccount } from "./acc-account";
 import { AccJournalEntry } from "./acc-journal-entry";
 import { AccLedgerEntry } from "./acc-ledger-entry";

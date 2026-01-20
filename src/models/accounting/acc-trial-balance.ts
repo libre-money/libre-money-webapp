@@ -1,4 +1,4 @@
-import { Currency } from "../currency";
+import { Currency } from "src/schemas/currency";
 import { AccAccount } from "./acc-account";
 
 export type AccTrialBalanceOfType = {
