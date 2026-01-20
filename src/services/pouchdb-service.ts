@@ -34,12 +34,27 @@ async function createCollectionIndexIfNeeded() {
   collectionIndexCreated = true;
 }
 
-const knownTemporaryFields = ["_currencySign", "_usedAmount"];
+const allowedUnderscoreFields = new Set(["_id", "_rev", "_attachments"]);
 
-function stripKnownTemporaryFields(doc: any) {
-  knownTemporaryFields.forEach((field) => {
-    delete doc[field];
-  });
+function stripTemporaryFields(doc: any) {
+  const visit = (value: any) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (typeof value !== "object") return;
+
+    Object.keys(value).forEach((key) => {
+      if (key.startsWith("_") && !allowedUnderscoreFields.has(key)) {
+        delete value[key];
+        return;
+      }
+      visit(value[key]);
+    });
+  };
+
+  visit(doc);
 }
 
 const changeListenerList: ((action: "upsert" | "remove" | "sync", doc: PouchDB.Core.PostDocument<any> | undefined) => void)[] = [];
@@ -89,7 +104,7 @@ export const pouchdbService = {
 
     doc.modifiedByUsername = userStore.currentUser?.username;
     doc.modifiedEpoch = Date.now();
-    stripKnownTemporaryFields(doc);
+    stripTemporaryFields(doc);
 
     let oldDoc: PouchDB.Core.PostDocument<any> | undefined = undefined;
     let res;
