@@ -7,26 +7,11 @@
       <q-separator />
       <q-card-section class="col scroll" style="min-height: 0">
         <q-form class="q-gutter-md" ref="importForm">
-          <q-input
-            type="textarea"
-            standout="bg-primary text-white"
-            v-model="importText"
-            label="Paste your text here"
-            lazy-rules
-            :rules="validators.required"
-            autogrow
-          />
+          <q-input type="textarea" standout="bg-primary text-white" v-model="importText" label="Paste your text here"
+            lazy-rules :rules="validators.required" autogrow />
 
-          <q-select
-            standout="bg-primary text-white"
-            v-model="selectedRuleId"
-            :options="ruleOptions"
-            label="Select Import Rule"
-            emit-value
-            map-options
-            lazy-rules
-            :rules="validators.required"
-          />
+          <q-select standout="bg-primary text-white" v-model="selectedRuleId" :options="ruleOptions"
+            label="Select Import Rule" emit-value map-options lazy-rules :rules="validators.required" />
 
           <div v-if="parsedData" class="q-mt-md">
             <div class="text-h6">Parsed Data</div>
@@ -62,10 +47,10 @@
       <q-separator />
       <q-card-section class="no-shrink">
         <div class="flex">
-          <q-btn flat rounded size="lg" label="Cancel" @click="onDialogCancel" />
+          <q-btn flat rounded label="Cancel" @click="onDialogCancel" />
           <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" label="Parse" @click="parseClicked" />
-          <q-btn v-if="parsedData" rounded size="lg" color="green" label="Create Expense" @click="createExpenseClicked" />
+          <q-btn rounded color="primary" label="Parse" @click="parseClicked" />
+          <q-btn v-if="parsedData" rounded color="green" label="Create Expense" @click="createExpenseClicked" />
         </div>
       </q-card-section>
     </q-card>
@@ -93,7 +78,7 @@ const importText = ref<string | null>(null);
 const selectedRuleId = ref<string | null>("AUTO_DETECT_ALL_RULES");
 const parsedData = ref<ExpenseRecordSuggestion | null>(null);
 
-const ruleOptions = ref<{ label: string; value: string }[]>([]);
+const ruleOptions = ref<{ label: string; value: string; }[]>([]);
 
 const parse = (text: string, format: string) => {
   return date.extractDate(text, format);

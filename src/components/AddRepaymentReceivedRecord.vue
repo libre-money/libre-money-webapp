@@ -16,7 +16,8 @@
 
           <div v-if="suggestedAmount">Total Owed by Party: {{ suggestedAmount }}</div>
 
-          <q-input type="number" standout="bg-primary text-white" v-model="recordAmount" label="Received Amount" lazy-rules :rules="validators.balance">
+          <q-input type="number" standout="bg-primary text-white" v-model="recordAmount" label="Received Amount"
+            lazy-rules :rules="validators.balance">
             <template v-slot:append>
               <div class="currency-label">
                 {{ recordCurrencySign }}
@@ -25,15 +26,16 @@
           </q-input>
 
           <select-tag v-model="recordTagIdList"></select-tag>
-          <q-input type="textarea" standout="bg-primary text-white" v-model="recordNotes" label="Notes" lazy-rules :rules="validators.notes" />
+          <q-input type="textarea" standout="bg-primary text-white" v-model="recordNotes" label="Notes" lazy-rules
+            :rules="validators.notes" />
         </q-form>
       </q-card-section>
       <q-separator />
       <q-card-section class="no-shrink">
         <div class="flex">
-          <q-btn flat rounded size="lg" label="Cancel" @click="cancelClicked" />
+          <q-btn flat rounded label="Cancel" @click="cancelClicked" />
           <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" :label="existingRecordId ? 'Update' : 'Add'" @click="okClicked" />
+          <q-btn rounded color="primary" :label="existingRecordId ? 'Update' : 'Add'" @click="okClicked" />
         </div>
       </q-card-section>
     </q-card>

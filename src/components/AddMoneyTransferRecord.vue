@@ -10,46 +10,35 @@
       <q-card-section class="col scroll" style="min-height: 0">
         <q-form class="q-gutter-md" ref="recordForm">
           <date-time-input v-model="transactionEpoch" label="Date & Time"></date-time-input>
-          <select-wallet v-model="recordFromWalletId" label="From Wallet (Source)" :rules="validators.required"> </select-wallet>
-          <q-input
-            input-class="text-h6"
-            type="number"
-            standout="bg-primary text-white"
-            v-model="recordFromAmount"
-            label="Source Amount"
-            lazy-rules
-            :rules="validators.balance"
-          >
+          <select-wallet v-model="recordFromWalletId" label="From Wallet (Source)" :rules="validators.required">
+          </select-wallet>
+          <q-input input-class="text-h6" type="number" standout="bg-primary text-white" v-model="recordFromAmount"
+            label="Source Amount" lazy-rules :rules="validators.balance">
             <template v-slot:append>
               <div class="currency-label">{{ recordFromCurrencySign }}</div>
             </template>
           </q-input>
 
-          <select-wallet v-model="recordToWalletId" label="To Wallet (Destination)" :rules="validators.required"> </select-wallet>
-          <q-input
-            input-class="text-h6"
-            type="number"
-            standout="bg-primary text-white"
-            v-model="recordToAmount"
-            label="Destination Amount"
-            lazy-rules
-            :rules="validators.balance"
-          >
+          <select-wallet v-model="recordToWalletId" label="To Wallet (Destination)" :rules="validators.required">
+          </select-wallet>
+          <q-input input-class="text-h6" type="number" standout="bg-primary text-white" v-model="recordToAmount"
+            label="Destination Amount" lazy-rules :rules="validators.balance">
             <template v-slot:append>
               <div class="currency-label">{{ recordToCurrencySign }}</div>
             </template>
           </q-input>
 
           <select-tag v-model="recordTagIdList"></select-tag>
-          <q-input standout="bg-primary text-white" type="textarea" v-model="recordNotes" label="Notes" lazy-rules :rules="validators.notes" />
+          <q-input standout="bg-primary text-white" type="textarea" v-model="recordNotes" label="Notes" lazy-rules
+            :rules="validators.notes" />
         </q-form>
       </q-card-section>
       <q-separator />
       <q-card-section class="no-shrink">
         <div class="flex">
-          <q-btn flat rounded size="lg" label="Cancel" @click="onDialogCancel" />
+          <q-btn flat rounded label="Cancel" @click="onDialogCancel" />
           <div class="spacer"></div>
-          <q-btn-dropdown rounded size="lg" color="primary" label="Save" split @click="okClicked">
+          <q-btn-dropdown rounded color="primary" label="Save" split @click="okClicked">
             <q-list>
               <q-item clickable v-close-popup @click="saveAsTemplateClicked">
                 <q-item-section>

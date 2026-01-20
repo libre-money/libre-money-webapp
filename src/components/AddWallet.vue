@@ -2,42 +2,32 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
     <q-card class="q-dialog-plugin column full-height">
       <q-card-section class="no-shrink">
-        <div class="std-dialog-title text-primary text-weight-bold">{{ existingWalletId ? "Editing a Wallet" : "Adding a Wallet" }}</div>
+        <div class="std-dialog-title text-primary text-weight-bold">{{ existingWalletId ? "Editing a Wallet" : "Adding a
+          Wallet" }}</div>
       </q-card-section>
       <q-separator />
       <q-card-section class="col scroll" style="min-height: 0">
         <q-form class="q-gutter-md" ref="walletForm">
-          <q-input hide-bottom-space standout="bg-primary text-white" v-model="walletName" label="Name of the Wallet" lazy-rules :rules="validators.name" />
-          <q-select standout="bg-primary text-white" v-model="walletType" :options="walletTypeList" label="Type" emit-value map-options />
+          <q-input hide-bottom-space standout="bg-primary text-white" v-model="walletName" label="Name of the Wallet"
+            lazy-rules :rules="validators.name" />
+          <q-select standout="bg-primary text-white" v-model="walletType" :options="walletTypeList" label="Type"
+            emit-value map-options />
           <select-currency v-model="walletCurrencyId"></select-currency>
-          <q-toggle v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options" right-label v-if="existingWalletId" />
-          <q-input
-            type="number"
-            hide-bottom-space
-            standout="bg-primary text-white"
-            v-model="walletInitialBalance"
-            label="Initial Balance"
-            lazy-rules
-            :rules="validators.balance"
-            v-if="!existingWalletId || shouldShowAdvancedOptions"
-          />
-          <q-input
-            type="number"
-            standout="bg-primary text-white"
-            v-model="walletMinimumBalance"
-            label="Minimum Balance"
-            lazy-rules
-            :rules="validators.balanceOptional"
-            v-if="!existingWalletId || shouldShowAdvancedOptions"
-          />
+          <q-toggle v-model="shouldShowAdvancedOptions" color="green" label="Show advanced options" right-label
+            v-if="existingWalletId" />
+          <q-input type="number" hide-bottom-space standout="bg-primary text-white" v-model="walletInitialBalance"
+            label="Initial Balance" lazy-rules :rules="validators.balance"
+            v-if="!existingWalletId || shouldShowAdvancedOptions" />
+          <q-input type="number" standout="bg-primary text-white" v-model="walletMinimumBalance" label="Minimum Balance"
+            lazy-rules :rules="validators.balanceOptional" v-if="!existingWalletId || shouldShowAdvancedOptions" />
         </q-form>
       </q-card-section>
       <q-separator />
       <q-card-section class="no-shrink">
         <div class="flex">
-          <q-btn flat rounded size="lg" label="Cancel" @click="cancelClicked" />
+          <q-btn flat rounded label="Cancel" @click="cancelClicked" />
           <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" :label="existingWalletId ? 'Update' : 'Add'" @click="okClicked" />
+          <q-btn rounded color="primary" :label="existingWalletId ? 'Update' : 'Add'" @click="okClicked" />
         </div>
       </q-card-section>
     </q-card>
