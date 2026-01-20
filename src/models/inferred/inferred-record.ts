@@ -54,6 +54,25 @@ export type InferredRecord = Record & {
     asset: Asset;
   };
 
+  payablePayment?: {
+    party: Party;
+    wallet: Wallet;
+    originalRecord: Record;
+  };
+  receivableReceipt?: {
+    party: Party;
+    wallet: Wallet;
+    originalRecord: Record;
+  };
+  loanForgivenessGiven?: {
+    party: Party;
+    originalLendingRecord: Record;
+  };
+  loanForgivenessReceived?: {
+    party: Party;
+    originalBorrowingRecord: Record;
+  };
+
   tagList: Tag[];
   typePrettified: string;
 };

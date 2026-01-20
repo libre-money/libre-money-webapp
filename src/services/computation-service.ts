@@ -16,6 +16,10 @@ import { pouchdbService } from "./pouchdb-service";
 import { QuickExpenseSummary } from "src/models/inferred/quick-expense-summary";
 import { entityService } from "./entity-service";
 import { RollingBudget } from "src/schemas/rolling-budget";
+import { PayableItem } from "src/models/inferred/payable-item";
+import { ReceivableItem } from "src/models/inferred/receivable-item";
+import { LoanGivenItem } from "src/models/inferred/loan-given-item";
+import { LoanTakenItem } from "src/models/inferred/loan-taken-item";
 
 class ComputationService {
   async computeBalancesForAssets(assetList: Asset[]): Promise<void> {
@@ -90,6 +94,16 @@ class ComputationService {
       wallet._balance += recordList
         .filter((record) => record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer?.toWalletId === wallet._id)
         .reduce((balance, record) => balance + asAmount(record.moneyTransfer?.toAmount), 0);
+
+      // Handle PAYABLE_PAYMENT (reduces wallet balance when paying payables, unless it's a write-off)
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.PAYABLE_PAYMENT && record.payablePayment?.walletId === wallet._id && record.payablePayment?.walletId !== "write-off")
+        .reduce((balance, record) => balance - asAmount(record.payablePayment?.amount), 0);
+
+      // Handle RECEIVABLE_RECEIPT (increases wallet balance when receiving payments, unless it's a write-off)
+      wallet._balance += recordList
+        .filter((record) => record.type === RecordType.RECEIVABLE_RECEIPT && record.receivableReceipt?.walletId === wallet._id && record.receivableReceipt?.walletId !== "write-off")
+        .reduce((balance, record) => balance + asAmount(record.receivableReceipt?.amount), 0);
     }
   }
 
@@ -133,6 +147,24 @@ class ComputationService {
           )
           .reduce((sum, record) => sum + record.repaymentReceived!.amount, 0);
 
+        const totalLoanForgivenessGiven = recordList
+          .filter(
+            (record) =>
+              record.type === RecordType.LOAN_FORGIVENESS_GIVEN &&
+              record.loanForgivenessGiven?.partyId === partyId &&
+              record.loanForgivenessGiven?.currencyId === currency._id
+          )
+          .reduce((sum, record) => sum + record.loanForgivenessGiven!.amountForgiven, 0);
+
+        const totalLoanForgivenessReceived = recordList
+          .filter(
+            (record) =>
+              record.type === RecordType.LOAN_FORGIVENESS_RECEIVED &&
+              record.loanForgivenessReceived?.partyId === partyId &&
+              record.loanForgivenessReceived?.currencyId === currency._id
+          )
+          .reduce((sum, record) => sum + record.loanForgivenessReceived!.amountForgiven, 0);
+
         const incomeReceivable = recordList
           .filter((record) => record.type === RecordType.INCOME && record.income?.partyId === party._id && record.income?.currencyId === currency._id)
           .reduce((sum, record) => sum + record.income!.amountUnpaid, 0);
@@ -152,13 +184,33 @@ class ComputationService {
           )
           .reduce((sum, record) => sum + record.assetPurchase!.amountUnpaid, 0);
 
+        const totalPayablePayments = recordList
+          .filter(
+            (record) =>
+              record.type === RecordType.PAYABLE_PAYMENT &&
+              record.payablePayment?.partyId === partyId &&
+              record.payablePayment?.currencyId === currency._id
+          )
+          .reduce((sum, record) => sum + record.payablePayment!.amount, 0);
+
+        const totalReceivableReceipts = recordList
+          .filter(
+            (record) =>
+              record.type === RecordType.RECEIVABLE_RECEIPT &&
+              record.receivableReceipt?.partyId === partyId &&
+              record.receivableReceipt?.currencyId === currency._id
+          )
+          .reduce((sum, record) => sum + record.receivableReceipt!.amount, 0);
+
         let totalOwedToParty =
           totalLoansTakenFromParty -
           totalLoansGivenToParty +
           totalRepaidByParty -
           totalRepaidToParty +
-          (expensePayable + purchasePayable) -
-          (incomeReceivable + salesReceivable);
+          totalLoanForgivenessReceived -
+          totalLoanForgivenessGiven +
+          (expensePayable + purchasePayable - totalPayablePayments) -
+          (incomeReceivable + salesReceivable - totalReceivableReceipts);
         let totalOwedByParty = 0;
         if (totalOwedToParty < 0) {
           totalOwedByParty = totalOwedToParty * -1;
@@ -425,6 +477,16 @@ class ComputationService {
               record.type === RecordType.MONEY_TRANSFER && record.moneyTransfer?.toWalletId === wallet._id && record.moneyTransfer?.toCurrencyId === currencyId
           )
           .reduce((balance, record) => balance + asAmount(record.moneyTransfer?.toAmount), 0);
+
+        // PAYABLE_PAYMENT (reduces wallet balance, unless write-off)
+        map[key].balance += recordList
+          .filter((record) => record.type === RecordType.PAYABLE_PAYMENT && record.payablePayment?.walletId === wallet._id && record.payablePayment?.walletId !== "write-off")
+          .reduce((balance, record) => balance - asAmount(record.payablePayment?.amount), 0);
+
+        // RECEIVABLE_RECEIPT (increases wallet balance, unless write-off)
+        map[key].balance += recordList
+          .filter((record) => record.type === RecordType.RECEIVABLE_RECEIPT && record.receivableReceipt?.walletId === wallet._id && record.receivableReceipt?.walletId !== "write-off")
+          .reduce((balance, record) => balance + asAmount(record.receivableReceipt?.amount), 0);
       }
 
       Object.keys(map).forEach((key) => {
@@ -784,6 +846,336 @@ class ComputationService {
     }
 
     return result;
+  }
+
+  /**
+   * Get list of unpaid expenses and purchases (Payables)
+   */
+  async preparePayablesList(currencyId: string): Promise<PayableItem[]> {
+    const res = await pouchdbService.listByCollection(Collection.RECORD);
+    const recordList = res.docs as Record[];
+
+    const res2 = await pouchdbService.listByCollection(Collection.PARTY);
+    const partyList = res2.docs as Party[];
+
+    const res3 = await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE);
+    const expenseAvenueList = res3.docs as ExpenseAvenue[];
+
+    const res4 = await pouchdbService.listByCollection(Collection.ASSET);
+    const assetList = res4.docs as Asset[];
+
+    const res5 = await pouchdbService.listByCollection(Collection.CURRENCY);
+    const currencyList = res5.docs as Currency[];
+
+    const currency = currencyList.find((c) => c._id === currencyId);
+    const currencySign = currency?.sign || "";
+
+    const payables: PayableItem[] = [];
+
+    // Calculate total payments made per record
+    const paymentsByRecordId: { [key: string]: number } = {};
+    recordList
+      .filter((r) => r.type === RecordType.PAYABLE_PAYMENT && r.payablePayment?.currencyId === currencyId)
+      .forEach((r) => {
+        const originalId = r.payablePayment!.originalRecordId;
+        if (!paymentsByRecordId[originalId]) {
+          paymentsByRecordId[originalId] = 0;
+        }
+        paymentsByRecordId[originalId] += r.payablePayment!.amount;
+      });
+
+    // Process unpaid expenses
+    recordList
+      .filter((r) => r.type === RecordType.EXPENSE && r.expense?.currencyId === currencyId)
+      .forEach((record) => {
+        const expense = record.expense!;
+        const additionalPayments = paymentsByRecordId[record._id!] || 0;
+        const totalPaid = expense.amountPaid + additionalPayments;
+        const remainingUnpaid = expense.amount - totalPaid;
+
+        if (remainingUnpaid > 0) {
+          const party = partyList.find((p) => p._id === expense.partyId);
+          const expenseAvenue = expenseAvenueList.find((e) => e._id === expense.expenseAvenueId);
+
+          payables.push({
+            recordId: record._id!,
+            transactionEpoch: record.transactionEpoch,
+            partyId: expense.partyId,
+            partyName: party?.name || "Unknown",
+            type: "expense",
+            description: expenseAvenue?.name || "Unknown",
+            originalAmount: expense.amount,
+            amountPaid: totalPaid,
+            amountUnpaid: remainingUnpaid,
+            currencyId,
+            currencySign,
+          });
+        }
+      });
+
+    // Process unpaid asset purchases
+    recordList
+      .filter((r) => r.type === RecordType.ASSET_PURCHASE && r.assetPurchase?.currencyId === currencyId)
+      .forEach((record) => {
+        const purchase = record.assetPurchase!;
+        const additionalPayments = paymentsByRecordId[record._id!] || 0;
+        const totalPaid = purchase.amountPaid + additionalPayments;
+        const remainingUnpaid = purchase.amount - totalPaid;
+
+        if (remainingUnpaid > 0) {
+          const party = partyList.find((p) => p._id === purchase.partyId);
+          const asset = assetList.find((a) => a._id === purchase.assetId);
+
+          payables.push({
+            recordId: record._id!,
+            transactionEpoch: record.transactionEpoch,
+            partyId: purchase.partyId,
+            partyName: party?.name || "Unknown",
+            type: "asset-purchase",
+            description: asset?.name || "Unknown",
+            originalAmount: purchase.amount,
+            amountPaid: totalPaid,
+            amountUnpaid: remainingUnpaid,
+            currencyId,
+            currencySign,
+          });
+        }
+      });
+
+    return payables;
+  }
+
+  /**
+   * Get list of unpaid income and sales (Receivables)
+   */
+  async prepareReceivablesList(currencyId: string): Promise<ReceivableItem[]> {
+    const res = await pouchdbService.listByCollection(Collection.RECORD);
+    const recordList = res.docs as Record[];
+
+    const res2 = await pouchdbService.listByCollection(Collection.PARTY);
+    const partyList = res2.docs as Party[];
+
+    const res3 = await pouchdbService.listByCollection(Collection.INCOME_SOURCE);
+    const incomeSourceList = res3.docs as IncomeSource[];
+
+    const res4 = await pouchdbService.listByCollection(Collection.ASSET);
+    const assetList = res4.docs as Asset[];
+
+    const res5 = await pouchdbService.listByCollection(Collection.CURRENCY);
+    const currencyList = res5.docs as Currency[];
+
+    const currency = currencyList.find((c) => c._id === currencyId);
+    const currencySign = currency?.sign || "";
+
+    const receivables: ReceivableItem[] = [];
+
+    // Calculate total receipts per record
+    const receiptsByRecordId: { [key: string]: number } = {};
+    recordList
+      .filter((r) => r.type === RecordType.RECEIVABLE_RECEIPT && r.receivableReceipt?.currencyId === currencyId)
+      .forEach((r) => {
+        const originalId = r.receivableReceipt!.originalRecordId;
+        if (!receiptsByRecordId[originalId]) {
+          receiptsByRecordId[originalId] = 0;
+        }
+        receiptsByRecordId[originalId] += r.receivableReceipt!.amount;
+      });
+
+    // Process unpaid income
+    recordList
+      .filter((r) => r.type === RecordType.INCOME && r.income?.currencyId === currencyId)
+      .forEach((record) => {
+        const income = record.income!;
+        const additionalReceipts = receiptsByRecordId[record._id!] || 0;
+        const totalReceived = income.amountPaid + additionalReceipts;
+        const remainingUnpaid = income.amount - totalReceived;
+
+        if (remainingUnpaid > 0) {
+          const party = partyList.find((p) => p._id === income.partyId);
+          const incomeSource = incomeSourceList.find((i) => i._id === income.incomeSourceId);
+
+          receivables.push({
+            recordId: record._id!,
+            transactionEpoch: record.transactionEpoch,
+            partyId: income.partyId,
+            partyName: party?.name || "Unknown",
+            type: "income",
+            description: incomeSource?.name || "Unknown",
+            originalAmount: income.amount,
+            amountReceived: totalReceived,
+            amountUnpaid: remainingUnpaid,
+            currencyId,
+            currencySign,
+          });
+        }
+      });
+
+    // Process unpaid asset sales
+    recordList
+      .filter((r) => r.type === RecordType.ASSET_SALE && r.assetSale?.currencyId === currencyId)
+      .forEach((record) => {
+        const sale = record.assetSale!;
+        const additionalReceipts = receiptsByRecordId[record._id!] || 0;
+        const totalReceived = sale.amountPaid + additionalReceipts;
+        const remainingUnpaid = sale.amount - totalReceived;
+
+        if (remainingUnpaid > 0) {
+          const party = partyList.find((p) => p._id === sale.partyId);
+          const asset = assetList.find((a) => a._id === sale.assetId);
+
+          receivables.push({
+            recordId: record._id!,
+            transactionEpoch: record.transactionEpoch,
+            partyId: sale.partyId,
+            partyName: party?.name || "Unknown",
+            type: "asset-sale",
+            description: asset?.name || "Unknown",
+            originalAmount: sale.amount,
+            amountReceived: totalReceived,
+            amountUnpaid: remainingUnpaid,
+            currencyId,
+            currencySign,
+          });
+        }
+      });
+
+    return receivables;
+  }
+
+  /**
+   * Get list of outstanding loans given
+   */
+  async prepareLoanGivenList(currencyId: string): Promise<LoanGivenItem[]> {
+    const res = await pouchdbService.listByCollection(Collection.RECORD);
+    const recordList = res.docs as Record[];
+
+    const res2 = await pouchdbService.listByCollection(Collection.PARTY);
+    const partyList = res2.docs as Party[];
+
+    const res3 = await pouchdbService.listByCollection(Collection.CURRENCY);
+    const currencyList = res3.docs as Currency[];
+
+    const currency = currencyList.find((c) => c._id === currencyId);
+    const currencySign = currency?.sign || "";
+
+    const loansGiven: LoanGivenItem[] = [];
+
+    // Get all lending records
+    const lendingRecords = recordList.filter((r) => r.type === RecordType.LENDING && r.lending?.currencyId === currencyId);
+
+    for (const lendingRecord of lendingRecords) {
+      const lending = lendingRecord.lending!;
+      const partyId = lending.partyId;
+      const party = partyList.find((p) => p._id === partyId);
+
+      // Calculate repayments received for this specific loan
+      const repaymentsReceived = recordList
+        .filter(
+          (r) =>
+            r.type === RecordType.REPAYMENT_RECEIVED &&
+            r.repaymentReceived?.partyId === partyId &&
+            r.repaymentReceived?.currencyId === currencyId &&
+            r.transactionEpoch >= lendingRecord.transactionEpoch
+        )
+        .reduce((sum, r) => sum + r.repaymentReceived!.amount, 0);
+
+      // Calculate forgiveness for this loan
+      const forgiven = recordList
+        .filter(
+          (r) =>
+            r.type === RecordType.LOAN_FORGIVENESS_GIVEN &&
+            r.loanForgivenessGiven?.originalLendingRecordId === lendingRecord._id &&
+            r.loanForgivenessGiven?.currencyId === currencyId
+        )
+        .reduce((sum, r) => sum + r.loanForgivenessGiven!.amountForgiven, 0);
+
+      const outstanding = lending.amount - repaymentsReceived - forgiven;
+
+      if (outstanding > 0) {
+        loansGiven.push({
+          lendingRecordId: lendingRecord._id!,
+          transactionEpoch: lendingRecord.transactionEpoch,
+          partyId,
+          partyName: party?.name || "Unknown",
+          amountLent: lending.amount,
+          amountRepaid: repaymentsReceived,
+          amountForgiven: forgiven,
+          amountOutstanding: outstanding,
+          currencyId,
+          currencySign,
+        });
+      }
+    }
+
+    return loansGiven;
+  }
+
+  /**
+   * Get list of outstanding loans taken
+   */
+  async prepareLoanTakenList(currencyId: string): Promise<LoanTakenItem[]> {
+    const res = await pouchdbService.listByCollection(Collection.RECORD);
+    const recordList = res.docs as Record[];
+
+    const res2 = await pouchdbService.listByCollection(Collection.PARTY);
+    const partyList = res2.docs as Party[];
+
+    const res3 = await pouchdbService.listByCollection(Collection.CURRENCY);
+    const currencyList = res3.docs as Currency[];
+
+    const currency = currencyList.find((c) => c._id === currencyId);
+    const currencySign = currency?.sign || "";
+
+    const loansTaken: LoanTakenItem[] = [];
+
+    // Get all borrowing records
+    const borrowingRecords = recordList.filter((r) => r.type === RecordType.BORROWING && r.borrowing?.currencyId === currencyId);
+
+    for (const borrowingRecord of borrowingRecords) {
+      const borrowing = borrowingRecord.borrowing!;
+      const partyId = borrowing.partyId;
+      const party = partyList.find((p) => p._id === partyId);
+
+      // Calculate repayments made for this specific loan
+      const repaymentsMade = recordList
+        .filter(
+          (r) =>
+            r.type === RecordType.REPAYMENT_GIVEN &&
+            r.repaymentGiven?.partyId === partyId &&
+            r.repaymentGiven?.currencyId === currencyId &&
+            r.transactionEpoch >= borrowingRecord.transactionEpoch
+        )
+        .reduce((sum, r) => sum + r.repaymentGiven!.amount, 0);
+
+      // Calculate forgiveness for this loan
+      const forgiven = recordList
+        .filter(
+          (r) =>
+            r.type === RecordType.LOAN_FORGIVENESS_RECEIVED &&
+            r.loanForgivenessReceived?.originalBorrowingRecordId === borrowingRecord._id &&
+            r.loanForgivenessReceived?.currencyId === currencyId
+        )
+        .reduce((sum, r) => sum + r.loanForgivenessReceived!.amountForgiven, 0);
+
+      const outstanding = borrowing.amount - repaymentsMade - forgiven;
+
+      if (outstanding > 0) {
+        loansTaken.push({
+          borrowingRecordId: borrowingRecord._id!,
+          transactionEpoch: borrowingRecord.transactionEpoch,
+          partyId,
+          partyName: party?.name || "Unknown",
+          amountBorrowed: borrowing.amount,
+          amountRepaid: repaymentsMade,
+          amountForgiven: forgiven,
+          amountOutstanding: outstanding,
+          currencyId,
+          currencySign,
+        });
+      }
+    }
+
+    return loansTaken;
   }
 }
 

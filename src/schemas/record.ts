@@ -156,6 +156,74 @@ const MoneyTransferDataSchema = z.object({
 });
 
 /**
+ * Payable payment record data schema
+ */
+const PayablePaymentDataSchema = z.object({
+  originalRecordId: z.string().min(1, "Original record ID is required"),
+  originalRecordType: z.enum(["expense", "asset-purchase"]),
+  partyId: z.string().nullable(),
+  walletId: z.string().min(1, "Wallet ID is required"),
+  amount: z.coerce.number(),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
+  _currencySign: z.string().optional(),
+  _partyName: z.string().optional(),
+  _walletName: z.string().optional(),
+});
+
+/**
+ * Receivable receipt record data schema
+ */
+const ReceivableReceiptDataSchema = z.object({
+  originalRecordId: z.string().min(1, "Original record ID is required"),
+  originalRecordType: z.enum(["income", "asset-sale"]),
+  partyId: z.string().nullable(),
+  walletId: z.string().min(1, "Wallet ID is required"),
+  amount: z.coerce.number(),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
+  _currencySign: z.string().optional(),
+  _partyName: z.string().optional(),
+  _walletName: z.string().optional(),
+});
+
+/**
+ * Loan forgiveness given record data schema
+ */
+const LoanForgivenessGivenDataSchema = z.object({
+  originalLendingRecordId: z.string().min(1, "Original lending record ID is required"),
+  partyId: z.string().min(1, "Party ID is required"),
+  amountForgiven: z.coerce.number(),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
+  reason: z.enum(["uncollectable", "gift", "settlement", "other"]).optional(),
+  _currencySign: z.string().optional(),
+  _partyName: z.string().optional(),
+});
+
+/**
+ * Loan forgiveness received record data schema
+ */
+const LoanForgivenessReceivedDataSchema = z.object({
+  originalBorrowingRecordId: z.string().min(1, "Original borrowing record ID is required"),
+  partyId: z.string().min(1, "Party ID is required"),
+  amountForgiven: z.coerce.number(),
+  currencyId: z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.string().min(1, "Currency ID is required")
+  ),
+  reason: z.enum(["uncollectable", "gift", "settlement", "other"]).optional(),
+  _currencySign: z.string().optional(),
+  _partyName: z.string().optional(),
+});
+
+/**
  * Record schema with all optional nested record type data
  * Uses type coercion for numeric fields to handle string inputs from forms
  */
@@ -179,6 +247,10 @@ export const RecordSchema = BaseDocumentSchema.extend({
   repaymentGiven: RepaymentGivenDataSchema.optional(),
   repaymentReceived: RepaymentReceivedDataSchema.optional(),
   moneyTransfer: MoneyTransferDataSchema.optional(),
+  payablePayment: PayablePaymentDataSchema.optional(),
+  receivableReceipt: ReceivableReceiptDataSchema.optional(),
+  loanForgivenessGiven: LoanForgivenessGivenDataSchema.optional(),
+  loanForgivenessReceived: LoanForgivenessReceivedDataSchema.optional(),
 }).refine(
   (data) => {
     // Validate that the appropriate nested data exists based on record type
@@ -203,6 +275,14 @@ export const RecordSchema = BaseDocumentSchema.extend({
         return !!data.repaymentReceived;
       case RecordType.MONEY_TRANSFER:
         return !!data.moneyTransfer;
+      case RecordType.PAYABLE_PAYMENT:
+        return !!data.payablePayment;
+      case RecordType.RECEIVABLE_RECEIPT:
+        return !!data.receivableReceipt;
+      case RecordType.LOAN_FORGIVENESS_GIVEN:
+        return !!data.loanForgivenessGiven;
+      case RecordType.LOAN_FORGIVENESS_RECEIVED:
+        return !!data.loanForgivenessReceived;
       default:
         return true; // Allow unknown types for backward compatibility
     }
