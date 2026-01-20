@@ -1,7 +1,7 @@
 import { throwMissingEnvironmentVariable } from "src/utils/misc-utils";
 
 export const PROMISE_POOL_CONCURRENCY_LIMT = 10;
-export const APP_VERSION = "0.9.0-rc1";
+export const APP_VERSION = "0.9.2-rc4";
 export const APP_BUILD_VERSION = "DEV_BUILD";
 export const APP_BUILD_DATE = "NOT_APPLICABLE";
 export const RECORD_BATCH_PROCESSING_OPTIMIZATION_THRESHOLD = 200;
