@@ -250,7 +250,7 @@ async function sync() {
       await updateSyncStatus("Finalizing setup...", "Running post-sync operations");
     }
 
-    await migrationService.migrateDefaultExpenseAvenueAndIncomeSource($q);
+    await migrationService.migrateDefaultExpenseAvenueAndIncomeSource();
     await sleep(500);
     await updateSyncStatus("Complete!", "Your data is now up to date");
 

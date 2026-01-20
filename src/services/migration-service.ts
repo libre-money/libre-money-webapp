@@ -5,7 +5,7 @@ import { ExpenseAvenue } from "src/models/expense-avenue";
 import { IncomeSource } from "src/models/income-source";
 
 class MigrationService {
-  async migrateDefaultExpenseAvenueAndIncomeSource($q: QVueGlobals) {
+  async migrateDefaultExpenseAvenueAndIncomeSource() {
     console.debug("Attempting migration...");
 
     const expenseAvenueList = (await pouchdbService.listByCollection(Collection.EXPENSE_AVENUE)).docs as ExpenseAvenue[];

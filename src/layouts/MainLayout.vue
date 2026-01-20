@@ -50,8 +50,8 @@
                 <q-item-section>Sync</q-item-section>
               </q-item>
               <q-separator />
-              <q-item clickable v-close-popup @click="hardRefreshClicked">
-                <q-item-section>Hard Refresh</q-item-section>
+              <q-item clickable v-close-popup @click="troubleshootClicked">
+                <q-item-section>Troubleshoot</q-item-section>
               </q-item>
               <q-separator />
               <q-item clickable v-close-popup @click="logoutClicked">
@@ -316,7 +316,7 @@ const advancedList = computed(() => {
       icon: "text_snippet",
       link: "#/text-import-rules",
     },
-{
+    {
       title: "Backup & Restore",
       caption: "Export/import local database JSON",
       icon: "backup",
@@ -461,6 +461,10 @@ function fullSyncClicked() {
   syncService.doFullSync($q, true, "MainLayout");
 }
 
+async function troubleshootClicked() {
+  await router.push({ name: "troubleshoot" });
+}
+
 async function verionClicked() {
   const title = `Version ${APP_VERSION}`;
   const body = `Internal Build: ${APP_BUILD_VERSION}, Release Date: ${APP_BUILD_DATE}`;
@@ -515,13 +519,6 @@ watch(
   },
   { immediate: true }
 );
-
-function hardRefreshClicked() {
-  console.debug("hardRefreshClicked");
-  window.location.href = "/";
-  // @ts-ignore
-  // window.location.reload(true);
-}
 
 onUnmounted(() => {
   globalErrorService.cancelSubscription();
