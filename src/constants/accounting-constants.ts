@@ -22,9 +22,13 @@ export const AccDefaultAccounts: Record<string, { type: string; code: string; na
   INCOME__COMBINED_INCOME: { type: "Income", code: "INCOME__COMBINED_INCOME", name: "Combined Income" },
   INCOME__MINOR_ADJUSTMENT: { type: "Income", code: "INCOME__MINOR_ADJUSTMENT", name: "Minor Income Adjustment" },
   INCOME__ASSET_APPRECIATION: { type: "Income", code: "INCOME__ASSET_APPRECIATION", name: "Asset Appreciation" },
+  INCOME__OTHER_INCOME: { type: "Income", code: "INCOME__OTHER_INCOME", name: "Other Income" },
+  INCOME__GIFT_INCOME: { type: "Income", code: "INCOME__GIFT_INCOME", name: "Gift Income" },
   EXPENSE__COMBINED_EXPENSE: { type: "Expense", code: "EXPENSE__COMBINED_EXPENSE", name: "Combined Expense" },
   EXPENSE__MINOR_ADJUSTMENT: { type: "Expense", code: "EXPENSE__MINOR_ADJUSTMENT", name: "Minor Expense Adjustment" },
   EXPENSE__ASSET_DEPRECIATION: { type: "Expense", code: "EXPENSE__ASSET_DEPRECIATION", name: "Asset Depreciation" },
+  EXPENSE__BAD_DEBT_EXPENSE: { type: "Expense", code: "EXPENSE__BAD_DEBT_EXPENSE", name: "Bad Debt Expense" },
+  EXPENSE__GIFT_EXPENSE: { type: "Expense", code: "EXPENSE__GIFT_EXPENSE", name: "Gift Expense" },
 };
 
 export const AccTypeList = ["Asset", "Liability", "Equity", "Income", "Expense"];

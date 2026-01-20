@@ -332,8 +332,8 @@ class AccountingService {
       if (income.amount === income.amountPaid) {
         description += `Fully received payment in "${income.wallet.name}" (${income.wallet.type}). `;
       } else {
-        creditList.push({
-          account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
+        debitList.push({
+          account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
           currencyId: income.currencyId,
           amount: asAmount(income.amount) - asAmount(income.amountPaid),
         });
@@ -776,6 +776,197 @@ class AccountingService {
     return { creditList, debitList, description };
   }
 
+  private async convertPayablePayment(record: InferredRecord, accountMap: Record<string, AccAccount>) {
+    const creditList: AccDebitOrCredit[] = [];
+    const debitList: AccDebitOrCredit[] = [];
+    let description = "";
+    const { payablePayment } = record;
+    if (!payablePayment) throw new Error("Malformatted Data");
+
+    // Check if this is a write-off (walletId = "write-off")
+    const isWriteOff = payablePayment.walletId === "write-off";
+
+    if (isWriteOff) {
+      // Write-off: Reduce liability without using cash
+      debitList.push({
+        account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
+        currencyId: payablePayment.currencyId,
+        amount: asAmount(payablePayment.amount),
+      });
+      // Credit to a gain/waived expense account
+      creditList.push({
+        account: accountMap[AccDefaultAccounts.INCOME__OTHER_INCOME.code],
+        currencyId: payablePayment.currencyId,
+        amount: asAmount(payablePayment.amount),
+      });
+      description += `Payable written off: ${printAmount(payablePayment.amount, payablePayment.currencyId)} for "${payablePayment.party?.name || "Unknown"}". `;
+    } else {
+      // Normal payment: Reduce liability and cash
+      debitList.push({
+        account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
+        currencyId: payablePayment.currencyId,
+        amount: asAmount(payablePayment.amount),
+      });
+      description += `Payment made of ${printAmount(payablePayment.amount, payablePayment.currencyId)} to "${payablePayment.party?.name || "Unknown"}" from "${payablePayment.wallet?.name || "Unknown"}". `;
+
+      if (payablePayment.wallet?.type === "credit-card") {
+        creditList.push({
+          account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+          currencyId: payablePayment.currencyId,
+          amount: asAmount(payablePayment.amount),
+        });
+      } else if (payablePayment.wallet?.type === "cash") {
+        creditList.push({
+          account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+          currencyId: payablePayment.currencyId,
+          amount: asAmount(payablePayment.amount),
+        });
+      } else {
+        creditList.push({
+          account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+          currencyId: payablePayment.currencyId,
+          amount: asAmount(payablePayment.amount),
+        });
+      }
+    }
+
+    return { creditList, debitList, description };
+  }
+
+  private async convertReceivableReceipt(record: InferredRecord, accountMap: Record<string, AccAccount>) {
+    const creditList: AccDebitOrCredit[] = [];
+    const debitList: AccDebitOrCredit[] = [];
+    let description = "";
+    const { receivableReceipt } = record;
+    if (!receivableReceipt) throw new Error("Malformatted Data");
+
+    // Check if this is a write-off (walletId = "write-off")
+    const isWriteOff = receivableReceipt.walletId === "write-off";
+
+    if (isWriteOff) {
+      // Write-off: Bad debt expense
+      debitList.push({
+        account: accountMap[AccDefaultAccounts.EXPENSE__BAD_DEBT_EXPENSE.code],
+        currencyId: receivableReceipt.currencyId,
+        amount: asAmount(receivableReceipt.amount),
+      });
+      // Credit to reduce accounts receivable
+      creditList.push({
+        account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
+        currencyId: receivableReceipt.currencyId,
+        amount: asAmount(receivableReceipt.amount),
+      });
+      description += `Receivable written off as bad debt: ${printAmount(receivableReceipt.amount, receivableReceipt.currencyId)} from "${receivableReceipt.party?.name || "Unknown"}". `;
+    } else {
+      // Normal receipt: Increase cash, reduce receivable
+      description += `Receipt of ${printAmount(receivableReceipt.amount, receivableReceipt.currencyId)} from "${receivableReceipt.party?.name || "Unknown"}" to "${receivableReceipt.wallet?.name || "Unknown"}". `;
+
+      if (receivableReceipt.wallet?.type === "credit-card") {
+        debitList.push({
+          account: accountMap[AccDefaultAccounts.LIABILITY__CREDIT_CARD_DEBT.code],
+          currencyId: receivableReceipt.currencyId,
+          amount: asAmount(receivableReceipt.amount),
+        });
+      } else if (receivableReceipt.wallet?.type === "cash") {
+        debitList.push({
+          account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__CASH.code],
+          currencyId: receivableReceipt.currencyId,
+          amount: asAmount(receivableReceipt.amount),
+        });
+      } else {
+        debitList.push({
+          account: accountMap[AccDefaultAccounts.ASSET__CURRENT_ASSET__BANK_AND_EQUIVALENT.code],
+          currencyId: receivableReceipt.currencyId,
+          amount: asAmount(receivableReceipt.amount),
+        });
+      }
+
+      creditList.push({
+        account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
+        currencyId: receivableReceipt.currencyId,
+        amount: asAmount(receivableReceipt.amount),
+      });
+    }
+
+    return { creditList, debitList, description };
+  }
+
+  private async convertLoanForgivenessGiven(record: InferredRecord, accountMap: Record<string, AccAccount>) {
+    const creditList: AccDebitOrCredit[] = [];
+    const debitList: AccDebitOrCredit[] = [];
+    let description = "";
+    const { loanForgivenessGiven } = record;
+    if (!loanForgivenessGiven) throw new Error("Malformatted Data");
+
+    // Determine if it's a gift or bad debt based on reason
+    const isGift = loanForgivenessGiven.reason === "gift";
+
+    if (isGift) {
+      // Debit: Gift Expense
+      debitList.push({
+        account: accountMap[AccDefaultAccounts.EXPENSE__GIFT_EXPENSE.code],
+        currencyId: loanForgivenessGiven.currencyId,
+        amount: asAmount(loanForgivenessGiven.amountForgiven),
+      });
+      description += `Loan forgiven as gift: ${printAmount(loanForgivenessGiven.amountForgiven, loanForgivenessGiven.currencyId)} for "${loanForgivenessGiven.party?.name || "Unknown"}". `;
+    } else {
+      // Debit: Bad Debt Expense
+      debitList.push({
+        account: accountMap[AccDefaultAccounts.EXPENSE__BAD_DEBT_EXPENSE.code],
+        currencyId: loanForgivenessGiven.currencyId,
+        amount: asAmount(loanForgivenessGiven.amountForgiven),
+      });
+      description += `Loan written off as bad debt: ${printAmount(loanForgivenessGiven.amountForgiven, loanForgivenessGiven.currencyId)} from "${loanForgivenessGiven.party?.name || "Unknown"}". `;
+    }
+
+    // Credit: Reduce Loans Receivable (Accounts Receivable)
+    creditList.push({
+      account: accountMap[AccDefaultAccounts.ASSET__ACCOUNTS_RECEIVABLE.code],
+      currencyId: loanForgivenessGiven.currencyId,
+      amount: asAmount(loanForgivenessGiven.amountForgiven),
+    });
+
+    return { creditList, debitList, description };
+  }
+
+  private async convertLoanForgivenessReceived(record: InferredRecord, accountMap: Record<string, AccAccount>) {
+    const creditList: AccDebitOrCredit[] = [];
+    const debitList: AccDebitOrCredit[] = [];
+    let description = "";
+    const { loanForgivenessReceived } = record;
+    if (!loanForgivenessReceived) throw new Error("Malformatted Data");
+
+    // Determine if it's a gift or debt forgiveness income based on reason
+    const isGift = loanForgivenessReceived.reason === "gift";
+
+    // Debit: Reduce Liability (Accounts Payable / Loans Payable)
+    debitList.push({
+      account: accountMap[AccDefaultAccounts.LIABILITY__ACCOUNTS_PAYABLE.code],
+      currencyId: loanForgivenessReceived.currencyId,
+      amount: asAmount(loanForgivenessReceived.amountForgiven),
+    });
+
+    if (isGift) {
+      // Credit: Gift Income
+      creditList.push({
+        account: accountMap[AccDefaultAccounts.INCOME__GIFT_INCOME.code],
+        currencyId: loanForgivenessReceived.currencyId,
+        amount: asAmount(loanForgivenessReceived.amountForgiven),
+      });
+      description += `Debt forgiven as gift: ${printAmount(loanForgivenessReceived.amountForgiven, loanForgivenessReceived.currencyId)} by "${loanForgivenessReceived.party?.name || "Unknown"}". `;
+    } else {
+      // Credit: Debt Forgiveness Income
+      creditList.push({
+        account: accountMap[AccDefaultAccounts.INCOME__OTHER_INCOME.code],
+        currencyId: loanForgivenessReceived.currencyId,
+        amount: asAmount(loanForgivenessReceived.amountForgiven),
+      });
+      description += `Debt forgiven: ${printAmount(loanForgivenessReceived.amountForgiven, loanForgivenessReceived.currencyId)} by "${loanForgivenessReceived.party?.name || "Unknown"}". `;
+    }
+
+    return { creditList, debitList, description };
+  }
+
   private async checkJournalEntryBalance(debitList: AccDebitOrCredit[], creditList: AccDebitOrCredit[]) {
     const balanceByCurrencyMap: Record<string, number> = {};
 
@@ -844,6 +1035,22 @@ class AccountingService {
     // ================ REPAYMENT_GIVEN
     else if (record.type === RecordType.REPAYMENT_GIVEN && record.repaymentGiven) {
       ({ creditList, debitList, description } = await this.convertRepaymentGiven(record, accountMap));
+    }
+    // ================ PAYABLE_PAYMENT
+    else if (record.type === RecordType.PAYABLE_PAYMENT && record.payablePayment) {
+      ({ creditList, debitList, description } = await this.convertPayablePayment(record, accountMap));
+    }
+    // ================ RECEIVABLE_RECEIPT
+    else if (record.type === RecordType.RECEIVABLE_RECEIPT && record.receivableReceipt) {
+      ({ creditList, debitList, description } = await this.convertReceivableReceipt(record, accountMap));
+    }
+    // ================ LOAN_FORGIVENESS_GIVEN
+    else if (record.type === RecordType.LOAN_FORGIVENESS_GIVEN && record.loanForgivenessGiven) {
+      ({ creditList, debitList, description } = await this.convertLoanForgivenessGiven(record, accountMap));
+    }
+    // ================ LOAN_FORGIVENESS_RECEIVED
+    else if (record.type === RecordType.LOAN_FORGIVENESS_RECEIVED && record.loanForgivenessReceived) {
+      ({ creditList, debitList, description } = await this.convertLoanForgivenessReceived(record, accountMap));
     }
 
     // Check balances
