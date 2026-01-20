@@ -11,29 +11,16 @@
         <q-form class="q-gutter-md" ref="recordForm">
           <date-time-input v-model="transactionEpoch" label="Date & Time"></date-time-input>
           <select-income-source v-model="recordIncomeSourceId"></select-income-source>
-          <q-input
-            input-class="text-h6"
-            type="number"
-            standout="bg-primary text-white"
-            v-model="recordAmount"
-            label="Income Amount"
-            lazy-rules
-            :rules="validators.balance"
-          >
+          <q-input input-class="text-h6" type="number" standout="bg-primary text-white" v-model="recordAmount"
+            label="Income Amount" lazy-rules :rules="validators.balance">
             <template v-slot:append>
               <!-- <div class="currency-label">{{ recordCurrencySign }}</div> -->
-              <q-btn-dropdown flat dense size="lg" color="primary" :label="recordCurrencySign as string">
+              <q-btn-dropdown flat dense color="primary" :label="recordCurrencySign as string">
                 <q-list style="min-width: 160px">
-                  <q-item
-                    v-for="curr in fullWalletCurrencyList"
-                    :key="curr._id"
-                    clickable
-                    v-close-popup
-                    @click="
-                      recordCurrencyId = curr._id ?? null;
-                      recordCurrencySign = curr.sign ?? null;
-                    "
-                  >
+                  <q-item v-for="curr in fullWalletCurrencyList" :key="curr._id" clickable v-close-popup @click="
+                    recordCurrencyId = curr._id ?? null;
+                  recordCurrencySign = curr.sign ?? null;
+                  ">
                     <q-item-section>
                       <q-item-label>{{ curr.sign }}</q-item-label>
                     </q-item-section>
@@ -44,44 +31,35 @@
           </q-input>
           <!-- <select-currency v-model="recordCurrencyId"></select-currency> -->
 
-          <q-tabs
-            v-model="paymentType"
-            inline-label
-            class="bg-blue-grey-11 text-grey-7 shadow-1 rounded-borders q-mb-lg"
-            active-color="teal-9"
-            active-bg-color="teal-3"
-            indicator-color="transparent"
-          >
+          <q-tabs v-model="paymentType" inline-label
+            class="bg-blue-grey-11 text-grey-7 shadow-1 rounded-borders q-mb-lg" active-color="teal-9"
+            active-bg-color="teal-3" indicator-color="transparent">
             <q-tab name="full" label="Paid" />
             <q-tab name="partial" label="Partially Paid" />
             <q-tab name="unpaid" label="Unpaid" />
           </q-tabs>
 
-          <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'" :limitByCurrencyId="recordCurrencyId">
+          <select-wallet v-model="recordWalletId" v-if="paymentType == 'full' || paymentType == 'partial'"
+            :limitByCurrencyId="recordCurrencyId">
           </select-wallet>
 
-          <q-input
-            type="number"
-            standout="bg-primary text-white"
-            v-model="recordAmountPaid"
-            label="Amount Paid"
-            lazy-rules
-            :rules="validators.balance"
-            v-if="paymentType == 'partial'"
-          />
+          <q-input type="number" standout="bg-primary text-white" v-model="recordAmountPaid" label="Amount Paid"
+            lazy-rules :rules="validators.balance" v-if="paymentType == 'partial'" />
           <div v-if="paymentType == 'partial'">Amount remaining: {{ recordAmountUnpaid }}</div>
 
-          <select-party v-model="recordPartyId" :mandatory="paymentType == 'unpaid' || paymentType == 'partial'"></select-party>
+          <select-party v-model="recordPartyId"
+            :mandatory="paymentType == 'unpaid' || paymentType == 'partial'"></select-party>
           <select-tag v-model="recordTagIdList"></select-tag>
-          <q-input standout="bg-primary text-white" type="textarea" v-model="recordNotes" label="Notes" lazy-rules :rules="validators.notes" />
+          <q-input standout="bg-primary text-white" type="textarea" v-model="recordNotes" label="Notes" lazy-rules
+            :rules="validators.notes" />
         </q-form>
       </q-card-section>
       <q-separator />
       <q-card-section class="no-shrink">
         <div class="flex">
-          <q-btn flat rounded size="lg" label="Cancel" @click="onDialogCancel" />
+          <q-btn flat rounded label="Cancel" @click="onDialogCancel" />
           <div class="spacer"></div>
-          <q-btn-dropdown rounded size="lg" color="primary" label="Save" split @click="okClicked">
+          <q-btn-dropdown rounded color="primary" label="Save" split @click="okClicked">
             <q-list>
               <q-item clickable v-close-popup @click="saveAsTemplateClicked">
                 <q-item-section>

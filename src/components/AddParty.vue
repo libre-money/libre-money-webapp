@@ -2,21 +2,24 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
     <q-card class="q-dialog-plugin column full-height">
       <q-card-section class="no-shrink">
-        <div class="std-dialog-title text-primary text-weight-bold">{{ existingPartyId ? "Editing a Party" : "Adding a Party" }}</div>
+        <div class="std-dialog-title text-primary text-weight-bold">{{ existingPartyId ? "Editing a Party" : "Adding a
+          Party" }}</div>
       </q-card-section>
       <q-separator />
       <q-card-section class="col scroll" style="min-height: 0">
         <q-form class="q-gutter-md" ref="partyForm">
-          <q-input hide-bottom-space standout="bg-primary text-white" v-model="partyName" label="Name of the Party/Vendor" lazy-rules :rules="validators.name" />
-          <q-select standout="bg-primary text-white" v-model="partyType" :options="partyTypeList" label="Type" emit-value map-options />
+          <q-input hide-bottom-space standout="bg-primary text-white" v-model="partyName"
+            label="Name of the Party/Vendor" lazy-rules :rules="validators.name" />
+          <q-select standout="bg-primary text-white" v-model="partyType" :options="partyTypeList" label="Type"
+            emit-value map-options />
         </q-form>
       </q-card-section>
       <q-separator />
       <q-card-section class="no-shrink">
         <div class="flex">
-          <q-btn flat rounded size="lg" label="Cancel" @click="cancelClicked" />
+          <q-btn flat rounded label="Cancel" @click="cancelClicked" />
           <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" :label="existingPartyId ? 'Update' : 'Add'" @click="okClicked" />
+          <q-btn rounded color="primary" :label="existingPartyId ? 'Update' : 'Add'" @click="okClicked" />
         </div>
       </q-card-section>
     </q-card>

@@ -22,7 +22,8 @@
               <span class="balance-label">New Balance:</span>
               <div class="balance-controls">
                 <q-btn flat dense icon="add" @click="incrementBalance" />
-                <q-input standout="bg-primary text-white" v-model.number="newBalance" type="number" dense :step="stepSize" class="balance-input" />
+                <q-input standout="bg-primary text-white" v-model.number="newBalance" type="number" dense
+                  :step="stepSize" class="balance-input" />
                 <q-btn flat dense icon="remove" @click="decrementBalance" />
               </div>
             </div>
@@ -42,26 +43,23 @@
             </div>
 
             <div v-for="(row, index) in breakdownRows" :key="index" class="breakdown-row">
-              <q-btn
-                flat
-                dense
-                :icon="row.type === 'income' ? 'arrow_upward' : 'arrow_downward'"
-                @click="row.type = row.type === 'income' ? 'expense' : 'income'"
-                class="type-toggle-btn"
-              />
+              <q-btn flat dense :icon="row.type === 'income' ? 'arrow_upward' : 'arrow_downward'"
+                @click="row.type = row.type === 'income' ? 'expense' : 'income'" class="type-toggle-btn" />
 
               <div class="breakdown-selector">
                 <select-expense-avenue v-if="row.type === 'expense'" v-model="row.expenseAvenueId" />
                 <select-income-source v-else v-model="row.incomeSourceId" />
               </div>
 
-              <q-input standout="bg-primary text-white" v-model.number="row.amount" type="number" dense class="breakdown-amount" />
+              <q-input standout="bg-primary text-white" v-model.number="row.amount" type="number" dense
+                class="breakdown-amount" />
               <q-btn flat dense icon="delete" @click="removeBreakdownRow(index)" class="delete-btn" />
             </div>
 
             <div class="breakdown-row" v-if="remainingAmount !== 0">
               <span class="auto-adjusted">
-                Auto-adjusted {{ remainingAmount > 0 ? "Income" : "Expense" }}: {{ printAmount(Math.abs(remainingAmount), calibration?.currencyId) }}
+                Auto-adjusted {{ remainingAmount > 0 ? "Income" : "Expense" }}: {{
+                  printAmount(Math.abs(remainingAmount), calibration?.currencyId) }}
               </span>
             </div>
           </div>
@@ -70,9 +68,9 @@
       <q-separator />
       <q-card-section class="no-shrink">
         <div class="flex">
-          <q-btn flat rounded size="lg" label="Cancel" @click="cancelClicked" />
+          <q-btn flat rounded label="Cancel" @click="cancelClicked" />
           <div class="spacer"></div>
-          <q-btn rounded size="lg" color="primary" label="Save" @click="saveClicked" />
+          <q-btn rounded color="primary" label="Save" @click="saveClicked" />
         </div>
       </q-card-section>
     </q-card>
