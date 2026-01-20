@@ -316,6 +316,12 @@ const advancedList = computed(() => {
       icon: "text_snippet",
       link: "#/text-import-rules",
     },
+{
+      title: "Backup & Restore",
+      caption: "Export/import local database JSON",
+      icon: "backup",
+      link: "#/backup-restore",
+    },
   ];
   if (userStore.currentUser?.isOfflineUser && !userStore.currentUser?.isDemoUser) {
     list.push({

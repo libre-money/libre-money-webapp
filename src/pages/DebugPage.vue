@@ -49,7 +49,6 @@
 
       <div class="title-row q-pa-md q-gutter-sm">
         <q-btn color="red" text-color="white" label="Remove All Local Data" @click="removeLocalDataClicked" />
-        <q-btn color="secondary" text-color="white" label="Download All Local Data" @click="downloadLocalDataClicked" />
       </div>
     </q-card>
 
@@ -62,7 +61,6 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { dataBackupService } from "src/services/data-backup-service";
 import { dialogService } from "src/services/dialog-service";
 import { localDataService } from "src/services/local-data-service";
 import { pouchdbService } from "src/services/pouchdb-service";
@@ -213,11 +211,6 @@ async function editClicked(doc: EditableDocument) {
 
 async function removeLocalDataClicked() {
   localDataService.removeLocalData();
-}
-
-async function downloadLocalDataClicked() {
-  let jsonData = await dataBackupService.exportAllDataToJson();
-  await dataBackupService.initiateFileDownload(jsonData);
 }
 
 async function deleteClicked(doc: EditableDocument) {
