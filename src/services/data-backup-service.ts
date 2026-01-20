@@ -38,6 +38,24 @@ function extractDocsFromPayload(payload: any): any[] {
 }
 
 export const dataBackupService = {
+  async initiateTextFileDownload(options: { content: string; fileName: string; mimeType: string }) {
+    const blob = new Blob([options.content], { type: options.mimeType });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = options.fileName;
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      document.body.removeChild(a);
+      const windowUrl = window.URL || window.webkitURL;
+      windowUrl.revokeObjectURL(url);
+    }, 100);
+  },
+
   async exportAllDataToJson(): Promise<string> {
     const res = await pouchdbService.listDocs();
     const rows = res.rows || [];
@@ -63,23 +81,11 @@ export const dataBackupService = {
     const seconds = String(now.getUTCSeconds()).padStart(2, "0");
     const datetime = `${year}-${month}-${day}--${hours}-${minutes}-${seconds}`;
     const fileName = `libre-money-backup--${domain}--${datetime}.json`;
-    const fileContent = jsonData;
-    const blob = new Blob([fileContent], { type: "application/json" });
-
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.style.display = "none";
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-
-    setTimeout(() => {
-      document.body.removeChild(a);
-      const windowUrl = window.URL || window.webkitURL;
-      windowUrl.revokeObjectURL(url);
-    }, 100);
+    await dataBackupService.initiateTextFileDownload({
+      content: jsonData,
+      fileName,
+      mimeType: "application/json",
+    });
   },
 
   /**
@@ -155,7 +161,7 @@ export const dataBackupService = {
           documentPreview: JSON.stringify(backupDoc, null, 2).substring(0, 500),
         });
         validationErrors += 1;
-        
+
         // Try to use validated data if available, otherwise skip this document
         if (validation.data) {
           // Use validated/coerced data

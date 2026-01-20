@@ -53,6 +53,24 @@
         </div>
       </div>
     </q-card>
+
+    <q-card class="std-card">
+      <div class="title-row q-pa-md q-gutter-sm">
+        <div class="title">Export (CSV)</div>
+      </div>
+
+      <div class="q-pa-md">
+        <div class="text-body2 q-mb-md">
+          Download a CSV export of your records in a spreadsheet-friendly format (similar to Pro Mode).
+        </div>
+        <q-banner dense class="bg-blue-1 text-blue-10 q-mt-sm q-mb-md">
+          <b>Note:</b> CSV files are <b>export-only</b> and cannot be directly imported into Libre Money.
+        </q-banner>
+
+        <q-btn color="primary" icon="table_view" label="Download Records CSV" :loading="isExportingCsv"
+          :disable="isBusy" @click="downloadRecordsCsvClicked" />
+      </div>
+    </q-card>
   </q-page>
 </template>
 
@@ -61,9 +79,11 @@ import { computed, ref } from "vue";
 import { Notify } from "quasar";
 import { dialogService } from "src/services/dialog-service";
 import { dataBackupService } from "src/services/data-backup-service";
+import { dataExportService } from "src/services/data-export-service";
 import { syncService } from "src/services/sync-service";
 
 const isExporting = ref(false);
+const isExportingCsv = ref(false);
 const isRestoring = ref(false);
 const restoreFile = ref<File | null>(null);
 
@@ -75,7 +95,7 @@ const restoreProgressValue = computed(() => {
   return Math.max(0.05, Math.min(1, v));
 });
 
-const isBusy = computed(() => isExporting.value || isRestoring.value);
+const isBusy = computed(() => isExporting.value || isExportingCsv.value || isRestoring.value);
 
 async function downloadBackupClicked() {
   isExporting.value = true;
@@ -87,6 +107,19 @@ async function downloadBackupClicked() {
     Notify.create({ type: "negative", message: ex instanceof Error ? ex.message : String(ex) });
   } finally {
     isExporting.value = false;
+  }
+}
+
+async function downloadRecordsCsvClicked() {
+  isExportingCsv.value = true;
+  try {
+    await dataExportService.downloadRecordsCsv();
+
+    Notify.create({ type: "positive", message: "CSV downloaded." });
+  } catch (ex) {
+    Notify.create({ type: "negative", message: ex instanceof Error ? ex.message : String(ex) });
+  } finally {
+    isExportingCsv.value = false;
   }
 }
 
