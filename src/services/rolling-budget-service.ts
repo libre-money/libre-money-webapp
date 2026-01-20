@@ -1,6 +1,6 @@
 import { Collection, RecordType } from "src/constants/constants";
 import { pouchdbService } from "./pouchdb-service";
-import { RollingBudget } from "src/models/rolling-budget";
+import { RollingBudget } from "src/schemas/rolling-budget";
 import { computationService } from "./computation-service";
 import { deepClone } from "src/utils/misc-utils";
 import { RecordFilters } from "src/models/inferred/record-filters";

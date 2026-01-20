@@ -3,7 +3,7 @@ import { AccAccount } from "src/models/accounting/acc-account";
 import { AccJournalEntry } from "src/models/accounting/acc-journal-entry";
 import { AccLedger } from "src/models/accounting/acc-ledger";
 import { AccLedgerEntry } from "src/models/accounting/acc-ledger-entry";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { asAmount } from "src/utils/de-facto-utils";
 import { pouchdbService } from "./pouchdb-service";
 

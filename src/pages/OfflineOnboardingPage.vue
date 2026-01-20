@@ -276,7 +276,7 @@
 <script setup lang="ts">
 import { Collection } from "src/constants/constants";
 import { CURRENCY_MAP, CURRENCY_OPTIONS } from "src/constants/onboarding-constants";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { dialogService } from "src/services/dialog-service";
 import { OnboardingProgress, onboardingService } from "src/services/onboarding-service";
 import { computed, ref, watch } from "vue";

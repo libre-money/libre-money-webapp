@@ -48,7 +48,7 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { IncomeSource } from "src/models/income-source";
+import { IncomeSource } from "src/schemas/income-source";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";

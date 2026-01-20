@@ -37,7 +37,7 @@
 <script lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Collection, defaultWalletType, walletTypeList } from "src/constants/constants";
-import { Wallet } from "src/models/wallet";
+import { Wallet } from "src/schemas/wallet";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { validators } from "src/utils/validators";
 import { Ref, ref } from "vue";

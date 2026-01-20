@@ -52,7 +52,7 @@ import AddAssetPurchaseRecord from "src/components/AddAssetPurchaseRecord.vue";
 import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
 import AddIncomeRecord from "src/components/AddIncomeRecord.vue";
 import AddMoneyTransferRecord from "src/components/AddMoneyTransferRecord.vue";
-import type { Record } from "src/models/record";
+import type { Record } from "src/schemas/record";
 import { NotificationType, dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";

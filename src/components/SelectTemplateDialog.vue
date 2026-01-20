@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { useDialogPluginComponent, useQuasar } from "quasar";
 import { Collection } from "src/constants/constants";
-import { Record } from "src/models/record";
+import { Record } from "src/schemas/record";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { ref } from "vue";

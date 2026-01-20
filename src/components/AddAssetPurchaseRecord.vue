@@ -88,8 +88,8 @@
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Collection, RecordType } from "src/constants/constants";
-import { Record } from "src/models/record";
-import { WalletWithPotentialBalance } from "src/models/wallet";
+import { Record } from "src/schemas/record";
+import { WalletWithPotentialBalance } from "src/schemas/wallet";
 import { computationService } from "src/services/computation-service";
 import { NotificationType, dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";

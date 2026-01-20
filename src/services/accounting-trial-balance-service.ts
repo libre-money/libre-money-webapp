@@ -3,7 +3,7 @@ import { Collection } from "src/constants/constants";
 import { AccAccount } from "src/models/accounting/acc-account";
 import { AccJournalEntry } from "src/models/accounting/acc-journal-entry";
 import { AccTrialBalance, AccTrialBalanceWithCurrency } from "src/models/accounting/acc-trial-balance";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { asAmount } from "src/utils/de-facto-utils";
 import { dialogService } from "./dialog-service";
 import { pouchdbService } from "./pouchdb-service";

@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Collection } from "src/constants/constants";
-import { ExpenseAvenue } from "src/models/expense-avenue";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { validators } from "src/utils/validators";
 import { onMounted, ref } from "vue";

@@ -77,7 +77,7 @@
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Collection, RecordType } from "src/constants/constants";
-import { Record } from "src/models/record";
+import { Record } from "src/schemas/record";
 import { NotificationType, dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
 import { pouchdbService } from "src/services/pouchdb-service";
@@ -87,7 +87,7 @@ import { deepClone } from "src/utils/misc-utils";
 import { validators } from "src/utils/validators";
 import { onMounted, ref, watch, Ref } from "vue";
 import DateTimeInput from "./lib/DateTimeInput.vue";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import SelectCurrency from "./SelectCurrency.vue";
 import SelectIncomeSource from "./SelectIncomeSource.vue";
 import SelectParty from "./SelectParty.vue";

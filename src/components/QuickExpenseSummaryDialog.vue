@@ -42,9 +42,9 @@
 <script setup lang="ts">
 import { useDialogPluginComponent, useQuasar } from "quasar";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { QuickExpenseSummary } from "src/models/inferred/quick-expense-summary";
-import { Record } from "src/models/record";
+import { Record } from "src/schemas/record";
 import { computationService } from "src/services/computation-service";
 import { printCount } from "src/utils/de-facto-utils";
 import { Ref, onMounted, ref } from "vue";

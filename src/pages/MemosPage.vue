@@ -50,7 +50,7 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { Memo } from "src/models/memo";
+import { Memo } from "src/schemas/memo";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";

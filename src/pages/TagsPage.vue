@@ -59,7 +59,7 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { Tag } from "src/models/tag";
+import { Tag } from "src/schemas/tag";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";

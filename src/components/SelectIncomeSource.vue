@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Collection } from "src/constants/constants";
-import { IncomeSource } from "src/models/income-source";
+import { IncomeSource } from "src/schemas/income-source";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref } from "vue";
 

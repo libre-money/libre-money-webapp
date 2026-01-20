@@ -61,9 +61,9 @@
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
 import { UNBUDGETED_RECORDS_BUDGET_NAME } from "src/constants/config-constants";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { RecordFilters } from "src/models/inferred/record-filters";
-import { RollingBudget } from "src/models/rolling-budget";
+import { RollingBudget } from "src/schemas/rolling-budget";
 import { computationService } from "src/services/computation-service";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";

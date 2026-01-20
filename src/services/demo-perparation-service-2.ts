@@ -1,13 +1,13 @@
 import { Collection } from "src/constants/constants";
-import type { Asset } from "src/models/asset";
-import type { Currency } from "src/models/currency";
-import type { Party } from "src/models/party";
-import type { Wallet } from "src/models/wallet";
-import type { RollingBudget } from "src/models/rolling-budget";
-import type { Record } from "src/models/record";
-import type { ExpenseAvenue } from "src/models/expense-avenue";
-import type { IncomeSource } from "src/models/income-source";
-import type { Tag } from "src/models/tag";
+import type { Asset } from "src/schemas/asset";
+import type { Currency } from "src/schemas/currency";
+import type { Party } from "src/schemas/party";
+import type { Wallet } from "src/schemas/wallet";
+import type { RollingBudget } from "src/schemas/rolling-budget";
+import type { Record } from "src/schemas/record";
+import type { ExpenseAvenue } from "src/schemas/expense-avenue";
+import type { IncomeSource } from "src/schemas/income-source";
+import type { Tag } from "src/schemas/tag";
 import { pouchdbService } from "./pouchdb-service";
 
 type CreatedCounts = {

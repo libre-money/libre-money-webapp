@@ -49,8 +49,8 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { Currency } from "src/models/currency";
-import { Wallet } from "src/models/wallet";
+import { Currency } from "src/schemas/currency";
+import { Wallet } from "src/schemas/wallet";
 import { computationService } from "src/services/computation-service";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";

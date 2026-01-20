@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Collection } from "src/constants/constants";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Ref, computed, ref } from "vue";
 

@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Collection, defaultTagColor } from "src/constants/constants";
-import { Tag } from "src/models/tag";
+import { Tag } from "src/schemas/tag";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { validators } from "src/utils/validators";
 import { onMounted, ref } from "vue";

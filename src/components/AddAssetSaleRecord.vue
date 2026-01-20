@@ -55,7 +55,7 @@
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Collection, RecordType } from "src/constants/constants";
-import { Record } from "src/models/record";
+import { Record } from "src/schemas/record";
 import { dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
 import { pouchdbService } from "src/services/pouchdb-service";

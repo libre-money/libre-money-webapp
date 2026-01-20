@@ -123,7 +123,7 @@
 <script lang="ts" setup>
 import { useDialogPluginComponent, useQuasar } from "quasar";
 import AddRollingBudget from "src/components/AddRollingBudget.vue";
-import { RollingBudget } from "src/models/rolling-budget";
+import { RollingBudget } from "src/schemas/rolling-budget";
 import { rollingBudgetService } from "src/services/rolling-budget-service";
 import { useRecordFiltersStore } from "src/stores/record-filters-store";
 import { printAmount } from "src/utils/de-facto-utils";

@@ -1,5 +1,5 @@
 import { Collection } from "src/constants/constants";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { formatCurrency, NumberValue, CurrencyFormatOptions, isNonNegativeNumber } from "src/utils/number-utils";
 import { pouchdbService } from "./pouchdb-service";
 

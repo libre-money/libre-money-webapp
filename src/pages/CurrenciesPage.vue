@@ -49,7 +49,7 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";
