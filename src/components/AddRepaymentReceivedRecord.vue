@@ -13,6 +13,10 @@
           <select-party v-model="recordPartyId" mandatory></select-party>
 
           <select-wallet v-model="recordWalletId" :limitByCurrencyId="recordCurrencyId"></select-wallet>
+          <div class="wallet-balance-container" v-if="selectedWallet">
+            <div>Balance in wallet: {{ printAmount(selectedWallet._balance!) }}</div>
+            <div style="margin-top: 8px">Balance afterwards will be: {{ printAmount(selectedWallet.potentialBalance) }}</div>
+          </div>
 
           <div v-if="suggestedAmount">Total Owed by Party: {{ suggestedAmount }}</div>
 
@@ -48,11 +52,14 @@ import { ref, watch, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { Collection, RecordType } from "src/constants/constants";
 import { Record } from "src/schemas/record";
+import { WalletWithPotentialBalance } from "src/schemas/wallet";
+import { computationService } from "src/services/computation-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";
 import SelectTag from "./SelectTag.vue";
-import { asAmount } from "src/utils/de-facto-utils";
+import { asAmount, printAmount as printAmountUtil } from "src/utils/de-facto-utils";
+import { isNullOrUndefined } from "src/utils/misc-utils";
 import { entityService } from "src/services/entity-service";
 import DateTimeInput from "./lib/DateTimeInput.vue";
 
@@ -88,6 +95,8 @@ const recordPartyId = ref<string | null>(null);
 const recordWalletId = ref<string | null>(null);
 const recordTagIdList = ref<string[]>([]);
 const recordNotes = ref<string | null>(null);
+
+const selectedWallet = ref<WalletWithPotentialBalance | null>(null);
 
 const transactionEpoch = ref<number>(Date.now());
 
@@ -162,6 +171,11 @@ function cancelClicked() {
   onDialogCancel();
 }
 
+// Print amount
+function printAmount(amount: number) {
+  return printAmountUtil(amount, recordCurrencyId.value);
+}
+
 // Watchers for currency and wallet
 watch(recordCurrencyId, async (currencyId: any) => {
   if (currencyId) {
@@ -173,12 +187,76 @@ watch(recordCurrencyId, async (currencyId: any) => {
 
 watch(recordWalletId, async (newWalletId: any) => {
   if (newWalletId) {
-    let wallet = await entityService.getWallet(newWalletId as string);
+    let wallet = (await entityService.getWallet(newWalletId as string)) as WalletWithPotentialBalance;
+    await computationService.computeBalancesForWallets([wallet]);
+    wallet.potentialBalance = 0;
+    selectedWallet.value = wallet;
     let currency = await entityService.getCurrency(wallet.currencyId);
     recordCurrencySign.value = currency.sign;
   } else {
     recordCurrencySign.value = null;
+    selectedWallet.value = null;
+  }
+});
+
+// Watch amount to update potential balance
+watch([recordAmount, selectedWallet], async () => {
+  if (selectedWallet.value) {
+    // For repayment received, money comes IN, so balance increases
+    selectedWallet.value.potentialBalance = asAmount(selectedWallet.value._balance) + asAmount(recordAmount.value);
+    if (initialDoc && initialDoc.repaymentReceived?.walletId === selectedWallet.value._id) {
+      selectedWallet.value.potentialBalance -= asAmount(initialDoc.repaymentReceived?.amount || 0);
+    }
+
+    selectedWallet.value._minimumBalanceState = "not-set";
+    if (!isNullOrUndefined(selectedWallet.value.minimumBalance)) {
+      selectedWallet.value._minimumBalanceState = "normal";
+    }
+    if (asAmount(selectedWallet.value.minimumBalance) * 0.8 > selectedWallet.value.potentialBalance) {
+      selectedWallet.value._minimumBalanceState = "warning";
+    }
+    if (asAmount(selectedWallet.value.minimumBalance) > selectedWallet.value.potentialBalance) {
+      selectedWallet.value._minimumBalanceState = "exceeded";
+    }
   }
 });
 </script>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.wallet-balance-container {
+  color: #546e7a;
+  margin-top: -16px;
+  margin-bottom: 12px;
+  text-align: right;
+
+  .wallet-limit-normal {
+    color: #546e7a;
+  }
+
+  .wallet-limit-warning {
+    color: #546e7a;
+    border-bottom: 4px solid #ffd740;
+  }
+
+  .wallet-limit-exceeded {
+    color: #bf360c;
+  }
+}
+
+// Dark theme styling for wallet balance container
+:deep(body.body--dark) .wallet-balance-container {
+  color: #94a3b8; // slate-400 for better readability
+
+  .wallet-limit-normal {
+    color: #94a3b8;
+  }
+
+  .wallet-limit-warning {
+    color: #fbbf24; // Amber warning color for dark theme
+    border-bottom: 4px solid #fbbf24;
+  }
+
+  .wallet-limit-exceeded {
+    color: #f87171; // Soft red for exceeded limit
+  }
+}
+</style>
