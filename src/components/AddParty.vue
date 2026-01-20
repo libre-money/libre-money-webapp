@@ -31,7 +31,7 @@ import { QForm, useDialogPluginComponent, useQuasar } from "quasar";
 import { ref, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { Collection, defaultPartyType, partyTypeList } from "src/constants/constants";
-import { Party } from "src/models/party";
+import { Party } from "src/schemas/party";
 import { pouchdbService } from "src/services/pouchdb-service";
 
 // Props

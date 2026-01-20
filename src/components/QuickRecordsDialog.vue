@@ -75,11 +75,11 @@
 import { useDialogPluginComponent } from "quasar";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { BudgetAnalysisItem } from "src/services/budget-analysis-service";
-import { BudgetedPeriod } from "src/models/rolling-budget";
-import { Record } from "src/models/record";
-import { Party } from "src/models/party";
-import { Wallet } from "src/models/wallet";
-import { Asset } from "src/models/asset";
+import { BudgetedPeriod } from "src/schemas/rolling-budget";
+import { Record } from "src/schemas/record";
+import { Party } from "src/schemas/party";
+import { Wallet } from "src/schemas/wallet";
+import { Asset } from "src/schemas/asset";
 import { recordService } from "src/services/record-service";
 import { entityService } from "src/services/entity-service";
 import { pouchdbService } from "src/services/pouchdb-service";

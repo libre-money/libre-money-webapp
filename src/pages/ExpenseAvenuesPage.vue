@@ -48,7 +48,7 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { ExpenseAvenue } from "src/models/expense-avenue";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";

@@ -1,17 +1,17 @@
 import { Collection } from "src/constants/constants";
-import { Asset } from "src/models/asset";
-import { Currency } from "src/models/currency";
-import { Party } from "src/models/party";
-import { Wallet } from "src/models/wallet";
-import { RollingBudget } from "src/models/rolling-budget";
-import { Record } from "src/models/record";
-import { ExpenseAvenue } from "src/models/expense-avenue";
-import { IncomeSource } from "src/models/income-source";
-import { Tag } from "src/models/tag";
+import { Asset } from "src/schemas/asset";
+import { Currency } from "src/schemas/currency";
+import { Party } from "src/schemas/party";
+import { Wallet } from "src/schemas/wallet";
+import { RollingBudget } from "src/schemas/rolling-budget";
+import { Record } from "src/schemas/record";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
+import { IncomeSource } from "src/schemas/income-source";
+import { Tag } from "src/schemas/tag";
 import { RecordType } from "src/constants/constants";
 import { pouchdbService } from "./pouchdb-service";
-import { Memo } from "src/models/memo";
-import { TextImportRules } from "src/models/text-import-rules";
+import { Memo } from "src/schemas/memo";
+import { TextImportRules } from "src/schemas/text-import-rules";
 
 class DemoPreparationService {
   // Maps to store all available entities (both existing and demo)

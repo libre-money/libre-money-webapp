@@ -3,7 +3,7 @@ import { useUserStore } from "src/stores/user";
 import { onboardingService } from "./onboarding-service";
 import { demoPreparationService } from "./demo-preparation-service";
 import { OFFLINE_DOMAIN, OFFLINE_SERVER_URL } from "src/constants/auth-constants";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { Collection } from "src/constants/constants";
 import { pouchdbService } from "./pouchdb-service";
 

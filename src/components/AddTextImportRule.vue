@@ -128,7 +128,7 @@
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent, useQuasar } from "quasar";
 import { Collection } from "src/constants/constants";
-import { ExpenseAvenueMatchRule, MatchingOperator, TextImportRules, TextImportRulesValidator, WalletMatchRule } from "src/models/text-import-rules";
+import { ExpenseAvenueMatchRule, MatchingOperator, TextImportRules, TextImportRulesSchema, WalletMatchRule } from "src/schemas/text-import-rules";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { validators } from "src/utils/validators";
 import { computed, onMounted, ref } from "vue";

@@ -124,7 +124,7 @@ import { usePaginationSizeStore } from "src/stores/pagination";
 import { Collection, rowsPerPageOptions } from "src/constants/constants";
 import { dialogService } from "src/services/dialog-service";
 import { recordService } from "src/services/record-service";
-import { Record } from "src/models/record";
+import { Record } from "src/schemas/record";
 import DocumentDiffViewer from "src/components/DocumentDiffViewer.vue";
 
 const isLoading = ref(false);

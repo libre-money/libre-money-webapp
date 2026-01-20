@@ -120,7 +120,7 @@
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent } from "quasar";
 import { Collection, defaultRollOverRule, rollOverRuleList, budgetFrequencyList, defaultBudgetFrequency } from "src/constants/constants";
-import { BudgetedPeriod, RollingBudget } from "src/models/rolling-budget";
+import { BudgetedPeriod, RollingBudget } from "src/schemas/rolling-budget";
 import { dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
 import { pouchdbService } from "src/services/pouchdb-service";

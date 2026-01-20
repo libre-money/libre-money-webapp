@@ -1,11 +1,11 @@
 import { Collection, assetLiquidityList, assetTypeList } from "src/constants/constants";
-import { Asset } from "src/models/asset";
-import { Currency } from "src/models/currency";
-import { ExpenseAvenue } from "src/models/expense-avenue";
-import { IncomeSource } from "src/models/income-source";
-import { Party } from "src/models/party";
-import { Tag } from "src/models/tag";
-import { Wallet } from "src/models/wallet";
+import { Asset } from "src/schemas/asset";
+import { Currency } from "src/schemas/currency";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
+import { IncomeSource } from "src/schemas/income-source";
+import { Party } from "src/schemas/party";
+import { Tag } from "src/schemas/tag";
+import { Wallet } from "src/schemas/wallet";
 import { pouchdbService } from "./pouchdb-service";
 
 const currencyCacheList: Currency[] = [];

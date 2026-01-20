@@ -47,7 +47,7 @@ import { QForm, useDialogPluginComponent, useQuasar } from "quasar";
 import { ref, watch, onMounted } from "vue";
 import { validators } from "src/utils/validators";
 import { Collection, RecordType } from "src/constants/constants";
-import { Record } from "src/models/record";
+import { Record } from "src/schemas/record";
 import { pouchdbService } from "src/services/pouchdb-service";
 import SelectWallet from "./SelectWallet.vue";
 import SelectParty from "./SelectParty.vue";

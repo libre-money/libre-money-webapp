@@ -55,7 +55,7 @@
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
 import { RecordFilters } from "src/models/inferred/record-filters";
-import { Party } from "src/models/party";
+import { Party } from "src/schemas/party";
 import { dialogService } from "src/services/dialog-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { usePaginationSizeStore } from "src/stores/pagination";

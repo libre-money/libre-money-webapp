@@ -59,8 +59,8 @@
 import { useDialogPluginComponent, useQuasar } from "quasar";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { Collection } from "src/constants/constants";
-import { Currency } from "src/models/currency";
-import { Wallet } from "src/models/wallet";
+import { Currency } from "src/schemas/currency";
+import { Wallet } from "src/schemas/wallet";
 import { computationService } from "src/services/computation-service";
 import { currencyFormatService } from "src/services/currency-format-service";
 import { pouchdbService } from "src/services/pouchdb-service";

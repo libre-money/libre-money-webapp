@@ -157,9 +157,9 @@
 import { useQuasar } from "quasar";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import QuickRecordsDialog from "src/components/QuickRecordsDialog.vue";
-import { RollingBudget } from "src/models/rolling-budget";
+import { RollingBudget } from "src/schemas/rolling-budget";
 import { BudgetAnalysisResult, BudgetAnalysisItem, budgetAnalysisService } from "src/services/budget-analysis-service";
-import { BudgetedPeriod } from "src/models/rolling-budget";
+import { BudgetedPeriod } from "src/schemas/rolling-budget";
 import { printAmount } from "src/utils/de-facto-utils";
 import { prettifyDate } from "src/utils/misc-utils";
 import { onMounted, ref, type Ref } from "vue";

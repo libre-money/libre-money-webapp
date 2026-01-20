@@ -1,9 +1,9 @@
 import { Collection } from "src/constants/constants";
-import { Asset } from "src/models/asset";
-import { Currency } from "src/models/currency";
-import { ExpenseAvenue } from "src/models/expense-avenue";
-import { Record } from "src/models/record";
-import { BudgetedPeriod, RollingBudget } from "src/models/rolling-budget";
+import { Asset } from "src/schemas/asset";
+import { Currency } from "src/schemas/currency";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
+import { Record } from "src/schemas/record";
+import { BudgetedPeriod, RollingBudget } from "src/schemas/rolling-budget";
 import { asAmount } from "src/utils/de-facto-utils";
 import { entityService } from "./entity-service";
 import { pouchdbService } from "./pouchdb-service";

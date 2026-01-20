@@ -1,7 +1,7 @@
 import { Notify } from "quasar";
 import { Router } from "vue-router";
 import { Collection } from "src/constants/constants";
-import { Currency } from "src/models/currency";
+import { Currency } from "src/schemas/currency";
 import { migrationService } from "src/services/migration-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { useUserStore } from "src/stores/user";

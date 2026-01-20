@@ -1,22 +1,21 @@
 import { Collection, RecordType, assetLiquidityList } from "src/constants/constants";
-import { Asset } from "src/models/asset";
-
-import { Currency } from "src/models/currency";
-import { ExpenseAvenue } from "src/models/expense-avenue";
-import { IncomeSource } from "src/models/income-source";
+import { Asset } from "src/schemas/asset";
+import { Currency } from "src/schemas/currency";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
+import { IncomeSource } from "src/schemas/income-source";
 import { LoanAndDebtSummary } from "src/models/inferred/loan-and-debt-summary";
 import { Overview } from "src/models/inferred/overview";
 import { QuickSummary } from "src/models/inferred/quick-summary";
-import { Party } from "src/models/party";
-import { Record } from "src/models/record";
-import { Wallet } from "src/models/wallet";
+import { Party } from "src/schemas/party";
+import { Record } from "src/schemas/record";
+import { Wallet } from "src/schemas/wallet";
 import { normalizeEpochAsDateAtTheEndOfDay, normalizeEpochAsDate, normalizeEpochRange } from "src/utils/date-utils";
 import { isNullOrUndefined } from "src/utils/misc-utils";
 import { asAmount } from "src/utils/de-facto-utils";
 import { pouchdbService } from "./pouchdb-service";
 import { QuickExpenseSummary } from "src/models/inferred/quick-expense-summary";
 import { entityService } from "./entity-service";
-import { RollingBudget } from "src/models/rolling-budget";
+import { RollingBudget } from "src/schemas/rolling-budget";
 
 class ComputationService {
   async computeBalancesForAssets(assetList: Asset[]): Promise<void> {

@@ -61,10 +61,10 @@
 import { date, QForm, useDialogPluginComponent, useQuasar } from "quasar";
 import AddExpenseRecord from "src/components/AddExpenseRecord.vue";
 import { Collection } from "src/constants/constants";
-import { ExpenseAvenue } from "src/models/expense-avenue";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
 import { ExpenseRecordSuggestion } from "src/models/inferred/expense-record-suggestion";
-import { TextImportRules, TextImportRulesValidator } from "src/models/text-import-rules";
-import { Wallet } from "src/models/wallet";
+import { TextImportRules, matchValue } from "src/schemas/text-import-rules";
+import { Wallet } from "src/schemas/wallet";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { validators } from "src/utils/validators";
 import { onMounted, ref } from "vue";

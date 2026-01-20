@@ -1,8 +1,8 @@
 import { QVueGlobals } from "quasar";
 import { pouchdbService } from "./pouchdb-service";
 import { Collection, fixtureCode } from "src/constants/constants";
-import { ExpenseAvenue } from "src/models/expense-avenue";
-import { IncomeSource } from "src/models/income-source";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
+import { IncomeSource } from "src/schemas/income-source";
 
 class MigrationService {
   async migrateDefaultExpenseAvenueAndIncomeSource() {

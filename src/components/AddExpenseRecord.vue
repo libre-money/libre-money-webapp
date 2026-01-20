@@ -94,9 +94,9 @@
 <script setup lang="ts">
 import { QForm, useDialogPluginComponent, useQuasar } from "quasar";
 import { Collection, RecordType } from "src/constants/constants";
-import { Record } from "src/models/record";
-import { WalletWithPotentialBalance } from "src/models/wallet";
-import { Currency } from "src/models/currency";
+import { Record } from "src/schemas/record";
+import { WalletWithPotentialBalance } from "src/schemas/wallet";
+import { Currency } from "src/schemas/currency";
 import { computationService } from "src/services/computation-service";
 import { NotificationType, dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";

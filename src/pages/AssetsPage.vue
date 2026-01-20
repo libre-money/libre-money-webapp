@@ -64,8 +64,8 @@
 
 <script lang="ts" setup>
 import { useQuasar } from "quasar";
-import { Asset } from "src/models/asset";
-import { Currency } from "src/models/currency";
+import { Asset } from "src/schemas/asset";
+import { Currency } from "src/schemas/currency";
 import { computationService } from "src/services/computation-service";
 import { dialogService } from "src/services/dialog-service";
 import { entityService } from "src/services/entity-service";
