@@ -1,10 +1,10 @@
-import { Record } from "src/models/record";
-import { ExpenseAvenue } from "../expense-avenue";
-import { Party } from "../party";
-import { Tag } from "../tag";
-import { Wallet } from "../wallet";
-import { IncomeSource } from "../income-source";
-import { Asset } from "../asset";
+import { Record } from "src/schemas/record";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
+import { Party } from "src/schemas/party";
+import { Tag } from "src/schemas/tag";
+import { Wallet } from "src/schemas/wallet";
+import { IncomeSource } from "src/schemas/income-source";
+import { Asset } from "src/schemas/asset";
 import { User } from "../user";
 
 export type InferredRecord = Record & {

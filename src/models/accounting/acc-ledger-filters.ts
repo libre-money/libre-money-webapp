@@ -1,4 +1,4 @@
-import { Currency } from "../currency";
+import { Currency } from "src/schemas/currency";
 
 export type AccLedgerFilters = {
   startEpoch: number;

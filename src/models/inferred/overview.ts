@@ -1,9 +1,9 @@
-import { Asset } from "../asset";
-import { Currency } from "../currency";
-import { ExpenseAvenue } from "../expense-avenue";
-import { IncomeSource } from "../income-source";
-import { Party } from "../party";
-import { Wallet } from "../wallet";
+import { Asset } from "src/schemas/asset";
+import { Currency } from "src/schemas/currency";
+import { ExpenseAvenue } from "src/schemas/expense-avenue";
+import { IncomeSource } from "src/schemas/income-source";
+import { Party } from "src/schemas/party";
+import { Wallet } from "src/schemas/wallet";
 
 export type Overview = {
   startEpoch: number;
