@@ -202,6 +202,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuthentication: true, title: "Settings", rememberable: true },
       },
       {
+        path: "troubleshoot",
+        name: "troubleshoot",
+        component: () => import("pages/TroubleshootPage.vue"),
+        meta: { requiresAuthentication: true, title: "Troubleshoot", rememberable: false },
+      },
+      {
         path: "debug",
         name: "debug",
         component: () => import("pages/DebugPage.vue"),
@@ -213,7 +219,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import("pages/AuditLogPage.vue"),
         meta: { requiresAuthentication: true, title: "Audit Log", rememberable: true },
       },
-{
+      {
         path: "backup-restore",
         name: "backup-restore",
         component: () => import("pages/BackupRestorePage.vue"),
