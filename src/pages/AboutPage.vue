@@ -3,12 +3,15 @@
     <q-card class="">
       <q-card-section class="q-pa-lg">
         <div class="text-h4 q-mb-md">Libre Money</div>
-        <div class="text-body1 text-grey-8 q-mb-sm">Finally a personal finance tracking application that makes sense.</div>
-        <div class="text-body2 text-grey-7 q-mb-md">This Free and OpenSource Software (FOSS) is developed and maintained by Sayem Shafayet.</div>
+        <div class="text-body1 text-grey-8 q-mb-sm">Finally a personal finance tracking application that makes sense.
+        </div>
+        <div class="text-body2 text-grey-7 q-mb-md">This Free and OpenSource Software (FOSS) is developed and maintained
+          by Sayem Shafayet.</div>
 
         <div class="text-body2 text-grey-7 q-mb-xs">
           Source Code:
-          <a href="https://github.com/iShafayet/cash-keeper-client" target="_blank" class="text-primary"> Under GPL-3.0 license on GitHub </a>
+          <a href="https://github.com/iShafayet/cash-keeper-client" target="_blank" class="text-primary"> Under GPL-3.0
+            license on GitHub </a>
         </div>
         <div class="text-body2 text-grey-7">
           2023 to {{ getCurrentYear() }} ©
@@ -59,10 +62,23 @@
               <q-item-label>{{ userStore.currentUser.domain }}</q-item-label>
             </q-item-section>
           </q-item>
+
+          <q-item v-if="updateStatus !== null">
+            <q-item-section>
+              <q-item-label class="text-weight-medium">Update Available</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-item-label>
+                <q-chip :color="updateStatus.updateAvailable ? 'positive' : 'grey'" text-color="white"
+                  :label="updateStatus.updateAvailable ? 'Yes' : 'No'" size="sm" />
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
 
         <div v-if="!isLoading" class="q-mt-md">
-          <q-btn color="secondary" text-color="white" label="Check for Updates" icon="update" @click="forceUpdateClicked" unelevated class="full-width" />
+          <q-btn color="secondary" text-color="white" label="Check for Updates" icon="update"
+            @click="forceUpdateClicked" unelevated class="full-width" />
         </div>
       </q-card-section>
 
@@ -70,7 +86,8 @@
 
       <q-card-section v-if="!isLoading" class="q-pa-lg">
         <div class="row q-gutter-sm">
-          <q-btn color="negative" label="Remove Local Data" icon="delete_forever" @click="removeLocalDataClicked" class="col" />
+          <q-btn color="negative" label="Remove Local Data" icon="delete_forever" @click="removeLocalDataClicked"
+            class="col" />
           <q-btn outline color="info" label="Home" icon="home" @click="backToHomeClicked" class="col" />
         </div>
       </q-card-section>
@@ -83,34 +100,47 @@ import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
 import { dialogService } from "src/services/dialog-service";
 import { localDataService } from "src/services/local-data-service";
+import { serviceWorkerService, type ServiceWorkerUpdateStatus } from "src/services/service-worker-service";
 import { useUserStore } from "src/stores/user";
-import { getCurrentYear, sleep } from "src/utils/misc-utils";
-import { ref } from "vue";
+import { getCurrentYear } from "src/utils/misc-utils";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
 const userStore = useUserStore();
 const isLoading = ref(false);
 const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
+const updateStatus = ref<ServiceWorkerUpdateStatus | null>(null);
+
+// Check for updates on mount
+onMounted(async () => {
+  updateStatus.value = await serviceWorkerService.checkForUpdate();
+});
 
 async function forceUpdateClicked() {
   isLoading.value = true;
   try {
     loadingIndicator.value?.startPhase({ phase: 1, weight: 100, label: "Checking for updates" });
 
-    for (const key of await caches.keys()) {
-      await caches.delete(key);
+    // Force check for updates
+    const status = await serviceWorkerService.forceCheckForUpdate();
+    updateStatus.value = status;
+
+    if (!status.updateAvailable) {
+      loadingIndicator.value?.startPhase({ phase: 1, weight: 100, label: "No updates available" });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await dialogService.alert("No Updates", "You are already running the latest version.");
+      isLoading.value = false;
+      return;
     }
 
-    const regList = await navigator.serviceWorker.getRegistrations();
-    for (const reg of regList) {
-      console.debug(reg);
-      await reg.update();
-    }
+    loadingIndicator.value?.startPhase({ phase: 1, weight: 100, label: "Activating update" });
 
-    await sleep(1000);
-    // @ts-ignore
-    window.location.reload(true);
+    // Activate the waiting service worker
+    await serviceWorkerService.activateUpdate();
+
+    // Reload to use the new version
+    window.location.reload();
   } catch (ex) {
     isLoading.value = false;
     console.warn(ex);

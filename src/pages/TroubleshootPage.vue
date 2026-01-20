@@ -35,6 +35,17 @@
 
         <q-btn color="primary" icon="refresh" label="Hard Refresh" @click="hardRefreshClicked" />
       </div>
+
+      <div class="q-pa-md control-group">
+        <div class="control-title q-mb-sm">Emergency Service Worker & Cache Cleanup</div>
+        <div class="text-body2 q-mb-md">
+          <strong>Warning:</strong> This will remove all cached data and unregister all service workers. Use this only
+          if you're experiencing persistent issues with updates or caching. The app will reload after cleanup.
+        </div>
+
+        <q-btn color="negative" icon="delete_forever" label="Clear All Caches & Unregister Service Workers"
+          :loading="isCleaningUp" :disable="isCleaningUp" @click="emergencyCleanupClicked" />
+      </div>
     </q-card>
 
     <OptimizationSummaryDialog v-model="showSummaryDialog" :summary="optimizationSummary" />
@@ -44,11 +55,14 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { dialogService } from "src/services/dialog-service";
 import { optimizationService, type OptimizationProgress, type OptimizationSummary } from "src/services/optimization-service";
+import { serviceWorkerService } from "src/services/service-worker-service";
 import OptimizationSummaryDialog from "src/components/troubleshoot/OptimizationSummaryDialog.vue";
 
 const router = useRouter();
 const isOptimizing = ref(false);
+const isCleaningUp = ref(false);
 const showSummaryDialog = ref(false);
 const optimizationSummary = ref<OptimizationSummary | null>(null);
 
@@ -113,6 +127,29 @@ function hardRefreshClicked() {
   window.location.href = "/";
   // @ts-ignore
   window.location.reload(true);
+}
+
+async function emergencyCleanupClicked() {
+  const confirmed = await dialogService.confirm(
+    "Emergency Cleanup",
+    "This will delete all cached data and unregister all service workers. The app will reload after cleanup. Are you sure you want to continue?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  isCleaningUp.value = true;
+  try {
+    await serviceWorkerService.emergencyCleanup();
+    await dialogService.alert("Cleanup Complete", "All caches have been cleared and service workers unregistered. The app will now reload.");
+    window.location.reload();
+  } catch (error) {
+    isCleaningUp.value = false;
+    console.error("Error during emergency cleanup:", error);
+    const message = error && error instanceof Error ? error.message : JSON.stringify(error);
+    await dialogService.alert("Cleanup Error", "An error occurred during cleanup: " + message);
+  }
 }
 
 onUnmounted(() => {
