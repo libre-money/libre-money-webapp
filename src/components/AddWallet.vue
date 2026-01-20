@@ -2,8 +2,9 @@
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
     <q-card class="q-dialog-plugin column full-height">
       <q-card-section class="no-shrink">
-        <div class="std-dialog-title text-primary text-weight-bold">{{ existingWalletId ? "Editing a Wallet" : "Adding a
-          Wallet" }}</div>
+        <div class="std-dialog-title text-primary text-weight-bold">
+          {{ existingWalletId ? "Editing a Wallet" : "Adding a Wallet" }}
+        </div>
       </q-card-section>
       <q-separator />
       <q-card-section class="col scroll" style="min-height: 0">
