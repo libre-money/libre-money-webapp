@@ -75,8 +75,19 @@ export function validateDocument(
   collection?: string
 ): ValidationResult {
   const collectionName = collection || (doc as any)?.$collection;
+  const documentId = (doc as any)?._id || "new document";
+
+  console.debug("[Zod Validation] Starting validation", {
+    collection: collectionName,
+    documentId: documentId,
+    hasCollection: !!collectionName,
+  });
 
   if (!collectionName) {
+    console.debug("[Zod Validation] Validation failed: missing $collection field", {
+      documentId: documentId,
+      docKeys: doc && typeof doc === "object" ? Object.keys(doc as object) : [],
+    });
     return {
       success: false,
       errors: new z.ZodError([
@@ -93,21 +104,76 @@ export function validateDocument(
 
   if (!schema) {
     // No schema found - allow it through with a warning (for backward compatibility)
-    console.warn(`No validation schema found for collection: ${collectionName}`);
+    console.warn(`[Zod Validation] No validation schema found for collection: ${collectionName}`, {
+      documentId: documentId,
+      availableCollections: Array.from(schemaRegistry.keys()),
+    });
     return {
       success: true,
       data: doc,
     };
   }
 
+  console.debug("[Zod Validation] Schema found, parsing document", {
+    collection: collectionName,
+    documentId: documentId,
+    inputType: typeof doc,
+    inputKeys: doc && typeof doc === "object" ? Object.keys(doc as object).slice(0, 10) : [],
+  });
+
   const result = schema.safeParse(doc);
 
   if (result.success) {
+    // Check if data was coerced/changed
+    const inputStr = JSON.stringify(doc);
+    const outputStr = JSON.stringify(result.data);
+    const wasCoerced = inputStr !== outputStr;
+
+    console.debug("[Zod Validation] Validation successful", {
+      collection: collectionName,
+      documentId: documentId,
+      wasCoerced: wasCoerced,
+      inputSample: doc && typeof doc === "object" ? JSON.stringify((doc as any).name || (doc as any)._id || "N/A").substring(0, 50) : String(doc).substring(0, 50),
+    });
+
+    if (wasCoerced) {
+      console.debug("[Zod Validation] Data was coerced during validation", {
+        collection: collectionName,
+        documentId: documentId,
+        inputLength: inputStr.length,
+        outputLength: outputStr.length,
+        // Log first difference if any
+        sampleDiff: inputStr.substring(0, 100) !== outputStr.substring(0, 100) ? "Values differ" : "Structure differs",
+      });
+    }
+
     return {
       success: true,
       data: result.data,
     };
   } else {
+    const errorDetails = result.error.errors.map((err) => ({
+      path: err.path.join("."),
+      message: err.message,
+      code: err.code,
+    }));
+
+    console.debug("[Zod Validation] Validation failed", {
+      collection: collectionName,
+      documentId: documentId,
+      errorCount: result.error.errors.length,
+      errors: errorDetails,
+      firstError: errorDetails[0],
+    });
+
+    console.debug("[Zod Validation] Invalid document data", {
+      collection: collectionName,
+      documentId: documentId,
+      documentPreview: doc && typeof doc === "object" 
+        ? JSON.stringify(doc, null, 2).substring(0, 500)
+        : String(doc).substring(0, 200),
+    });
+
     return {
       success: false,
       errors: result.error,

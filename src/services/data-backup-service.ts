@@ -1,5 +1,6 @@
 import { pouchdbService } from "./pouchdb-service";
 import { useUserStore } from "src/stores/user";
+import { safeValidate, ValidationError } from "src/utils/validation-utils";
 
 export interface LibreMoneyBackupPayloadV1 {
   identity: "Libre Money Backup";
@@ -121,11 +122,66 @@ export const dataBackupService = {
     let created = 0;
     let updated = 0;
     let skipped = 0;
+    let validationErrors = 0;
     const invalid = total - validDocs.length;
 
     const upserts: any[] = [];
-    for (const backupDoc of validDocs) {
+    for (let backupDoc of validDocs) {
       processed += 1;
+
+      console.debug("[data-backup-service.restoreAllDataFromPayload] Validating document", {
+        documentId: backupDoc._id,
+        collection: backupDoc.$collection,
+        processed: processed,
+        total: total,
+      });
+
+      // Validate document before adding to upserts
+      const validation = safeValidate(backupDoc, backupDoc.$collection);
+      if (!validation.success) {
+        // Log validation error but continue (for backward compatibility with old backups)
+        console.warn(
+          `[data-backup-service] Validation failed for document ${backupDoc._id} in collection ${backupDoc.$collection}:`,
+          validation.errors?.errors
+        );
+        console.debug("[data-backup-service] Validation error details", {
+          documentId: backupDoc._id,
+          collection: backupDoc.$collection,
+          errors: validation.errors?.errors.map((err) => ({
+            path: err.path.join("."),
+            message: err.message,
+            code: err.code,
+          })),
+          documentPreview: JSON.stringify(backupDoc, null, 2).substring(0, 500),
+        });
+        validationErrors += 1;
+        
+        // Try to use validated data if available, otherwise skip this document
+        if (validation.data) {
+          // Use validated/coerced data
+          console.debug("[data-backup-service] Using coerced data despite validation errors", {
+            documentId: backupDoc._id,
+            collection: backupDoc.$collection,
+          });
+          backupDoc = validation.data;
+        } else {
+          // Skip invalid document
+          console.warn(`[data-backup-service] Skipping invalid document: ${backupDoc._id}`);
+          continue;
+        }
+      } else if (validation.data) {
+        // Use validated/coerced data
+        console.debug("[data-backup-service] Using validated/coerced data", {
+          documentId: backupDoc._id,
+          collection: backupDoc.$collection,
+        });
+        backupDoc = validation.data;
+      } else {
+        console.debug("[data-backup-service] Validation passed, no coercion needed", {
+          documentId: backupDoc._id,
+          collection: backupDoc.$collection,
+        });
+      }
 
       const existingDoc = existingById.get(backupDoc._id);
       if (!existingDoc) {
@@ -156,6 +212,6 @@ export const dataBackupService = {
       await db.bulkDocs(chunk);
     }
 
-    return { total, processed, created, updated, skipped, invalid };
+    return { total, processed, created, updated, skipped, invalid, validationErrors };
   },
 };
