@@ -25,6 +25,7 @@ export interface SyncRequest {
 class SyncService {
   private syncQueue: SyncRequest[] = [];
   private isProcessingQueue = false;
+  private backgroundSyncEnabled = true;
   private syncStatus = ref<SyncStatus>({
     isBackgroundSyncing: false,
     isFullSyncing: false,
@@ -196,9 +197,13 @@ class SyncService {
 
   onPouchdbChange(action: "upsert" | "remove" | "sync", doc: PouchDB.Core.PostDocument<any> | undefined) {
     console.debug("Pouchdb change:", action, doc);
-    if (action !== "sync") {
+    if (action !== "sync" && this.backgroundSyncEnabled) {
       this.triggerAutoBackgroundSync();
     }
+  }
+
+  setBackgroundSyncEnabled(enabled: boolean) {
+    this.backgroundSyncEnabled = enabled;
   }
 }
 
