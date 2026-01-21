@@ -78,7 +78,7 @@ Founded by [Sayem Shafayet](https://github.com/iShafayet), now maintained by a s
 
 ## License
 
-GNU General Public License v3.0
+[GNU General Public License v3.0](LICENSE)
 
 ## Links
 
