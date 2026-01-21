@@ -23,6 +23,10 @@ class DemoPreparationService {
   private incomeSourcesMap = new Map<string, IncomeSource>();
   private tagsMap = new Map<string, Tag>();
 
+  // Map to track record IDs for payables/receivables demo data across months
+  private unpaidRecordIdsMap = new Map<string, string>();
+  private lendingRecordIdsMap = new Map<string, string>();
+
   // State variable to store the primary demo currency
   private primaryCurrency: Currency | null = null;
 
@@ -746,6 +750,26 @@ class DemoPreparationService {
       count++;
     }
 
+    // Payables/Receivables demo records (unpaid expenses/income and their payments)
+    const payablesReceivablesRecords = this.getPayablesReceivablesDemoRecordsForMonth(
+      monthNumber,
+      monthStart,
+      currencyId,
+      chaseChecking,
+      amexCreditCard,
+      jamieBusiness
+    );
+    // Create precursor records (unpaid expenses/income) first
+    for (const record of payablesReceivablesRecords.precursorRecords) {
+      await this.createRecord(record);
+      count++;
+    }
+    // Then create payment/receipt records
+    for (const record of payablesReceivablesRecords.paymentRecords) {
+      await this.createRecord(record);
+      count++;
+    }
+
     // Asset purchase records
     const assetPurchaseRecords = this.getAssetPurchaseRecordsForMonth(monthNumber, monthStart, currencyId, chaseChecking);
     for (const record of assetPurchaseRecords) {
@@ -1355,41 +1379,41 @@ class DemoPreparationService {
     const records: Record[] = [];
 
     if (monthNumber === 1) {
-      records.push(
-        this.createLendingRecord(
-          new Date(monthStart.getFullYear(), monthStart.getMonth(), 15),
-          currencyId,
-          chaseChecking._id,
-          this.partiesMap.get("MOM")?._id || "",
-          [],
-          2000,
-          "Help with car repair"
-        )
+      const momLending = this.createLendingRecord(
+        new Date(monthStart.getFullYear(), monthStart.getMonth(), 15),
+        currencyId,
+        chaseChecking._id,
+        this.partiesMap.get("MOM")?._id || "",
+        [],
+        2000,
+        "Help with car repair"
       );
+      this.lendingRecordIdsMap.set("MOM_LOAN", momLending._id as string);
+      records.push(momLending);
     } else if (monthNumber === 2) {
-      records.push(
-        this.createLendingRecord(
-          new Date(monthStart.getFullYear(), monthStart.getMonth(), 20),
-          currencyId,
-          chaseChecking._id,
-          this.partiesMap.get("BROTHER")?._id || "",
-          [],
-          800,
-          "Moving expenses"
-        )
+      const brotherLending = this.createLendingRecord(
+        new Date(monthStart.getFullYear(), monthStart.getMonth(), 20),
+        currencyId,
+        chaseChecking._id,
+        this.partiesMap.get("BROTHER")?._id || "",
+        [],
+        800,
+        "Moving expenses"
       );
+      this.lendingRecordIdsMap.set("BROTHER_LOAN", brotherLending._id as string);
+      records.push(brotherLending);
     } else if (monthNumber === 4) {
-      records.push(
-        this.createLendingRecord(
-          new Date(monthStart.getFullYear(), monthStart.getMonth(), 10),
-          currencyId,
-          chaseChecking._id,
-          this.partiesMap.get("BEST_FRIEND")?._id || "",
-          [],
-          500,
-          "Emergency loan"
-        )
+      const friendLending = this.createLendingRecord(
+        new Date(monthStart.getFullYear(), monthStart.getMonth(), 10),
+        currencyId,
+        chaseChecking._id,
+        this.partiesMap.get("BEST_FRIEND")?._id || "",
+        [],
+        500,
+        "Emergency loan"
       );
+      this.lendingRecordIdsMap.set("FRIEND_LOAN", friendLending._id as string);
+      records.push(friendLending);
     }
 
     return records;
@@ -1399,26 +1423,41 @@ class DemoPreparationService {
    * Get borrowing records (initial setup)
    */
   private getBorrowingRecordsForMonth(monthStart: Date, currencyId: string, chaseChecking: Wallet & { _id: string }): Record[] {
-    return [
-      this.createBorrowingRecord(
-        new Date(monthStart.getFullYear(), monthStart.getMonth(), 1),
-        currencyId,
-        chaseChecking._id,
-        this.partiesMap.get("CHASE_BANK")?._id || "",
-        [],
-        185000,
-        "Mortgage balance (simplified)"
-      ),
-      this.createBorrowingRecord(
-        new Date(monthStart.getFullYear(), monthStart.getMonth(), 1),
-        currencyId,
-        chaseChecking._id,
-        this.partiesMap.get("TOYOTA_FINANCIAL")?._id || "",
-        [],
-        8500,
-        "Auto loan remaining"
-      ),
-    ];
+    const mortgageBorrowing = this.createBorrowingRecord(
+      new Date(monthStart.getFullYear(), monthStart.getMonth(), 1),
+      currencyId,
+      chaseChecking._id,
+      this.partiesMap.get("CHASE_BANK")?._id || "",
+      [],
+      185000,
+      "Mortgage balance (simplified)"
+    );
+    this.lendingRecordIdsMap.set("MORTGAGE_LOAN", mortgageBorrowing._id as string);
+
+    const autoLoanBorrowing = this.createBorrowingRecord(
+      new Date(monthStart.getFullYear(), monthStart.getMonth(), 1),
+      currencyId,
+      chaseChecking._id,
+      this.partiesMap.get("TOYOTA_FINANCIAL")?._id || "",
+      [],
+      8500,
+      "Auto loan remaining"
+    );
+    this.lendingRecordIdsMap.set("AUTO_LOAN", autoLoanBorrowing._id as string);
+
+    // Personal loan from Mom (separate from the one we gave her)
+    const momLoanBorrowing = this.createBorrowingRecord(
+      new Date(monthStart.getFullYear(), monthStart.getMonth(), 5),
+      currencyId,
+      chaseChecking._id,
+      this.partiesMap.get("BEST_FRIEND")?._id || "",
+      [],
+      1200,
+      "Emergency medical expenses"
+    );
+    this.lendingRecordIdsMap.set("FRIEND_BORROWING", momLoanBorrowing._id as string);
+
+    return [mortgageBorrowing, autoLoanBorrowing, momLoanBorrowing];
   }
 
   /**
@@ -1494,6 +1533,190 @@ class DemoPreparationService {
     }
 
     return records;
+  }
+
+  /**
+   * Get payables/receivables demo records (unpaid expenses/income and their payments)
+   */
+  private getPayablesReceivablesDemoRecordsForMonth(
+    monthNumber: number,
+    monthStart: Date,
+    currencyId: string,
+    chaseChecking: Wallet & { _id: string },
+    amexCreditCard: Wallet & { _id: string },
+    jamieBusiness: Wallet & { _id: string }
+  ): { precursorRecords: Record[]; paymentRecords: Record[] } {
+    const precursorRecords: Record[] = [];
+    const paymentRecords: Record[] = [];
+    const getTagIds = (names: string[]) => names.map((n) => this.tagsMap.get(n)?._id).filter(Boolean) as string[];
+
+    // Month 5: Create some unpaid expenses and income
+    if (monthNumber === 5) {
+      // Unpaid expense: Web hosting invoice not paid yet
+      const unpaidHosting = this.createUnpaidExpenseRecord(
+        new Date(monthStart.getFullYear(), monthStart.getMonth(), 10),
+        currencyId,
+        chaseChecking._id,
+        this.expenseAvenuesMap.get("AMAZON_PURCHASES")?._id || "",
+        this.partiesMap.get("AMAZON")?._id || "",
+        getTagIds(["BUSINESS"]),
+        299, // total amount
+        0, // nothing paid yet
+        "Annual web hosting - AWS"
+      );
+      this.unpaidRecordIdsMap.set("HOSTING_EXPENSE", unpaidHosting._id as string);
+      precursorRecords.push(unpaidHosting);
+
+      // Partially paid expense: Office supplies
+      const partialOfficeSupplies = this.createUnpaidExpenseRecord(
+        new Date(monthStart.getFullYear(), monthStart.getMonth(), 12),
+        currencyId,
+        chaseChecking._id,
+        this.expenseAvenuesMap.get("AMAZON_PURCHASES")?._id || "",
+        this.partiesMap.get("AMAZON")?._id || "",
+        getTagIds(["BUSINESS"]),
+        450,
+        200, // paid 200 out of 450
+        "Office furniture and supplies"
+      );
+      this.unpaidRecordIdsMap.set("OFFICE_SUPPLIES_EXPENSE", partialOfficeSupplies._id as string);
+      precursorRecords.push(partialOfficeSupplies);
+
+      // Unpaid income: Design project invoice sent but not received yet
+      const unpaidDesignInvoice = this.createUnpaidIncomeRecord(
+        new Date(monthStart.getFullYear(), monthStart.getMonth(), 15),
+        currencyId,
+        jamieBusiness._id,
+        this.incomeSourcesMap.get("FREELANCE_DESIGN")?._id || "",
+        this.partiesMap.get("BRIGHT_IDEAS")?._id || "",
+        getTagIds(["BUSINESS"]),
+        1800,
+        0, // not received yet
+        "Brand identity package - invoice sent"
+      );
+      this.unpaidRecordIdsMap.set("DESIGN_INVOICE_INCOME", unpaidDesignInvoice._id as string);
+      precursorRecords.push(unpaidDesignInvoice);
+
+      // Partially paid income: Consulting work with partial advance
+      const partialConsultingIncome = this.createUnpaidIncomeRecord(
+        new Date(monthStart.getFullYear(), monthStart.getMonth(), 18),
+        currencyId,
+        jamieBusiness._id,
+        this.incomeSourcesMap.get("FREELANCE_DESIGN")?._id || "",
+        this.partiesMap.get("VERDE_LANDSCAPING")?._id || "",
+        getTagIds(["BUSINESS"]),
+        2500,
+        1000, // received 1000 advance
+        "Marketing campaign - 40% advance received"
+      );
+      this.unpaidRecordIdsMap.set("CONSULTING_INCOME", partialConsultingIncome._id as string);
+      precursorRecords.push(partialConsultingIncome);
+    }
+
+    // Month 6 (current): Create payment/receipt records for the month 5 precursors
+    if (monthNumber === 6) {
+      // Payment for the AWS hosting (full payment)
+      const hostingExpenseId = this.unpaidRecordIdsMap.get("HOSTING_EXPENSE") || "";
+      if (hostingExpenseId) {
+        const hostingPayment = this.createPayablePaymentRecord(
+          new Date(monthStart.getFullYear(), monthStart.getMonth(), 5),
+          currencyId,
+          chaseChecking._id,
+          this.partiesMap.get("AMAZON")?._id || "",
+          hostingExpenseId,
+          "expense",
+          getTagIds(["BUSINESS"]),
+          299,
+          "Paid AWS hosting invoice"
+        );
+        paymentRecords.push(hostingPayment);
+      }
+
+      // Partial payment for office supplies (paying remaining 250)
+      const suppliesExpenseId = this.unpaidRecordIdsMap.get("OFFICE_SUPPLIES_EXPENSE") || "";
+      if (suppliesExpenseId) {
+        const suppliesPayment = this.createPayablePaymentRecord(
+          new Date(monthStart.getFullYear(), monthStart.getMonth(), 8),
+          currencyId,
+          chaseChecking._id,
+          this.partiesMap.get("AMAZON")?._id || "",
+          suppliesExpenseId,
+          "expense",
+          getTagIds(["BUSINESS"]),
+          250,
+          "Final payment for office furniture"
+        );
+        paymentRecords.push(suppliesPayment);
+      }
+
+      // Receipt for design invoice (received full amount)
+      const designIncomeId = this.unpaidRecordIdsMap.get("DESIGN_INVOICE_INCOME") || "";
+      if (designIncomeId) {
+        const designReceipt = this.createReceivableReceiptRecord(
+          new Date(monthStart.getFullYear(), monthStart.getMonth(), 10),
+          currencyId,
+          jamieBusiness._id,
+          this.partiesMap.get("BRIGHT_IDEAS")?._id || "",
+          designIncomeId,
+          "income",
+          getTagIds(["BUSINESS"]),
+          1800,
+          "Received payment for brand identity work"
+        );
+        paymentRecords.push(designReceipt);
+      }
+
+      // Receipt for consulting work (received remaining balance)
+      const consultingIncomeId = this.unpaidRecordIdsMap.get("CONSULTING_INCOME") || "";
+      if (consultingIncomeId) {
+        const consultingReceipt = this.createReceivableReceiptRecord(
+          new Date(monthStart.getFullYear(), monthStart.getMonth(), 20),
+          currencyId,
+          jamieBusiness._id,
+          this.partiesMap.get("VERDE_LANDSCAPING")?._id || "",
+          consultingIncomeId,
+          "income",
+          getTagIds(["BUSINESS"]),
+          1500, // remaining 1500
+          "Final payment for marketing campaign"
+        );
+        paymentRecords.push(consultingReceipt);
+      }
+
+      // Loan forgiveness given: Forgive a small portion of the loan given to brother
+      const brotherLendingId = this.lendingRecordIdsMap.get("BROTHER_LOAN") || "";
+      if (brotherLendingId) {
+        const loanForgivenessGiven = this.createLoanForgivenessGivenRecord(
+          new Date(monthStart.getFullYear(), monthStart.getMonth(), 25),
+          currencyId,
+          this.partiesMap.get("BROTHER")?._id || "",
+          brotherLendingId,
+          getTagIds(["FAMILY"]),
+          200,
+          "gift",
+          "Forgave $200 of brother's loan due to medical expenses"
+        );
+        paymentRecords.push(loanForgivenessGiven);
+      }
+
+      // Loan forgiveness received: Best friend forgives part of the loan
+      const friendBorrowingId = this.lendingRecordIdsMap.get("FRIEND_BORROWING") || "";
+      if (friendBorrowingId) {
+        const loanForgivenessReceived = this.createLoanForgivenessReceivedRecord(
+          new Date(monthStart.getFullYear(), monthStart.getMonth(), 28),
+          currencyId,
+          this.partiesMap.get("BEST_FRIEND")?._id || "",
+          friendBorrowingId,
+          [],
+          400,
+          "gift",
+          "Friend forgave $400 of loan as birthday gift"
+        );
+        paymentRecords.push(loanForgivenessReceived);
+      }
+    }
+
+    return { precursorRecords, paymentRecords };
   }
 
   /**
@@ -1725,6 +1948,70 @@ class DemoPreparationService {
   }
 
   /**
+   * Create an unpaid/partially paid expense record
+   */
+  private createUnpaidExpenseRecord(
+    date: Date,
+    currencyId: string,
+    walletId: string,
+    expenseAvenueId: string,
+    partyId: string,
+    tagIds: string[],
+    amount: number,
+    amountPaid: number,
+    notes: string
+  ): Record {
+    return {
+      $collection: Collection.RECORD,
+      notes: notes,
+      type: RecordType.EXPENSE,
+      tagIdList: tagIds,
+      transactionEpoch: date.getTime(),
+      expense: {
+        expenseAvenueId,
+        amount,
+        currencyId,
+        partyId,
+        walletId,
+        amountPaid,
+        amountUnpaid: amount - amountPaid,
+      },
+    };
+  }
+
+  /**
+   * Create an unpaid/partially paid income record
+   */
+  private createUnpaidIncomeRecord(
+    date: Date,
+    currencyId: string,
+    walletId: string,
+    incomeSourceId: string,
+    partyId: string,
+    tagIds: string[],
+    amount: number,
+    amountPaid: number,
+    notes: string
+  ): Record {
+    return {
+      $collection: Collection.RECORD,
+      notes: notes,
+      type: RecordType.INCOME,
+      tagIdList: tagIds,
+      transactionEpoch: date.getTime(),
+      income: {
+        incomeSourceId,
+        amount,
+        currencyId,
+        partyId,
+        walletId,
+        amountPaid,
+        amountUnpaid: amount - amountPaid,
+      },
+    };
+  }
+
+  /**
    * Create an asset purchase record
    */
   private createAssetPurchaseRecord(
@@ -1903,6 +2190,126 @@ class DemoPreparationService {
         walletId,
         currencyId,
         partyId,
+      },
+    };
+  }
+
+  /**
+   * Create a payable payment record
+   */
+  private createPayablePaymentRecord(
+    date: Date,
+    currencyId: string,
+    walletId: string,
+    partyId: string,
+    originalRecordId: string,
+    originalRecordType: "expense" | "asset-purchase",
+    tagIds: string[],
+    amount: number,
+    notes: string
+  ): Record {
+    return {
+      $collection: Collection.RECORD,
+      notes: notes,
+      type: RecordType.PAYABLE_PAYMENT,
+      tagIdList: tagIds,
+      transactionEpoch: date.getTime(),
+      payablePayment: {
+        amount,
+        walletId,
+        currencyId,
+        partyId,
+        originalRecordId,
+        originalRecordType,
+      },
+    };
+  }
+
+  /**
+   * Create a receivable receipt record
+   */
+  private createReceivableReceiptRecord(
+    date: Date,
+    currencyId: string,
+    walletId: string,
+    partyId: string,
+    originalRecordId: string,
+    originalRecordType: "income" | "asset-sale",
+    tagIds: string[],
+    amount: number,
+    notes: string
+  ): Record {
+    return {
+      $collection: Collection.RECORD,
+      notes: notes,
+      type: RecordType.RECEIVABLE_RECEIPT,
+      tagIdList: tagIds,
+      transactionEpoch: date.getTime(),
+      receivableReceipt: {
+        amount,
+        walletId,
+        currencyId,
+        partyId,
+        originalRecordId,
+        originalRecordType,
+      },
+    };
+  }
+
+  /**
+   * Create a loan forgiveness given record
+   */
+  private createLoanForgivenessGivenRecord(
+    date: Date,
+    currencyId: string,
+    partyId: string,
+    originalLendingRecordId: string,
+    tagIds: string[],
+    amountForgiven: number,
+    reason: "uncollectable" | "gift" | "settlement" | "other",
+    notes: string
+  ): Record {
+    return {
+      $collection: Collection.RECORD,
+      notes: notes,
+      type: RecordType.LOAN_FORGIVENESS_GIVEN,
+      tagIdList: tagIds,
+      transactionEpoch: date.getTime(),
+      loanForgivenessGiven: {
+        amountForgiven,
+        currencyId,
+        partyId,
+        originalLendingRecordId,
+        reason,
+      },
+    };
+  }
+
+  /**
+   * Create a loan forgiveness received record
+   */
+  private createLoanForgivenessReceivedRecord(
+    date: Date,
+    currencyId: string,
+    partyId: string,
+    originalBorrowingRecordId: string,
+    tagIds: string[],
+    amountForgiven: number,
+    reason: "uncollectable" | "gift" | "settlement" | "other",
+    notes: string
+  ): Record {
+    return {
+      $collection: Collection.RECORD,
+      notes: notes,
+      type: RecordType.LOAN_FORGIVENESS_RECEIVED,
+      tagIdList: tagIds,
+      transactionEpoch: date.getTime(),
+      loanForgivenessReceived: {
+        amountForgiven,
+        currencyId,
+        partyId,
+        originalBorrowingRecordId,
+        reason,
       },
     };
   }
