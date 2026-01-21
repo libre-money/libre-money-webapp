@@ -46,6 +46,17 @@
         <q-btn color="negative" icon="delete_forever" label="Clear All Caches & Unregister Service Workers"
           :loading="isCleaningUp" :disable="isCleaningUp" @click="emergencyCleanupClicked" />
       </div>
+
+      <div class="q-pa-md control-group">
+        <div class="control-title q-mb-sm">Remove All Local Data</div>
+        <div class="text-body2 q-mb-md">
+          <strong>Danger Zone:</strong> This will permanently delete ALL your local financial data including records,
+          accounts, budgets, and settings. This action cannot be undone. If you have cloud sync enabled, your data will
+          remain on the cloud but all local copies will be erased.
+        </div>
+
+        <q-btn color="negative" icon="delete_forever" label="Remove All Local Data" @click="removeLocalDataClicked" />
+      </div>
     </q-card>
 
     <OptimizationSummaryDialog v-model="showSummaryDialog" :summary="optimizationSummary" />
@@ -56,6 +67,7 @@
 import { computed, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { dialogService } from "src/services/dialog-service";
+import { localDataService } from "src/services/local-data-service";
 import { optimizationService, type OptimizationProgress, type OptimizationSummary } from "src/services/optimization-service";
 import { serviceWorkerService } from "src/services/service-worker-service";
 import OptimizationSummaryDialog from "src/components/troubleshoot/OptimizationSummaryDialog.vue";
@@ -150,6 +162,10 @@ async function emergencyCleanupClicked() {
     const message = error && error instanceof Error ? error.message : JSON.stringify(error);
     await dialogService.alert("Cleanup Error", "An error occurred during cleanup: " + message);
   }
+}
+
+function removeLocalDataClicked() {
+  localDataService.removeLocalData();
 }
 
 onUnmounted(() => {
