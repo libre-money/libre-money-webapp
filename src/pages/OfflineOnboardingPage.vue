@@ -119,6 +119,20 @@
                 </div>
               </div>
             </div>
+
+            <!-- Terms and Privacy Agreement -->
+            <div class="terms-agreement q-mt-lg q-pt-md">
+              <q-checkbox v-model="agreedToTerms" dense>
+                <template v-slot:default>
+                  <div class="text-body2">
+                    I agree to the
+                    <a href="#" @click.prevent="showTermsDialog" class="text-primary">Terms and Conditions</a>
+                    and
+                    <a href="#" @click.prevent="showPrivacyDialog" class="text-primary">Privacy Policy</a>
+                  </div>
+                </template>
+              </q-checkbox>
+            </div>
           </q-form>
         </div>
       </q-card-section>
@@ -259,7 +273,7 @@
         <q-btn v-if="currentStep === 1" unelevated color="primary" label="Get Started" @click="nextStep"
           icon-right="arrow_forward" class="primary-button" />
         <q-btn v-if="currentStep === 2" unelevated color="primary" label="Create Account" @click="createAccount"
-          :disabled="!isUsernameValid" :loading="isCreatingAccount" icon-right="arrow_forward" class="primary-button" />
+          :disabled="!isUsernameValid || !agreedToTerms" :loading="isCreatingAccount" icon-right="arrow_forward" class="primary-button" />
         <q-btn v-if="currentStep === 3" unelevated color="primary" label="Continue" @click="proceedToTelemetry"
           :disabled="!isCurrencyValid" icon-right="arrow_forward" class="primary-button" />
         <q-btn v-if="currentStep === 4" unelevated color="primary" label="Continue" @click="proceedToSetup"
@@ -284,6 +298,8 @@ import { useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 import { useUserStore } from "src/stores/user";
 import { authService, TelemetryCurrency } from "src/services/auth-service";
+import TermsAndConditionsDialog from "src/components/TermsAndConditionsDialog.vue";
+import PrivacyPolicyDialog from "src/components/PrivacyPolicyDialog.vue";
 
 const router = useRouter();
 const $q = useQuasar();
@@ -375,7 +391,21 @@ const telemetryEmailRules = [
 const telemetryEmail = ref("");
 const allowOneTimeTelemetry = ref(true);
 
+// Terms and Privacy Agreement
+const agreedToTerms = ref(false);
+
 // Methods
+function showTermsDialog() {
+  $q.dialog({
+    component: TermsAndConditionsDialog,
+  });
+}
+
+function showPrivacyDialog() {
+  $q.dialog({
+    component: PrivacyPolicyDialog,
+  });
+}
 function nextStep() {
   if (currentStep.value < 5) {
     currentStep.value++;
@@ -847,6 +877,33 @@ async function goToDashboard() {
         .q-icon {
           flex-shrink: 0;
         }
+      }
+    }
+  }
+
+  .terms-agreement {
+    border-top: 1px solid #e0e0e0;
+
+    .q-checkbox {
+      min-height: 44px; // Touch target size
+
+      @media (max-width: 600px) {
+        font-size: 14px;
+      }
+
+      :deep(.q-checkbox__label) {
+        line-height: 1.5;
+      }
+    }
+
+    a {
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 0.8;
+        text-decoration: underline;
       }
     }
   }

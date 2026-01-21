@@ -6,12 +6,18 @@
         <div class="text-body1 text-grey-8 q-mb-sm">Finally a personal finance tracking application that makes sense.
         </div>
         <div class="text-body2 text-grey-7 q-mb-md">This Free and OpenSource Software (FOSS) is developed and maintained
-          by Sayem Shafayet.</div>
+          by the <a href="https://github.com/libre-money#-author--maintainer" target="_blank" class="text-primary">
+            Libre Money</a> team.</div>
 
         <div class="text-body2 text-grey-7 q-mb-xs">
           Source Code:
-          <a href="https://github.com/iShafayet/cash-keeper-client" target="_blank" class="text-primary"> Under GPL-3.0
+          <a href="https://github.com/libre-money/libre-money-webapp" target="_blank" class="text-primary"> Under
+            GPL-3.0
             license on GitHub </a>
+        </div>
+        <div class="text-body2 text-grey-7 q-mb-xs">
+          Website:
+          <a href="https://libre.money" target="_blank" class="text-primary">libre.money</a>
         </div>
         <div class="text-body2 text-grey-7">
           2023 to {{ getCurrentYear() }} ©
@@ -85,11 +91,19 @@
       <q-separator v-if="!isLoading" />
 
       <q-card-section v-if="!isLoading" class="q-pa-lg">
+        <div class="text-subtitle1 q-mb-md">Legal & Privacy</div>
         <div class="row q-gutter-sm">
-          <q-btn color="negative" label="Remove Local Data" icon="delete_forever" @click="removeLocalDataClicked"
+          <q-btn outline color="primary" label="Terms and Conditions" icon="description" @click="showTermsDialog"
             class="col" />
-          <q-btn outline color="info" label="Home" icon="home" @click="backToHomeClicked" class="col" />
+          <q-btn outline color="primary" label="Privacy Policy" icon="privacy_tip" @click="showPrivacyDialog"
+            class="col" />
         </div>
+      </q-card-section>
+
+      <q-separator v-if="!isLoading" />
+
+      <q-card-section v-if="!isLoading" class="q-pa-lg">
+        <q-btn outline color="info" label="Home" icon="home" @click="backToHomeClicked" class="full-width" />
       </q-card-section>
     </q-card>
   </q-page>
@@ -99,14 +113,17 @@
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
 import { dialogService } from "src/services/dialog-service";
-import { localDataService } from "src/services/local-data-service";
 import { serviceWorkerService, type ServiceWorkerUpdateStatus } from "src/services/service-worker-service";
 import { useUserStore } from "src/stores/user";
 import { getCurrentYear } from "src/utils/misc-utils";
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useQuasar } from "quasar";
+import TermsAndConditionsDialog from "src/components/TermsAndConditionsDialog.vue";
+import PrivacyPolicyDialog from "src/components/PrivacyPolicyDialog.vue";
 
 const router = useRouter();
+const $q = useQuasar();
 const userStore = useUserStore();
 const isLoading = ref(false);
 const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
@@ -149,12 +166,20 @@ async function forceUpdateClicked() {
   }
 }
 
-function removeLocalDataClicked() {
-  localDataService.removeLocalData();
-}
-
 function backToHomeClicked() {
   router.push("/");
+}
+
+function showTermsDialog() {
+  $q.dialog({
+    component: TermsAndConditionsDialog,
+  });
+}
+
+function showPrivacyDialog() {
+  $q.dialog({
+    component: PrivacyPolicyDialog,
+  });
 }
 </script>
 
