@@ -92,8 +92,20 @@
         </q-list>
 
         <q-list>
-          <q-item-label header> ENTITIES </q-item-label>
-          <EssentialLink v-for="link in entityList" :key="link.title" v-bind="link" />
+          <q-item clickable @click="toggleEntitiesExpanded" class="accounting-header">
+            <q-item-section>
+              <q-item-label header>ENTITIES</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-icon :name="userInterfaceStore.entitiesExpanded ? 'expand_less' : 'expand_more'"
+                class="accounting-chevron" />
+            </q-item-section>
+          </q-item>
+          <transition name="slide-down">
+            <div v-show="userInterfaceStore.entitiesExpanded">
+              <EssentialLink v-for="link in entityList" :key="link.title" v-bind="link" />
+            </div>
+          </transition>
         </q-list>
 
         <q-list>
@@ -542,6 +554,10 @@ function toggleAdvancedExpanded() {
 
 function togglePayablesReceivablesExpanded() {
   userInterfaceStore.setPayablesReceivablesExpanded(!userInterfaceStore.payablesReceivablesExpanded);
+}
+
+function toggleEntitiesExpanded() {
+  userInterfaceStore.setEntitiesExpanded(!userInterfaceStore.entitiesExpanded);
 }
 
 async function goToOnlinePage() {
