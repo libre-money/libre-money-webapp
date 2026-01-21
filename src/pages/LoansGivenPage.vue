@@ -3,6 +3,7 @@
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <div class="title"></div>
+        <q-btn label="Add" icon="add" color="primary" @click="addLendingRecordClicked" />
         <q-select
           v-model="selectedCurrencyId"
           :options="currencyList"
@@ -93,6 +94,7 @@ import { computed, ref, type Ref } from "vue";
 import { rowsPerPageOptions } from "./../constants/constants";
 import AddRepaymentReceivedRecord from "src/components/AddRepaymentReceivedRecord.vue";
 import ForgiveLoanGiven from "src/components/ForgiveLoanGivenDialog.vue";
+import AddLendingRecord from "src/components/AddLendingRecord.vue";
 
 const $q = useQuasar();
 const settingsStore = useSettingsStore();
@@ -240,6 +242,17 @@ async function forgiveLoanClicked(item: LoanGivenItem) {
   $q.dialog({
     component: ForgiveLoanGiven,
     componentProps: { loanGivenItem: item },
+  }).onOk(() => {
+    loadData();
+  });
+}
+
+async function addLendingRecordClicked() {
+  $q.dialog({
+    component: AddLendingRecord,
+    componentProps: {
+      existingRecordId: null,
+    },
   }).onOk(() => {
     loadData();
   });
