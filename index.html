@@ -8,6 +8,7 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="msapplication-tap-highlight" content="no" />
     <meta
+      id="viewport"
       name="viewport"
       content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, viewport-fit=cover<% } %>"
     />
@@ -181,6 +182,36 @@
         window.location.href = "/";
         window.location.reload(true);
       }
+
+      // Viewport scaling for devices smaller than 375px
+      function adjustViewportForSmallScreens() {
+        const MIN_SUPPORTED_WIDTH = 375;
+        const screenWidth = screen.width;
+
+        if (screenWidth < MIN_SUPPORTED_WIDTH) {
+          const scale = screenWidth / MIN_SUPPORTED_WIDTH;
+          const vp = document.getElementById('viewport');
+
+          if (vp) {
+            const viewportFit = '<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, viewport-fit=cover<% } %>';
+            vp.setAttribute('content',
+              'width=' + MIN_SUPPORTED_WIDTH +
+              ', initial-scale=' + scale +
+              ', maximum-scale=' + scale +
+              ', minimum-scale=' + scale +
+              ', user-scalable=no' +
+              viewportFit
+            );
+          }
+        }
+      }
+
+      // Apply viewport adjustment on load
+      adjustViewportForSmallScreens();
+
+      // Listen for resize events (orientation changes, window resize)
+      window.addEventListener('resize', adjustViewportForSmallScreens);
+      window.addEventListener('orientationchange', adjustViewportForSmallScreens);
     </script>
     <!-- quasar:entry-point -->
   </body>
