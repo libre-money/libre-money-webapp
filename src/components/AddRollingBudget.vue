@@ -1,6 +1,6 @@
 <template>
   <q-dialog ref="dialogRef" @hide="onDialogHide" no-backdrop-dismiss :maximized="$q.screen.lt.sm">
-    <q-card class="q-dialog-plugin column full-height">
+    <q-card class="q-dialog-plugin full-height">
       <q-card-section class="no-shrink">
         <div class="std-dialog-title text-primary text-weight-bold">
           {{ existingBudgetId ? "Editing a Rolling Budget" : "Adding a Rolling Budget" }}
@@ -10,44 +10,27 @@
       <q-card-section class="col scroll" style="min-height: 0">
         <q-form class="q-gutter-md" ref="budgetForm">
           <div class="custom-group">
-            <q-input standout="bg-primary text-white" v-model="budgetName" label="Name of the Rolling Budget" lazy-rules :rules="validators.name" />
+            <q-input standout="bg-primary text-white" v-model="budgetName" label="Name of the Rolling Budget" lazy-rules
+              :rules="validators.name" />
             <select-currency v-model="budgetCurrencyId"></select-currency>
-            <q-checkbox v-model="budgetIsFeatured" label="Highlight in Records Page" @update:model-value="optionChanged('featured')" style="margin-top: 16px" />
+            <q-checkbox v-model="budgetIsFeatured" label="Highlight in Records Page"
+              @update:model-value="optionChanged('featured')" style="margin-top: 16px" />
           </div>
 
           <div class="custom-group">
-            <q-checkbox v-model="budgetIncludeExpenses" label="Apply to Expenses" @update:model-value="optionChanged('expenses')" />
-            <q-checkbox
-              v-model="budgetIncludeAssetPurchases"
-              label="Apply to Asset Purchases"
-              @update:model-value="optionChanged('assetPurchases')"
-              style="margin-bottom: 12px"
-            />
+            <q-checkbox v-model="budgetIncludeExpenses" label="Apply to Expenses"
+              @update:model-value="optionChanged('expenses')" />
+            <q-checkbox v-model="budgetIncludeAssetPurchases" label="Apply to Asset Purchases"
+              @update:model-value="optionChanged('assetPurchases')" style="margin-bottom: 12px" />
             <select-tag v-model="budgetTagIdWhiteList" label="Only include records with these tags"></select-tag>
             <select-tag v-model="budgetTagIdBlackList" label="Exclude records with these tags"></select-tag>
-            <q-select
-              v-model="budgetRollOverRule"
-              :options="rollOverRuleList"
-              label="Roll Over Rule"
-              option-value="value"
-              option-label="label"
-              map-options
-              emit-value
-              standout="bg-primary text-white"
-            />
+            <q-select v-model="budgetRollOverRule" :options="rollOverRuleList" label="Roll Over Rule"
+              option-value="value" option-label="label" map-options emit-value standout="bg-primary text-white" />
           </div>
 
-          <q-select
-            v-model="budgetFrequency"
-            :options="budgetFrequencyList"
-            label="Frequency"
-            option-value="value"
-            option-label="label"
-            map-options
-            emit-value
-            standout="bg-primary text-white"
-            @update:model-value="onFrequencyChanged"
-          />
+          <q-select v-model="budgetFrequency" :options="budgetFrequencyList" label="Frequency" option-value="value"
+            option-label="label" map-options emit-value standout="bg-primary text-white"
+            @update:model-value="onFrequencyChanged" />
 
           <!-- Monthly frequency controls -->
           <div v-if="budgetFrequency === 'monthly'">
@@ -67,7 +50,7 @@
           <q-btn v-if="budgetFrequency === 'irregular'" color="primary" label="Add Period" @click="addPeriod" />
 
           <!-- @vue-expect-error -->
-          <q-table class="budgeted-period-table" :rows="budgetedPeriodList" :columns="tableColumns" flat grid>
+          <q-table class="budgeted-period-table" :rows="budgetedPeriodList" :columns="tableColumns" flat>
             <template v-slot:body="props">
               <q-tr :props="props">
                 <q-td key="startDate" :props="props">
@@ -79,7 +62,8 @@
                   {{ prettifyDate(props.row.endEpoch) }}
                 </q-td>
                 <q-td key="allocated" :props="props">
-                  <q-input type="number" dense v-model="props.row.allocatedAmount" @update:model-value="allocatedAmountChanged(props.row)" />
+                  <q-input type="number" dense v-model="props.row.allocatedAmount"
+                    @update:model-value="allocatedAmountChanged(props.row)" />
                 </q-td>
                 <q-td key="rolledOver" :props="props">
                   {{ printAmount(props.row.rolledOverAmount, null) }}
@@ -91,7 +75,8 @@
                   {{ printAmount(props.row.usedAmount, null) }}
                 </q-td>
                 <q-td key="held" :props="props">
-                  <q-input type="number" dense v-model="props.row.heldAmount" @update:model-value="heldAmountChanged(props.row)" />
+                  <q-input type="number" dense v-model="props.row.heldAmount"
+                    @update:model-value="heldAmountChanged(props.row)" />
                 </q-td>
                 <q-td key="remaining" :props="props">
                   {{ printAmount(props.row.remainingAmount, null) }}
