@@ -4,13 +4,19 @@
     <title>LibreMoney</title>
 
     <meta charset="utf-8" />
-    <meta name="description" content="LibreMoney - Free and open-source personal finance tracking application. Track income, expenses, budgets, and assets with complete privacy. Works offline. Clound Sync and Self Hosting is available too." />
+    <meta
+      name="description"
+      content="Free, open-source personal finance tracker. Track income, expenses, budgets & assets with complete privacy. Works offline. Cloud sync & self-hosting available."
+    />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="LibreMoney" />
-    <meta property="og:description" content="LibreMoney - Free and open-source personal finance tracking application. Track income, expenses, budgets, and assets with complete privacy. Works offline. Clound Sync and Self Hosting is available too." />
-    <meta property="og:image" content="social-sharing-og.png" />
+    <meta property="og:title" content="LibreMoney - Open-source, privacy-first personal finance tracker" />
+    <meta
+      property="og:description"
+      content="Free, open-source personal finance tracker. Track income, expenses, budgets & assets with complete privacy. Works offline. Cloud sync & self-hosting available."
+    />
+    <meta property="og:image" content="https://app.libre.money/icons/social-sharing-og.png" />
     <meta property="og:image:alt" content="LibreMoney - Personal Finance Tracking Application Logo" />
 
     <meta property="og:url" content="/" />
@@ -18,9 +24,12 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="LibreMoney" />
-    <meta name="twitter:description" content="LibreMoney - Free and open-source personal finance tracking application. Track income, expenses, budgets, and assets with complete privacy. Works offline. Clound Sync and Self Hosting is available too." />
-    <meta name="twitter:image" content="social-sharing-og.png" />
+    <meta name="twitter:title" content="LibreMoney - Open-source, privacy-first personal finance tracker" />
+    <meta
+      name="twitter:description"
+      content="Free, open-source personal finance tracker. Track income, expenses, budgets & assets with complete privacy. Works offline. Cloud sync & self-hosting available."
+    />
+    <meta name="twitter:image" content="https://app.libre.money/icons/social-sharing-og.png" />
     <meta name="twitter:image:alt" content="LibreMoney - Personal Finance Tracking Application Logo" />
 
     <meta name="format-detection" content="telephone=no" />
@@ -208,17 +217,22 @@
 
         if (screenWidth < MIN_SUPPORTED_WIDTH) {
           const scale = screenWidth / MIN_SUPPORTED_WIDTH;
-          const vp = document.getElementById('viewport');
+          const vp = document.getElementById("viewport");
 
           if (vp) {
-            const viewportFit = '<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, viewport-fit=cover<% } %>';
-            vp.setAttribute('content',
-              'width=' + MIN_SUPPORTED_WIDTH +
-              ', initial-scale=' + scale +
-              ', maximum-scale=' + scale +
-              ', minimum-scale=' + scale +
-              ', user-scalable=no' +
-              viewportFit
+            const viewportFit = "<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, viewport-fit=cover<% } %>";
+            vp.setAttribute(
+              "content",
+              "width=" +
+                MIN_SUPPORTED_WIDTH +
+                ", initial-scale=" +
+                scale +
+                ", maximum-scale=" +
+                scale +
+                ", minimum-scale=" +
+                scale +
+                ", user-scalable=no" +
+                viewportFit
             );
           }
         }
@@ -228,8 +242,8 @@
       adjustViewportForSmallScreens();
 
       // Listen for resize events (orientation changes, window resize)
-      window.addEventListener('resize', adjustViewportForSmallScreens);
-      window.addEventListener('orientationchange', adjustViewportForSmallScreens);
+      window.addEventListener("resize", adjustViewportForSmallScreens);
+      window.addEventListener("orientationchange", adjustViewportForSmallScreens);
     </script>
     <!-- quasar:entry-point -->
   </body>
